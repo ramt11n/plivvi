@@ -962,6 +962,10 @@ export default function App() {
             initialFiles={initial}
             onClose={() => setSelected(null)}
             onSave={save}
+            onRead={(out) => {
+              setSelected(null);
+              openReader(new File([out.data as BlobPart], out.name, { type: out.type }));
+            }}
             onCloud={(out) => {
               setCloudOutput(out);
               setCloudOpen(true);

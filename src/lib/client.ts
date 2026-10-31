@@ -54,7 +54,10 @@ export function download(out: Output) {
     a = document.createElement('a');
   a.href = url;
   a.download = out.name;
+  a.style.display = 'none';
+  document.body.append(a);
   a.click();
+  a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 export async function downloadAll(outputs: Output[]) {

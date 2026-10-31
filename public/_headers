@@ -1,0 +1,16 @@
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/sw.js
+  Cache-Control: no-cache
+/pocket-config.json
+  Cache-Control: no-store
+/redirect.html
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+/redirect
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), microphone=(), geolocation=()

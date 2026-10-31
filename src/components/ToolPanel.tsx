@@ -14,6 +14,7 @@ import {
   GripVertical,
   RotateCw,
   FolderPlus,
+  BookOpen,
   FileText,
   Share2,
   Cloud,
@@ -32,17 +33,20 @@ export default function ToolPanel({
   initialFiles = [],
   onClose,
   onSave,
+  onRead,
   onCloud,
 }: {
   tool: Tool;
   initialFiles?: File[];
   onClose: () => void;
   onSave: (o: Output[]) => Promise<void>;
+  onRead?: (o: Output) => void;
   onCloud?: (o: Output) => void;
 }) {
   const [files, setFiles] = useState<File[]>(initialFiles),
     [pages, setPages] = useState<Page[]>([]),
     [preview, setPreview] = useState<Preview>(),
+    [pageCount, setPageCount] = useState<number>(),
     [options, setOptions] = useState<any>({
       range: '',
       splitMode: 'every',
@@ -92,9 +96,9 @@ export default function ToolPanel({
     window.addEventListener('keydown', key);
     return () => {
       window.removeEventListener('keydown', key);
-      urls.current.forEach((u) => URL.revokeObjectURL(u));
     };
   }, [busy, onClose]);
+  useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
   async function add(incoming: File[]) {
     if (!incoming.length) return;
     if (incoming.some((f) => f.size > 100 * 1048576)) {
@@ -140,13 +144,17 @@ export default function ToolPanel({
     if (!files.length) {
       setPages([]);
       setPreview(undefined);
+      setPageCount(undefined);
       return;
     }
     let currentUrls: string[] = [];
     setLoading(true);
+    setPageCount(undefined);
     setError('');
     (async () => {
       const pgs: Page[] = [];
+      let count = 0,
+        complete = true;
       for (let source = 0; source < files.length; source++) {
         const file = files[source];
         if (/\.pdf$/i.test(file.name)) {
@@ -156,6 +164,7 @@ export default function ToolPanel({
               password: options.currentPassword,
             });
             if (gen !== generation.current) return;
+            count += result.count;
             if (source === 0) {
               setPreview(result);
               setOptions((o: any) => ({
@@ -169,9 +178,11 @@ export default function ToolPanel({
               pgs.push({ id: `${source}-${p.index}`, source, index: p.index, url, rotation: 0 });
             }
           } catch (e) {
+            complete = false;
             if (gen === generation.current) setError((e as Error).message);
           }
         } else if (file.type.startsWith('image/')) {
+          count++;
           const url = URL.createObjectURL(file);
           currentUrls.push(url);
           pgs.push({ id: `${source}-0`, source, index: 0, url, rotation: 0 });
@@ -181,6 +192,7 @@ export default function ToolPanel({
         urls.current.forEach((u) => URL.revokeObjectURL(u));
         urls.current = currentUrls;
         setPages(pgs);
+        setPageCount(complete && count ? count : undefined);
         setActivePage(pgs[0]?.id);
       } else currentUrls.forEach((u) => URL.revokeObjectURL(u));
     })()
@@ -336,6 +348,11 @@ export default function ToolPanel({
               ))}
             </div>
             <div className="result-actions">
+              {results.length === 1 && results[0].type === 'application/pdf' && onRead && (
+                <button className="button secondary" onClick={() => onRead(results[0])}>
+                  <BookOpen size={18} /> Read or edit PDF
+                </button>
+              )}
               <button
                 className="button primary"
                 onClick={() => (results.length > 1 ? downloadAll(results) : download(results[0]))}
@@ -453,7 +470,9 @@ export default function ToolPanel({
                   <div className="files-toolbar">
                     <span>
                       <strong>{files.length}</strong> {files.length === 1 ? 'file' : 'files'}
-                      {preview ? ` · ${preview.count} pages` : ''}
+                      {pageCount !== undefined
+                        ? ` · ${pageCount} ${pageCount === 1 ? 'page' : 'pages'}`
+                        : ''}
                     </span>
                     <div>
                       {images && (
