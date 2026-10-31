@@ -1,0 +1,772 @@
+{
+  "reader": {
+    "slug": "pdf-reader",
+    "title": "Free PDF Reader & Editor",
+    "description": "Read PDFs, draw with Apple Pencil or a stylus, highlight passages, add text, and export annotated PDFs locally.",
+    "heading": "Your quiet reading space, with room to think.",
+    "steps": [
+      "Open a PDF or start with blank, lined, or graph paper.",
+      "Choose Select to copy text, or pick Pen, Highlighter, Text, Note, or Rectangle.",
+      "Adjust color and width. Use undo, search, bookmarks, and page navigation as you work.",
+      "Download a PDF with portable annotations, or flatten a copy when you need a static result."
+    ],
+    "faqs": [
+      {
+        "q": "Can I use Apple Pencil?",
+        "a": "The reader accepts pen pointer events and pressure values where your device and browser provide them. Finger drawing is optional; stylus and touch behavior still depends on the hardware."
+      },
+      {
+        "q": "Can I rewrite existing PDF paragraphs?",
+        "a": "You can add text and annotations. Reflowing or rewriting existing paragraphs while preserving the original layout is not included."
+      }
+    ]
+  },
+  "scan": {
+    "slug": "scan-to-pdf",
+    "title": "Scan to PDF — Free Document Scanner",
+    "description": "Scan documents with a camera or uploaded photos. Correct perspective, reduce uneven lighting, and make PDFs without uploading your pages.",
+    "heading": "A paper document, a clearer digital copy.",
+    "steps": [
+      "Capture a page or upload photos from your device.",
+      "Adjust the four crop corners, then try Clean paper or another filter.",
+      "Set shadow reduction, brightness, contrast, and a page layout.",
+      "Create your PDF and download it or save it to your local workspace."
+    ],
+    "faqs": [
+      {
+        "q": "Do I need a camera?",
+        "a": "No. You can import photos, screenshots, and existing scans from Files on any supported device."
+      },
+      {
+        "q": "Does shadow removal recover hidden text?",
+        "a": "Lighting normalization can reduce uneven shadows. It cannot reconstruct covered text, strong glare, severe blur, or curved-book detail."
+      }
+    ]
+  },
+  "enhance": {
+    "slug": "enhance-scan",
+    "title": "Enhance Scans — Filters & Shadow Reduction",
+    "description": "Clean up document photos with adjustable crop corners, grayscale and black-and-white filters, brightness, contrast, and shadow reduction.",
+    "heading": "Let your document stand out from its shadows.",
+    "steps": [
+      "Upload the document photo you want to improve.",
+      "Adjust the crop corners and correct its perspective.",
+      "Compare Clean paper, Grayscale, Black and white, and Vivid color.",
+      "Hold the original preview to compare, then export a new copy."
+    ],
+    "faqs": [
+      {
+        "q": "Will my original photo change?",
+        "a": "No. The tool creates an enhanced copy. Your source photo is not overwritten."
+      },
+      {
+        "q": "Which filter should I choose?",
+        "a": "Clean paper helps uneven lighting, grayscale removes color distractions, and black-and-white increases text contrast. Review small print before exporting."
+      }
+    ]
+  },
+  "merge": {
+    "slug": "merge-pdf",
+    "title": "Merge PDF — Combine PDFs Free",
+    "description": "Combine multiple PDFs into one file in your browser. Arrange file order and download a merged copy without a subscription.",
+    "heading": "One neat document, from a handful of files.",
+    "steps": [
+      "Choose the PDF files you want to combine.",
+      "Move files up or down to set their order.",
+      "Provide the current password for protected sources when needed.",
+      "Merge and download the combined document."
+    ],
+    "faqs": [
+      {
+        "q": "Does merging turn pages into images?",
+        "a": "The page-copying workflow preserves document text and vector content where the source structure supports it."
+      },
+      {
+        "q": "Can I merge encrypted PDFs?",
+        "a": "You need the current source password. Files using different passwords are best unlocked separately before merging."
+      }
+    ]
+  },
+  "split": {
+    "slug": "split-pdf",
+    "title": "Split PDF — Separate Pages & Ranges",
+    "description": "Split a PDF into individual pages or selected page ranges. Create just the documents you need, locally in your browser.",
+    "heading": "A long document, divided into useful pieces.",
+    "steps": [
+      "Open your source PDF.",
+      "Choose one file per page or enter page ranges.",
+      "Use ranges such as 1-3, 5, 7-9 to define output files.",
+      "Download individual PDFs or a ZIP containing the results."
+    ],
+    "faqs": [
+      {
+        "q": "How do page ranges work?",
+        "a": "A comma separates output groups. For example, 1-3, 5 creates one PDF for pages 1 through 3 and another for page 5."
+      },
+      {
+        "q": "Are the original pages deleted?",
+        "a": "No. Splitting creates new files and leaves the original PDF unchanged."
+      }
+    ]
+  },
+  "organize": {
+    "slug": "organize-pdf",
+    "title": "Organize PDF Pages — Reorder & Duplicate",
+    "description": "Reorder, rotate, duplicate, and remove PDF pages with visual page previews and touch-friendly move controls.",
+    "heading": "Every page, in the right place.",
+    "steps": [
+      "Open a PDF to see page previews.",
+      "Drag pages or use the move buttons to change their order.",
+      "Rotate, duplicate, or remove the pages you need.",
+      "Save an organized copy and review its final sequence."
+    ],
+    "faqs": [
+      {
+        "q": "Can I organize on a phone?",
+        "a": "Yes. Move buttons provide an alternative to dragging, so the same page operations are available on touch devices."
+      },
+      {
+        "q": "Is there a preview limit?",
+        "a": "The organizer previews up to 60 pages. Split larger documents into smaller sections before visual organization."
+      }
+    ]
+  },
+  "extract": {
+    "slug": "extract-pdf-pages",
+    "title": "Extract PDF Pages — Keep Selected Pages",
+    "description": "Create a new PDF from selected pages or page ranges. Keep the useful parts without changing the original file.",
+    "heading": "Keep the pages that tell your story.",
+    "steps": [
+      "Choose your PDF.",
+      "Enter individual pages or ranges, such as 2-4, 8.",
+      "Check the range against the source page count.",
+      "Export the selected pages as a new PDF."
+    ],
+    "faqs": [
+      {
+        "q": "Can I repeat pages with Extract?",
+        "a": "Extract keeps each selected source page once. Use Organize pages to duplicate a page."
+      },
+      {
+        "q": "Will links and text remain?",
+        "a": "The tool copies PDF pages rather than rasterizing them. Some document-level links or structures may depend on their original context."
+      }
+    ]
+  },
+  "remove": {
+    "slug": "remove-pdf-pages",
+    "title": "Remove PDF Pages — Delete Unwanted Pages",
+    "description": "Remove unwanted pages from a PDF and save a clean copy. Enter page numbers or ranges with clear validation.",
+    "heading": "A little less clutter in your document.",
+    "steps": [
+      "Open the source PDF.",
+      "Enter the pages to remove, such as 1, 6-8.",
+      "Keep at least one page in the output.",
+      "Export the remaining pages in their original order."
+    ],
+    "faqs": [
+      {
+        "q": "Can I delete every page?",
+        "a": "A PDF needs at least one page. The tool prevents an empty output."
+      },
+      {
+        "q": "Does this delete my original PDF?",
+        "a": "No. The tool exports a new copy; it cannot delete your downloaded original."
+      }
+    ]
+  },
+  "rotate": {
+    "slug": "rotate-pdf",
+    "title": "Rotate PDF — Fix Page Orientation",
+    "description": "Rotate selected PDF pages by 90, 180, or 270 degrees. Fix sideways pages without converting them to images.",
+    "heading": "A better angle on your paperwork.",
+    "steps": [
+      "Open a PDF.",
+      "Choose a rotation angle.",
+      "Enter a page range, or leave it blank to rotate every page.",
+      "Save and check the orientation of the output."
+    ],
+    "faqs": [
+      {
+        "q": "Can I rotate only some pages?",
+        "a": "Yes. Enter individual page numbers or ranges to target only those pages."
+      },
+      {
+        "q": "Does rotation reduce image quality?",
+        "a": "Page rotation changes PDF orientation metadata. It does not re-encode page images in this workflow."
+      }
+    ]
+  },
+  "compress": {
+    "slug": "compress-pdf",
+    "title": "Compress PDF — Local PDF Optimization",
+    "description": "Optimize PDF size locally. Choose lossless cleanup or an explicitly flattened image copy for sharing smaller documents.",
+    "heading": "A lighter file, with a clear choice of tradeoffs.",
+    "steps": [
+      "Open your PDF and choose a compression mode.",
+      "Try lossless optimization to preserve text, forms, and page structure.",
+      "Use an image copy only when flattening and rasterization are acceptable.",
+      "Compare the output size and review the saved copy."
+    ],
+    "faqs": [
+      {
+        "q": "Is a smaller file guaranteed?",
+        "a": "No. Some PDFs are already optimized. Lossless mode returns the original bytes when rewriting would make the file larger."
+      },
+      {
+        "q": "What does image compression remove?",
+        "a": "Raster output can lose selectable text, links, interactive fields, and vector sharpness. Use it only when those features are not needed."
+      }
+    ]
+  },
+  "repair": {
+    "slug": "repair-pdf",
+    "title": "Repair PDF — Recover Readable PDF Structure",
+    "description": "Try rebuilding a damaged PDF from readable structures. Best-effort recovery runs locally and creates a separate copy.",
+    "heading": "Give a difficult document another chance.",
+    "steps": [
+      "Choose the damaged PDF.",
+      "Enter its current password if it is encrypted.",
+      "Run best-effort structural recovery.",
+      "Open the repaired copy and verify all important pages."
+    ],
+    "faqs": [
+      {
+        "q": "Can every damaged PDF be repaired?",
+        "a": "No. Missing bytes, truncated content, or severely corrupted structures cannot always be reconstructed."
+      },
+      {
+        "q": "Should I trust the repaired copy immediately?",
+        "a": "Review page count, text, images, and important fields. Successful saving does not prove that every part of a damaged source was recovered."
+      }
+    ]
+  },
+  "ocr": {
+    "slug": "ocr-pdf",
+    "title": "OCR PDF & Images — Searchable PDFs Free",
+    "description": "Recognize English, Persian, or Arabic text locally. Export plain text or create a searchable PDF from scans and images.",
+    "heading": "Give your scanned words a text layer.",
+    "steps": [
+      "Upload a scanned PDF or document image.",
+      "Choose English, Persian, or Arabic.",
+      "Select text extraction or searchable PDF output.",
+      "Wait for local recognition, then review and export."
+    ],
+    "faqs": [
+      {
+        "q": "Are scans sent to an OCR server?",
+        "a": "No. The browser downloads an OCR engine and language model, then recognizes your document on the device."
+      },
+      {
+        "q": "How accurate is the recognized text?",
+        "a": "Accuracy depends on language, layout, image quality, and handwriting. Check names, numbers, and important wording against the original."
+      }
+    ]
+  },
+  "image-pdf": {
+    "slug": "images-to-pdf",
+    "title": "Images to PDF — JPG, PNG & Photo PDFs",
+    "description": "Turn photos, screenshots, and supported images into a PDF. Choose A4, Letter, original size, or document copy layouts.",
+    "heading": "Your images, together on paper.",
+    "steps": [
+      "Choose one or more images.",
+      "Adjust scans if they need crop or lighting corrections.",
+      "Choose A4, Letter, original image size, or an ID/passport copy layout.",
+      "Create and download your PDF."
+    ],
+    "faqs": [
+      {
+        "q": "Can I combine front and back of an ID?",
+        "a": "The ID copy preset arranges your first two genuine document photos on one PDF page."
+      },
+      {
+        "q": "Are these official document templates?",
+        "a": "They are neutral copy layouts for authentic user-provided scans. They do not create credentials or guarantee government acceptance."
+      }
+    ]
+  },
+  "pdf-image": {
+    "slug": "pdf-to-images",
+    "title": "PDF to JPG & PNG — Export PDF Pages",
+    "description": "Render PDF pages as JPG or PNG images with selectable output widths. Download pages separately or together as a ZIP.",
+    "heading": "A picture of every page.",
+    "steps": [
+      "Open your PDF.",
+      "Choose JPG for compact images or PNG for lossless image encoding.",
+      "Set the output page width.",
+      "Export page images and download them or a ZIP."
+    ],
+    "faqs": [
+      {
+        "q": "Will the exported images contain editable text?",
+        "a": "No. Page images are raster pictures. Keep the PDF or use text/OCR tools when you need selectable words."
+      },
+      {
+        "q": "Can I make WebP images?",
+        "a": "Export PNG or JPG pages, then use Convert images to create WebP copies."
+      }
+    ]
+  },
+  "image-convert": {
+    "slug": "convert-images",
+    "title": "Convert Images — JPG, PNG & WebP",
+    "description": "Convert supported images to JPG, PNG, or WebP locally. Make compatible copies without uploading private photos.",
+    "heading": "The right image format for the next step.",
+    "steps": [
+      "Choose your source images.",
+      "Select JPG, PNG, or WebP output.",
+      "Convert the images on your device.",
+      "Download the converted files or a ZIP."
+    ],
+    "faqs": [
+      {
+        "q": "Which format is best for documents?",
+        "a": "PNG is useful for crisp graphics, JPG often saves space for photographs, and WebP can offer efficient web images."
+      },
+      {
+        "q": "Can my browser open HEIC?",
+        "a": "HEIC decoding depends on the browser and operating system. If it cannot open the image, export a JPG or PNG from Photos first."
+      }
+    ]
+  },
+  "text": {
+    "slug": "pdf-to-text",
+    "title": "PDF to Text — Extract PDF Words",
+    "description": "Extract selectable text from a PDF into a plain text file. Keep processing local and use OCR for image-only scans.",
+    "heading": "Just the words you need.",
+    "steps": [
+      "Upload a text-based PDF.",
+      "Enter the current password if required.",
+      "Extract the text layer.",
+      "Download the result and check reading order."
+    ],
+    "faqs": [
+      {
+        "q": "Why is my scan empty?",
+        "a": "Scans may contain images without a text layer. Run Recognize text first to add or extract OCR text."
+      },
+      {
+        "q": "Are columns preserved?",
+        "a": "Plain text has no page layout. Reading order can vary in multi-column pages and complex tables."
+      }
+    ]
+  },
+  "markdown": {
+    "slug": "pdf-to-markdown",
+    "title": "PDF to Markdown — Simple Text Export",
+    "description": "Export PDF text to Markdown with page sections. Move document words into your notes or writing workflow.",
+    "heading": "From a fixed page to flexible notes.",
+    "steps": [
+      "Choose a text-based PDF.",
+      "Extract its text layer.",
+      "Export Markdown with separate page headings.",
+      "Review structure and refine it in your Markdown editor."
+    ],
+    "faqs": [
+      {
+        "q": "Will every heading and table be reconstructed?",
+        "a": "No. This export creates readable page sections from extracted text, without reliably inferring complex semantic structure."
+      },
+      {
+        "q": "Does it support scanned PDFs?",
+        "a": "Run OCR first for documents that contain only page images."
+      }
+    ]
+  },
+  "word": {
+    "slug": "pdf-to-word",
+    "title": "PDF to Word — Editable Paragraph Export",
+    "description": "Convert PDF text to an editable DOCX document. Local paragraph extraction with clear layout limitations and no subscription.",
+    "heading": "A useful starting point for editing the words.",
+    "steps": [
+      "Open a PDF with selectable text.",
+      "Use OCR first if the PDF is image-only.",
+      "Export text as Word paragraphs.",
+      "Review formatting, reading order, and page sections in Word."
+    ],
+    "faqs": [
+      {
+        "q": "Will it look exactly like my PDF?",
+        "a": "No. This is editable text conversion, not a reconstruction of the original layout, charts, or typography."
+      },
+      {
+        "q": "Can I edit the result in other apps?",
+        "a": "The output is a DOCX file that compatible word processors can open. Review the converted document before sharing."
+      }
+    ]
+  },
+  "excel": {
+    "slug": "pdf-to-excel",
+    "title": "PDF to Excel — Export Text Rows",
+    "description": "Export inferred PDF text rows to an XLSX workbook. A local starting point for organizing tabular text.",
+    "heading": "Bring useful rows into a workbook.",
+    "steps": [
+      "Choose a PDF with a text layer.",
+      "Export inferred rows and columns.",
+      "Open the XLSX workbook in a compatible spreadsheet app.",
+      "Check column boundaries, decimal values, and dates."
+    ],
+    "faqs": [
+      {
+        "q": "Does it reliably detect complex tables?",
+        "a": "No. Columns are inferred from spacing in extracted text. Merged cells, irregular tables, and multi-column layouts need review."
+      },
+      {
+        "q": "Can I use a scanned table?",
+        "a": "Run OCR first. Recognition errors in digits and separators can affect spreadsheet results."
+      }
+    ]
+  },
+  "powerpoint": {
+    "slug": "pdf-to-powerpoint",
+    "title": "PDF to PowerPoint — PDF Pages as Slides",
+    "description": "Make a PowerPoint presentation from PDF page images. Preserve each page visually as an image on a slide.",
+    "heading": "Your pages, ready for the screen.",
+    "steps": [
+      "Open your PDF.",
+      "Render the pages at a suitable resolution.",
+      "Export a PPTX presentation.",
+      "Open the slides and add your presentation notes."
+    ],
+    "faqs": [
+      {
+        "q": "Is slide text editable?",
+        "a": "No. Each exported slide contains an image of a PDF page. Use text extraction if you need to rewrite the words."
+      },
+      {
+        "q": "Will portrait pages be stretched?",
+        "a": "The page images are fitted proportionally to widescreen slides, with space around them when needed."
+      }
+    ]
+  },
+  "office-pdf": {
+    "slug": "office-to-pdf",
+    "title": "Office to PDF — Basic DOCX, XLSX & PPTX Copies",
+    "description": "Create basic PDF reading copies from DOCX, XLSX, or PPTX text and data. Browser-local conversion with explicit layout limits.",
+    "heading": "A simple reading copy of the content.",
+    "steps": [
+      "Choose a modern DOCX, XLSX, or PPTX file.",
+      "Extract its readable text or worksheet data locally.",
+      "Create a clean PDF reading copy.",
+      "Check that all important content appears."
+    ],
+    "faqs": [
+      {
+        "q": "Is this a full Office rendering engine?",
+        "a": "No. Complex layouts, charts, images, slide design, and original fonts are not faithfully reproduced."
+      },
+      {
+        "q": "Are old DOC, XLS, or PPT files supported?",
+        "a": "No. Save them as DOCX, XLSX, or PPTX in a compatible Office app before using this tool."
+      }
+    ]
+  },
+  "html-pdf": {
+    "slug": "text-html-to-pdf",
+    "title": "Text & HTML to PDF — Clean Reading Copies",
+    "description": "Create a PDF from plain text, Markdown, or HTML text content. Scripts, styles, and external resources are excluded.",
+    "heading": "A clean page for what you wrote.",
+    "steps": [
+      "Choose a TXT, Markdown, or HTML file.",
+      "Extract readable content locally.",
+      "Create a simple PDF with consistent typography.",
+      "Open the result and review page breaks."
+    ],
+    "faqs": [
+      {
+        "q": "Will it capture a live website?",
+        "a": "No. This tool converts text from an uploaded file. It does not browse a URL or reproduce a styled web page."
+      },
+      {
+        "q": "Can embedded scripts run?",
+        "a": "The conversion excludes script and style content and does not load external resources from the uploaded HTML."
+      }
+    ]
+  },
+  "sign": {
+    "slug": "sign-pdf",
+    "title": "Sign PDF — Add a Drawn Signature",
+    "description": "Draw a signature and place it on a PDF page. Create a signed visual copy locally without a subscription.",
+    "heading": "A familiar signature, in the right place.",
+    "steps": [
+      "Open your document.",
+      "Draw your signature with a pen, mouse, or touch.",
+      "Choose the page, size, and placement.",
+      "Export a new PDF and review its appearance."
+    ],
+    "faqs": [
+      {
+        "q": "Is this a certificate-backed digital signature?",
+        "a": "No. This feature places a drawn signature image. It does not provide identity certification, timestamps, or a digital-signature service."
+      },
+      {
+        "q": "Can I use it on a form?",
+        "a": "Yes. Place the visible signature where needed. Verify the recipient’s requirements before relying on any signature method."
+      }
+    ]
+  },
+  "annotate": {
+    "slug": "add-text-to-pdf",
+    "title": "Add Text to PDF — Type Notes & Labels",
+    "description": "Type new text on a PDF page. Position notes, labels, and missing details while keeping the original content.",
+    "heading": "A few useful words, right on the page.",
+    "steps": [
+      "Open the PDF.",
+      "Choose a page and type your text.",
+      "Tap the preview to place it and adjust the text size.",
+      "Save a new copy, or open the full reader for more annotations."
+    ],
+    "faqs": [
+      {
+        "q": "Can I change an existing paragraph?",
+        "a": "This tool adds new text. It does not reflow or rewrite the document’s existing paragraphs."
+      },
+      {
+        "q": "Can I write by hand too?",
+        "a": "Use PDF reader & editor for pen strokes, pressure-aware drawing, highlights, and sticky notes."
+      }
+    ]
+  },
+  "watermark": {
+    "slug": "watermark-pdf",
+    "title": "Watermark PDF — Add Ownership or Status",
+    "description": "Add a text watermark to PDF pages. Label a document as a draft, confidential copy, or personal reference.",
+    "heading": "Make the document’s purpose clear.",
+    "steps": [
+      "Choose your PDF.",
+      "Enter the watermark text.",
+      "Adjust its opacity and placement settings.",
+      "Export and review a watermarked copy."
+    ],
+    "faqs": [
+      {
+        "q": "Does a watermark prevent copying?",
+        "a": "No. A watermark is a visual label, not access control or copy protection."
+      },
+      {
+        "q": "Should I watermark identity-document copies?",
+        "a": "A purpose-specific watermark can help communicate intended use. Keep required details legible and follow the recipient’s instructions."
+      }
+    ]
+  },
+  "numbers": {
+    "slug": "add-page-numbers",
+    "title": "Add Page Numbers to PDF — Number Pages",
+    "description": "Add page numbers to a PDF with a chosen starting number. Make longer documents easier to reference.",
+    "heading": "A small detail that keeps everyone aligned.",
+    "steps": [
+      "Open your PDF.",
+      "Choose the starting page number.",
+      "Add numbering to the page sequence.",
+      "Review the footer area in the exported copy."
+    ],
+    "faqs": [
+      {
+        "q": "Can numbering start above one?",
+        "a": "Yes. Set a starting number to match a larger combined document or appendix."
+      },
+      {
+        "q": "Will it replace existing numbers?",
+        "a": "The tool adds a new number overlay. Existing page-number content is not automatically removed."
+      }
+    ]
+  },
+  "crop": {
+    "slug": "crop-pdf",
+    "title": "Crop PDF — Trim Visible Page Margins",
+    "description": "Trim visible PDF margins with a crop box. Create a cleaner view while keeping the underlying document content.",
+    "heading": "A closer view of the useful part.",
+    "steps": [
+      "Open your PDF.",
+      "Choose the margin to trim.",
+      "Apply the visible-page crop.",
+      "Check that no useful content is hidden."
+    ],
+    "faqs": [
+      {
+        "q": "Does cropping remove sensitive content?",
+        "a": "No. Cropped content can remain in the file. Use Redact content when information must be removed."
+      },
+      {
+        "q": "Will the original file change?",
+        "a": "No. Cropping creates a separate PDF copy."
+      }
+    ]
+  },
+  "forms": {
+    "slug": "fill-pdf-forms",
+    "title": "Fill PDF Forms — Complete Interactive Fields",
+    "description": "Fill supported text, checkbox, radio, and choice fields in an existing PDF form, then save a completed copy.",
+    "heading": "Your form, a little closer to finished.",
+    "steps": [
+      "Open an interactive PDF form.",
+      "Enter text and choose available field values.",
+      "Save a completed PDF copy.",
+      "Review the form in a PDF reader before sending."
+    ],
+    "faqs": [
+      {
+        "q": "Why are there no fields in my scan?",
+        "a": "A flat scan contains a page image rather than interactive fields. Use Add text or the full reader to write on it."
+      },
+      {
+        "q": "Can I fill certificate signature fields?",
+        "a": "Certificate signature fields and unsupported form technologies are not completed by this tool."
+      }
+    ]
+  },
+  "protect": {
+    "slug": "protect-pdf",
+    "title": "Protect PDF — AES-256 Password Encryption",
+    "description": "Encrypt a PDF with an opening password using AES-256. Keep document processing local and save a protected copy.",
+    "heading": "A password at the document’s front door.",
+    "steps": [
+      "Open your PDF.",
+      "Choose a strong opening password.",
+      "Create an encrypted copy.",
+      "Test the password before sharing it through a separate channel."
+    ],
+    "faqs": [
+      {
+        "q": "Can a forgotten password be recovered?",
+        "a": "There is no password recovery service. Keep the password in a safe place."
+      },
+      {
+        "q": "Are all password characters accepted?",
+        "a": "The interface rejects option-delimiter characters used by the underlying writer. Use a long unique password that meets its validation rules."
+      }
+    ]
+  },
+  "unlock": {
+    "slug": "unlock-pdf",
+    "title": "Unlock PDF — Remove a Known PDF Password",
+    "description": "Save an unlocked PDF copy using its current password. Local decryption for documents you are authorized to access.",
+    "heading": "A more convenient copy, when you know the key.",
+    "steps": [
+      "Choose the encrypted PDF.",
+      "Enter its current opening password.",
+      "Save an unlocked copy.",
+      "Store the output appropriately because it no longer requires that password."
+    ],
+    "faqs": [
+      {
+        "q": "Does this crack unknown passwords?",
+        "a": "No. It requires the current password and does not guess or bypass it."
+      },
+      {
+        "q": "Is the encrypted original overwritten?",
+        "a": "No. The source remains unchanged and the tool creates a new unlocked PDF."
+      }
+    ]
+  },
+  "redact": {
+    "slug": "redact-pdf",
+    "title": "Redact PDF — Remove Selected Page Content",
+    "description": "Remove PDF page content in a selected rectangle and rewrite the file. Use real content redaction rather than a covering box.",
+    "heading": "Remove the content, not just the view of it.",
+    "steps": [
+      "Open your PDF and choose a page.",
+      "Draw a rectangle over the content to remove.",
+      "Apply redaction and export a rewritten copy.",
+      "Search and inspect the result before sharing it."
+    ],
+    "faqs": [
+      {
+        "q": "Is a black rectangle enough?",
+        "a": "A normal drawn rectangle can leave text underneath. This tool uses the PDF engine’s destructive redaction operation."
+      },
+      {
+        "q": "Does it sanitize every part of a file?",
+        "a": "No. Metadata, attachments, and other document-level information need separate review. Check every sensitive page and the final output."
+      }
+    ]
+  },
+  "compare": {
+    "slug": "compare-pdf",
+    "title": "Compare PDFs — Side-by-Side Page Views",
+    "description": "Create a side-by-side PDF comparison aligned by page number. Review two versions visually without uploading them.",
+    "heading": "Two versions, with room to look closely.",
+    "steps": [
+      "Choose two PDFs.",
+      "Align the documents in the desired original/comparison order.",
+      "Create a side-by-side comparison PDF.",
+      "Inspect wording, layout, and page differences visually."
+    ],
+    "faqs": [
+      {
+        "q": "Does it detect every text change?",
+        "a": "No. This is visual comparison, not semantic difference detection or a legal review."
+      },
+      {
+        "q": "What if the page counts differ?",
+        "a": "The comparison uses the longer document’s page count and leaves missing counterpart areas blank."
+      }
+    ]
+  },
+  "flatten": {
+    "slug": "flatten-pdf",
+    "title": "Flatten PDF — Bake Forms & Annotations",
+    "description": "Create a static PDF copy with supported form and annotation appearances baked into the pages.",
+    "heading": "Keep the appearance, simplify the interaction.",
+    "steps": [
+      "Open a PDF containing forms or annotations.",
+      "Flatten the current appearances into the pages.",
+      "Export a static copy.",
+      "Review fields, comments, and signatures before sharing."
+    ],
+    "faqs": [
+      {
+        "q": "Can flattened fields be edited later?",
+        "a": "They are no longer interactive fields in the flattened copy. Keep an editable original."
+      },
+      {
+        "q": "Does flattening preserve a digital signature?",
+        "a": "Editing or rewriting a PDF can invalidate existing cryptographic signatures. Check signature requirements separately."
+      }
+    ]
+  },
+  "metadata": {
+    "slug": "edit-pdf-metadata",
+    "title": "Edit PDF Metadata — Title, Author & Subject",
+    "description": "Set a PDF title, author, and subject locally. Make document details clearer without changing the original file.",
+    "heading": "A useful label behind the file name.",
+    "steps": [
+      "Choose your PDF.",
+      "Enter the document title, author, and subject.",
+      "Save a new copy with updated metadata.",
+      "Check its document properties in a reader."
+    ],
+    "faqs": [
+      {
+        "q": "Does clearing metadata remove all private information?",
+        "a": "No. Visible text, attachments, custom structures, and other information may remain. This tool changes the supported metadata fields."
+      },
+      {
+        "q": "Will the file name change?",
+        "a": "The export uses a new output name. Metadata titles and file names are separate document properties."
+      }
+    ]
+  },
+  "summary": {
+    "slug": "summarize-pdf",
+    "title": "Summarize PDF — Local Extractive Key Sentences",
+    "description": "Select key sentences from a text-based PDF with a local extractive summary. No external AI service or document upload.",
+    "heading": "A shorter route back to the source.",
+    "steps": [
+      "Choose a PDF with selectable text.",
+      "Set how many key sentences to extract.",
+      "Create a summary from existing source sentences.",
+      "Read important points in their original context."
+    ],
+    "faqs": [
+      {
+        "q": "Is this generative AI?",
+        "a": "No. It ranks and selects sentences already present in the document. It does not create new claims or translate content."
+      },
+      {
+        "q": "Can I rely on it instead of reading?",
+        "a": "It is a reading aid. Frequency-based sentence selection can miss context, exceptions, and important details."
+      }
+    ]
+  }
+}

@@ -1,0 +1,350 @@
+:root {
+  --surface: #fff;
+  --surface-soft: #fafbfe;
+  --ink: #293047;
+  --hover: #f4f5fa;
+  --selected: #efeffc;
+  --reader-desk: #e9ecf2;
+}
+html {
+  color-scheme: light;
+}
+.theme-picker {
+  display: flex;
+  gap: 5px;
+  background: var(--surface-soft);
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.theme-picker > button {
+  flex: 1;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 9px 8px;
+  min-height: 36px;
+}
+.theme-picker > button.active {
+  color: var(--purple);
+  background: var(--surface);
+  box-shadow: 0 2px 6px #202d4e0b;
+}
+.theme-picker.compact {
+  margin: 14px 5px 9px;
+}
+.theme-picker.compact > button {
+  padding: 7px 5px;
+  gap: 5px;
+  font-size: 9px;
+}
+.theme-picker.compact svg {
+  width: 14px;
+}
+.theme-help {
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin-top: 12px;
+  margin-bottom: 20px;
+}
+.theme-picker button:hover {
+  transform: translateY(-1px);
+}
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --surface: #1d2330;
+  --surface-soft: #181e29;
+  --ink: #e0e6f3;
+  --hover: #282f40;
+  --selected: #30304f;
+  --reader-desk: #111620;
+  --purple: #a19bff;
+  --muted: #a7aec0;
+  --line: #333b4d;
+  background: #151a24;
+  color: var(--ink);
+}
+html[data-theme='dark'] body {
+  background: #151a24;
+  color: var(--ink);
+}
+html[data-theme='dark'] .app-shell {
+  background: #151a24;
+}
+html[data-theme='dark'] .sidebar,
+html[data-theme='dark'] .tool-card,
+html[data-theme='dark'] .document-row,
+html[data-theme='dark'] .bottom-tips > button,
+html[data-theme='dark'] .template-card,
+html[data-theme='dark'] .info-dialog,
+html[data-theme='dark'] .tool-panel,
+html[data-theme='dark'] .scan-panel,
+html[data-theme='dark'] .toast,
+html[data-theme='dark'] .loading-card {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+html[data-theme='dark'] .topbar {
+  background: #1a202c;
+  border-color: var(--line);
+}
+html[data-theme='dark'] .nav-item {
+  color: #b0b7cc;
+}
+html[data-theme='dark'] .nav-item.active {
+  background: #30304f;
+  color: #b5afff;
+}
+html[data-theme='dark'] .nav-item:hover,
+html[data-theme='dark'] .icon-button:hover {
+  background: var(--hover);
+}
+html[data-theme='dark'] .nav-item small {
+  background: #3a385e;
+  color: #c3bdff;
+}
+html[data-theme='dark'] .brand {
+  color: #edf0fa;
+}
+html[data-theme='dark'] .page-heading h1,
+html[data-theme='dark'] .section-heading h2,
+html[data-theme='dark'] .template-description h3,
+html[data-theme='dark'] .tool-card strong,
+html[data-theme='dark'] .panel-title h2,
+html[data-theme='dark'] .info-dialog h2 {
+  color: #e5e9f6;
+}
+html[data-theme='dark'] .page-heading p,
+html[data-theme='dark'] .section-heading p,
+html[data-theme='dark'] .tool-card-text > span,
+html[data-theme='dark'] .template-description p,
+html[data-theme='dark'] .document-name small,
+html[data-theme='dark'] .info-dialog > p,
+html[data-theme='dark'] .help-list {
+  color: #a8b0c5;
+}
+html[data-theme='dark'] .hero {
+  background:
+    radial-gradient(ellipse at 87% 50%, #45446966, transparent 55%),
+    linear-gradient(120deg, #292944, #242b40);
+  border-color: #3c3d5e;
+}
+html[data-theme='dark'] .hero h2 {
+  color: #e2dffc;
+}
+html[data-theme='dark'] .hero-copy > p {
+  color: #b3b8d0;
+}
+html[data-theme='dark'] .hero-badge {
+  background: #34344e;
+  border-color: #484866;
+  color: #c0bbdf;
+}
+html[data-theme='dark'] .hero-trust {
+  color: #abb0cc;
+}
+html[data-theme='dark'] .hero-art {
+  opacity: 0.85;
+}
+html[data-theme='dark'] .button.primary {
+  background: #8378ed;
+  color: white;
+}
+html[data-theme='dark'] .button.primary:hover {
+  background: #9489fb;
+}
+html[data-theme='dark'] .button.secondary,
+html[data-theme='dark'] .button.hero-secondary {
+  background: #252c3b;
+  color: #c4c9dc;
+  border-color: #41495d;
+}
+html[data-theme='dark'] .button.secondary:hover {
+  background: #30394a;
+  border-color: #68619a;
+}
+html[data-theme='dark'] .privacy-card {
+  background: linear-gradient(140deg, #242d3c, #202735);
+  border-color: #354052;
+}
+html[data-theme='dark'] .privacy-card strong {
+  color: #d7e0ef;
+}
+html[data-theme='dark'] .privacy-card p {
+  color: #b0b8ca;
+}
+html[data-theme='dark'] .privacy-symbol {
+  background: #2b453e;
+  color: #9ac7ae;
+}
+html[data-theme='dark'] .tool-icon.blue,
+html[data-theme='dark'] .mini-tip-icon.blue {
+  background: #2b3653;
+  color: #a6b9ef;
+}
+html[data-theme='dark'] .tool-icon.violet,
+html[data-theme='dark'] .mini-tip-icon.violet {
+  background: #3b3151;
+  color: #d1b9f2;
+}
+html[data-theme='dark'] .tool-icon.coral,
+html[data-theme='dark'] .mini-tip-icon.coral {
+  background: #4a323b;
+  color: #e9b4b3;
+}
+html[data-theme='dark'] .tool-icon.mint,
+html[data-theme='dark'] .mini-tip-icon.mint {
+  background: #2b423e;
+  color: #a9d6c1;
+}
+html[data-theme='dark'] .tool-icon.amber,
+html[data-theme='dark'] .mini-tip-icon.amber {
+  background: #483e2c;
+  color: #e2c68c;
+}
+html[data-theme='dark'] .empty-documents,
+html[data-theme='dark'] .drop-zone,
+html[data-theme='dark'] .template-banner {
+  background: var(--surface-soft);
+  border-color: #40495f;
+  color: var(--muted);
+}
+html[data-theme='dark'] .tool-search,
+html[data-theme='dark'] .input-file,
+html[data-theme='dark'] .result-file,
+html[data-theme='dark'] .page-card,
+html[data-theme='dark'] .favorites-grid label {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+html[data-theme='dark'] .tool-search input {
+  color: var(--ink);
+}
+html[data-theme='dark'] .category-tabs > button.active {
+  background: #36334f;
+  color: #c6bdff;
+}
+html[data-theme='dark'] .tool-options,
+html[data-theme='dark'] .scan-options {
+  background: var(--surface);
+  border-color: var(--line);
+}
+html[data-theme='dark'] input:not([type='color']):not([type='checkbox']):not([type='range']),
+html[data-theme='dark'] select,
+html[data-theme='dark'] textarea {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border-color: #444d63;
+}
+html[data-theme='dark'] .tool-options label,
+html[data-theme='dark'] .scan-options label,
+html[data-theme='dark'] .tool-options h3,
+html[data-theme='dark'] .help-list strong {
+  color: #c4cce1;
+}
+html[data-theme='dark'] .muted,
+html[data-theme='dark'] .tool-note,
+html[data-theme='dark'] .library-note {
+  color: #aab3ca;
+}
+html[data-theme='dark'] .error-message,
+html[data-theme='dark'] .reader-error {
+  background: #4b2e39;
+  color: #ffc0c9;
+}
+html[data-theme='dark'] .info-note {
+  background: #2b354d;
+  color: #bac8ec;
+  border-color: #45516e;
+}
+html[data-theme='dark'] .panel-footer,
+html[data-theme='dark'] .panel-header,
+html[data-theme='dark'] .page-footer {
+  border-color: var(--line);
+}
+html[data-theme='dark'] .scan-canvas-space,
+html[data-theme='dark'] .placement-space {
+  background: #131a27;
+}
+html[data-theme='dark'] .segmented {
+  background: #141b27;
+}
+html[data-theme='dark'] .segmented > button.active {
+  background: #3c3b5b;
+  color: #c8c0ff;
+}
+html[data-theme='dark'] .filter-tile.active {
+  border-color: #a49afa;
+  background: #34314a;
+}
+html[data-theme='dark'] .filter-tile {
+  color: #c1c9dc;
+}
+html[data-theme='dark'] .filter-swatch {
+  color: #313744;
+}
+html[data-theme='dark'] .mobile-bottom-nav {
+  background: #1b2333f5;
+  border-color: var(--line);
+}
+html[data-theme='dark'] .mobile-bottom-nav > button.active {
+  color: #beb5ff;
+}
+html[data-theme='dark'] .mobile-bottom-nav > button:nth-child(3) > svg {
+  background: #38314e;
+  color: #b8aef5;
+}
+html[data-theme='dark'] .document-thumb {
+  background: #30394b;
+  color: #bdc8e0;
+}
+html[data-theme='dark'] .setting-row .pill {
+  background: #2a463c;
+  color: #add3bf;
+}
+html[data-theme='dark'] .count-pill {
+  background: #32374c;
+  color: #c3c8dd;
+}
+html[data-theme='dark'] .reader-free-badge {
+  background: #2c433c;
+  color: #b1d8c3;
+}
+html[data-theme='dark'] .reader-selection-card {
+  box-shadow: 0 12px 40px #0005;
+}
+html[data-theme='dark'] .reader-page,
+html[data-theme='dark'] .page-number-paper {
+  background: #fff;
+  color: #111;
+  border-color: #41485b;
+}
+html[data-theme='dark'] .signature-pad {
+  background: white;
+}
+html[data-theme='dark'] .global-drop {
+  background: #292944f5;
+  border-color: #a49ee9;
+  color: #d8d2ff;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .spinner {
+    animation: spin 1.8s linear infinite !important;
+  }
+}

@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="Pocket PDF Workshop: free, open-source and vibe-coded PDF tools by Ramtin Neshatvar. Explore the project, contribute, or launch the private-by-default document app."
+    />
+    <meta name="theme-color" content="#7770dc" />
+    <meta property="og:title" content="Pocket PDF Workshop — Free. Open source. Vibe coded." />
+    <meta
+      property="og:description"
+      content="A little less paperwork. A community-friendly PDF reader, scanner, editor, and converter."
+    />
+    <meta
+      property="og:image"
+      content="https://pocket-pdf-workshop-ramtin.asa-adv-agency2.chatgpt.site/og.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>Pocket PDF Workshop — Open-source project by Ramtin Neshatvar</title>
+    <style>
+      :root {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        color: #30364b;
+        background: #f7f7fc;
+        --surface: white;
+        --muted: #717b92;
+        --line: #e5e5f1;
+        --accent: #7169d8;
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+      }
+      a {
+        color: var(--accent);
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: auto;
+        padding: 32px 28px;
+      }
+      nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0 34px;
+        gap: 20px;
+      }
+      .brand {
+        font-size: 27px;
+        font-weight: 750;
+        letter-spacing: -1px;
+        color: inherit;
+        text-decoration: none;
+      }
+      .brand > span {
+        color: var(--accent);
+      }
+      nav > a:last-child {
+        font-size: 13px;
+        text-decoration: none;
+      }
+      main {
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 56px;
+        background: var(--surface);
+        box-shadow: 0 20px 65px #6663a508;
+      }
+      .badge {
+        display: inline-flex;
+        padding: 7px 11px;
+        background: #f0edfc;
+        border-radius: 7px;
+        color: #8477ba;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+      h1 {
+        font-size: 55px;
+        letter-spacing: -2.4px;
+        line-height: 1.15;
+        margin: 25px 0 22px;
+        font-weight: 700;
+        max-width: 750px;
+      }
+      p {
+        font-size: 15px;
+        line-height: 1.95;
+        color: var(--muted);
+        max-width: 760px;
+      }
+      .actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 13px;
+        margin: 29px 0 18px;
+      }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        padding: 14px 21px;
+        border-radius: 9px;
+        background: var(--accent);
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        min-height: 47px;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      .button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px #7169d825;
+      }
+      .button.secondary {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--accent);
+      }
+      .small {
+        font-size: 11px;
+        line-height: 1.8;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin: 39px 0 29px;
+      }
+      .cards > section {
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        padding: 22px;
+      }
+      .icon {
+        font-size: 24px;
+        line-height: 1;
+        color: #9c8dcc;
+        margin-bottom: 16px;
+        display: block;
+      }
+      h2 {
+        font-size: 17px;
+        letter-spacing: -0.3px;
+        margin: 0 0 12px;
+      }
+      .cards p {
+        font-size: 12px;
+        line-height: 1.9;
+        margin: 0;
+      }
+      .open-note {
+        border-top: 1px solid var(--line);
+        margin-top: 35px;
+        padding-top: 25px;
+      }
+      .open-note h2 {
+        font-size: 22px;
+      }
+      .open-note p {
+        font-size: 13px;
+      }
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin-top: 19px;
+      }
+      .links > a {
+        font-size: 12px;
+        text-decoration: none;
+      }
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        padding: 29px 3px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      footer a {
+        text-decoration: none;
+      }
+      a:focus-visible {
+        outline: 3px solid #aaa1ef;
+        outline-offset: 5px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color: #e3e7f3;
+          background: #151a25;
+          --surface: #1f2534;
+          --muted: #aeb6cc;
+          --line: #374055;
+          --accent: #aba0ff;
+          color-scheme: dark;
+        }
+        .badge {
+          background: #37304b;
+          color: #d3c5f6;
+        }
+        .button {
+          background: #8376e5;
+          color: white;
+        }
+      }
+      @media (max-width: 760px) {
+        .wrap {
+          padding: 22px 18px;
+        }
+        nav {
+          padding-bottom: 24px;
+        }
+        main {
+          padding: 32px 24px;
+          border-radius: 18px;
+        }
+        h1 {
+          font-size: 39px;
+          letter-spacing: -1.4px;
+        }
+        p {
+          font-size: 13px;
+        }
+        .cards {
+          grid-template-columns: 1fr;
+          margin-top: 30px;
+          gap: 13px;
+        }
+        .cards > section {
+          padding: 21px;
+        }
+        .button {
+          font-size: 12px;
+          padding: 13px 16px;
+        }
+        .badge {
+          font-size: 9px;
+        }
+        footer {
+          line-height: 1.9;
+        }
+        .open-note h2 {
+          font-size: 20px;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .button {
+          transition: none;
+        }
+        .button:hover {
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav aria-label="Project navigation">
+        <a class="brand" href="./">Pocket<span>.</span></a
+        ><a href="https://github.com/ramt11n/pocket-pdf">Explore the source ↗</a>
+      </nav>
+      <main>
+        <span class="badge">FREE · OPEN SOURCE · VIBE CODED</span>
+        <h1>A little less paperwork.<br />A lot more possibility.</h1>
+        <p>
+          Pocket PDF Workshop is a friendly document toolkit made by Ramtin Neshatvar. Read a PDF,
+          write in the margins, scan a page, or put a paper pile in order—with every document
+          feature free.
+        </p>
+        <div class="actions">
+          <a class="button" href="https://pocket-pdf-workshop-ramtin.asa-adv-agency2.chatgpt.site/"
+            >Open the PDF workshop ↗</a
+          ><a class="button secondary" href="https://github.com/ramt11n/pocket-pdf"
+            >Code & contributions</a
+          >
+        </div>
+        <p class="small">
+          This is the open-source project page. The interactive PWA opens on its own static host;
+          you do not need to rent a server to use it.
+        </p>
+        <div class="cards">
+          <section>
+            <span class="icon" aria-hidden="true">✎</span>
+            <h2>A reader with room for ideas.</h2>
+            <p>
+              Search and bookmark pages, highlight passages, type notes, and draw with a mouse,
+              touch, Apple Pencil, or another supported stylus.
+            </p>
+          </section>
+          <section>
+            <span class="icon" aria-hidden="true">▤</span>
+            <h2>A tool for everyday tasks.</h2>
+            <p>
+              Scan, merge, split, rotate, sign, redact, convert, and recognize text. Features stay
+              free; accounts and cloud connections are optional.
+            </p>
+          </section>
+          <section>
+            <span class="icon" aria-hidden="true">⌘</span>
+            <h2>Your files. Your device.</h2>
+            <p>
+              Document processing runs in the browser. Save locally, download a copy, or explicitly
+              choose a cloud transfer. Used tools can be cached offline.
+            </p>
+          </section>
+        </div>
+        <section class="open-note">
+          <h2>Vibe coded. Open to better ideas.</h2>
+          <p>
+            AI-assisted development, practical tests, clear conversion limits, and an open source
+            tree. Contribute a fix, improve accessibility, report a reproducible bug, or build your
+            own workflow under AGPL-3.0-or-later.
+          </p>
+          <div class="links">
+            <a href="https://github.com/ramt11n/pocket-pdf/blob/main/CONTRIBUTING.md"
+              >Contributing guide ↗</a
+            ><a href="https://github.com/ramt11n/pocket-pdf/issues">Issues ↗</a
+            ><a href="https://github.com/ramt11n/pocket-pdf/blob/main/LICENSE">License ↗</a
+            ><a href="mailto:ramtinneshat4@gmail.com">Contact Ramtin ↗</a>
+          </div>
+        </section>
+      </main>
+      <footer>
+        <span>Made by <a href="https://github.com/ramt11n">Ramtin Neshatvar</a></span
+        ><span>Open-source project documentation · GitHub Pages</span>
+      </footer>
+    </div>
+  </body>
+</html>

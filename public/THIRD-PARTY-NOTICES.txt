@@ -1,0 +1,32 @@
+Pocket PDF Workshop - third-party notices
+
+This application is AGPL-3.0-or-later. Application source is provided at /source.zip.
+
+MuPDF.js 1.28.1, Artifex Software - AGPL-3.0-or-later.
+Copyright 2004-2026 Artifex Software, Inc.
+MuPDF corresponding engine source: https://github.com/ArtifexSoftware/mupdf/tree/1.28.1
+Build and JavaScript bindings: https://github.com/ArtifexSoftware/mupdf
+License: /LICENSE.txt
+
+Tesseract.js and tesseract.js-core: Apache-2.0.
+Source: https://github.com/naptha/tesseract.js
+Tesseract engine: https://github.com/tesseract-ocr/tesseract
+Language data (eng, fas, ara): Apache-2.0, https://github.com/tesseract-ocr/tessdata_fast
+
+DejaVu Sans: Bitstream Vera and DejaVu font licenses, see /fonts/LICENSE_DEJAVU.
+Source: https://github.com/dejavu-fonts/dejavu-fonts
+
+React (MIT), lucide-react (ISC), pdf-lib (MIT), @pdf-lib/fontkit (MIT), docx (MIT),
+mammoth (BSD-2-Clause), ExcelJS (MIT), PptxGenJS (MIT), fflate (MIT), idb-keyval
+(Apache-2.0). Exact dependency versions are in package-lock.json in the source archive.
+
+Firebase JavaScript SDK 13.1.0 — Apache-2.0
+Source: https://github.com/firebase/firebase-js-sdk
+Only the app/auth browser entry points are used. No analytics service is initialized.
+
+Microsoft Authentication Library for JavaScript (MSAL Browser) 5.27.0 — MIT
+Source: https://github.com/AzureAD/microsoft-authentication-library-for-js
+License: /MSAL-LICENSE.txt
+
+Prettier — MIT (development formatting dependency only)
+Source: https://github.com/prettier/prettier

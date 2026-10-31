@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.sites-runtime/
+.DS_Store
+test-output/
+*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+public/source.zip

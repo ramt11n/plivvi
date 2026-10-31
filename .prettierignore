@@ -1,0 +1,9 @@
+node_modules
+dist
+.sites-runtime
+test-output
+public/ocr
+public/source.zip
+package-lock.json
+public/LICENSE.txt
+public/*-LICENSE.txt

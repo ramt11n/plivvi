@@ -1,0 +1,27 @@
+name: Something needs a little fixing
+description: Report a reproducible problem using non-private sample files.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please keep private documents, passwords, account tokens, and identity information out of public issues. Use a synthetic or anonymized sample.
+  - type: input
+    id: environment
+    attributes:
+      label: Device and browser
+      placeholder: iPad, Safari, version…
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: Which tool or page?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include what you expected and what happened instead.
+    validations:
+      required: true

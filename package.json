@@ -1,0 +1,46 @@
+{
+  "name": "pocket-pdf-workshop",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "node scripts/prepare-source.mjs && tsc -b && vite build && node scripts/generate-seo.mjs",
+    "test": "vitest run",
+    "preview": "vite preview --host 127.0.0.1",
+    "format": "prettier --write src scripts tests docs .github project-site \"*.{json,ts,html,md}\" public/sw.js"
+  },
+  "dependencies": {
+    "react": "latest",
+    "react-dom": "latest",
+    "lucide-react": "latest",
+    "mupdf": "latest",
+    "pdf-lib": "latest",
+    "@pdf-lib/fontkit": "latest",
+    "tesseract.js": "latest",
+    "docx": "latest",
+    "mammoth": "latest",
+    "exceljs": "latest",
+    "pptxgenjs": "latest",
+    "fflate": "latest",
+    "idb-keyval": "latest",
+    "dompurify": "latest",
+    "html-to-image": "latest",
+    "firebase": "latest",
+    "@azure/msal-browser": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "vite": "latest",
+    "@vitejs/plugin-react": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/node": "latest",
+    "vitest": "latest",
+    "prettier": "latest"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.13.6"
+  }
+}

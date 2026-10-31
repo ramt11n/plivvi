@@ -1,0 +1,16 @@
+name: A useful idea
+description: Suggest an improvement to the free document workshop.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What document task would this help?
+      description: Describe the problem and the desired result.
+    validations:
+      required: true
+  - type: textarea
+    id: approach
+    attributes:
+      label: Possible approach
+      description: Local processing, accessibility, and clear limits are priorities.

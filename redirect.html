@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Connecting OneDrive · Pocket</title>
+  </head>
+  <body>
+    <p style="font: 16px system-ui; padding: 30px">Completing your secure connection…</p>
+    <script type="module">
+      import { broadcastResponseToMainFrame } from '@azure/msal-browser/redirect-bridge';
+      broadcastResponseToMainFrame().catch(() => {
+        document.querySelector('p').textContent =
+          'The connection could not return to Pocket. Close this window and try connecting again.';
+      });
+    </script>
+  </body>
+</html>
