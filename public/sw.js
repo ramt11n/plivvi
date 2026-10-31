@@ -1,4 +1,4 @@
-const CACHE = 'pocket-v2';
+const CACHE = 'pocket-v2-1';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -44,7 +44,8 @@ self.addEventListener('fetch', (event) => {
     url.pathname.includes('/cdn-cgi/') ||
     url.pathname.startsWith('/api/') ||
     url.pathname.startsWith('/auth/') ||
-    ['/redirect.html', '/pocket-config.json', '/source.zip'].includes(url.pathname)
+    /^\/redirect(?:\.html)?\/?$/.test(url.pathname) ||
+    ['/pocket-config.json', '/source.zip'].includes(url.pathname)
   )
     return;
   if (request.mode === 'navigate') {

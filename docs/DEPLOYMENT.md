@@ -2,7 +2,11 @@
 
 Pocket builds to ordinary static files in `dist`. PDF work runs in the visitor’s browser. You do not need a rented VM, a continuously running Node server, or an Apple developer membership.
 
-## Recommended public host: Cloudflare Pages
+## Current public links
+
+The [interactive workshop](https://pocket-pdf-workshop-ramtin.asa-adv-agency2.chatgpt.site) is published on static Sites hosting. The [GitHub project page](https://ramt11n.github.io/pocket-pdf/) is a shorter launch and contribution link. GitHub Actions tests the app and publishes the project page; the Cloudflare production workflow is prepared but not activated.
+
+## Alternative public host: Cloudflare Pages
 
 Cloudflare Pages provides a free `project-name.pages.dev` address, HTTPS, and static hosting. The free plan currently allows 500 builds/month, 20,000 files, and individual assets up to 25 MiB. Pocket’s largest bundled engine fits under that per-file limit. Account and service terms still apply; no third-party service promises a permanent domain forever. See [Pages limits](https://developers.cloudflare.com/pages/platform/limits/) and [custom domains](https://developers.cloudflare.com/pages/configuration/custom-domains/).
 
@@ -33,7 +37,7 @@ node scripts/verify-build.mjs
 npm run preview
 ```
 
-Serve over HTTPS in production. Keep `redirect.html` as a separate MSAL bridge page; it must not be replaced by the SPA shell or served with `Cross-Origin-Opener-Policy`. The service worker excludes this callback and runtime integration configuration from caching.
+Serve over HTTPS in production. Keep `redirect.html` as a separate MSAL bridge page; it must not be replaced by the SPA shell or served with `Cross-Origin-Opener-Policy`. The service worker excludes this callback, its host-normalized `/redirect` and `/redirect/` aliases, and runtime integration configuration from caching.
 
 ## Moving domains
 

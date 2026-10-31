@@ -73,7 +73,14 @@ describe('offline shell', () => {
     });
     expect(await (await result).text()).toContain('<h1>Pocket</h1>');
     let intercepted = false;
-    for (const path of ['/redirect.html', '/pocket-config.json', '/auth/callback/'])
+    for (const path of [
+      '/redirect.html',
+      '/redirect',
+      '/redirect/',
+      '/redirect?code=synthetic',
+      '/pocket-config.json',
+      '/auth/callback/',
+    ])
       handlers.fetch({
         request: { method: 'GET', url: 'https://pocket.test' + path, mode: 'navigate' },
         respondWith: () => (intercepted = true),

@@ -2,7 +2,7 @@
 
 **Free. Open source. Proudly vibe coded.** A responsive, installable PDF workshop made by [Ramtin Neshatvar](https://github.com/ramt11n).
 
-[Open the workshop](https://pocket-pdf-workshop-ramtin.asa-adv-agency2.chatgpt.site) · [Contribute](CONTRIBUTING.md) · [Contact & sponsor](mailto:ramtinneshat4@gmail.com) · [AGPL-3.0-or-later](LICENSE)
+[Open the workshop](https://pocket-pdf-workshop-ramtin.asa-adv-agency2.chatgpt.site) · [Project home](https://ramt11n.github.io/pocket-pdf/) · [Contribute](CONTRIBUTING.md) · [Contact & sponsor](mailto:ramtinneshat4@gmail.com) · [AGPL-3.0-or-later](LICENSE)
 
 Read, mark up, scan, organize, sign, and convert documents on your device. No feature subscriptions, no required login, and no document-upload processing backend. Sponsorship and optional paid custom-workflow help support the project without restricting document tools.
 
