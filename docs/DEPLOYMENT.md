@@ -4,7 +4,7 @@ Pocket builds to ordinary static files in `dist`. PDF work runs in the visitor�
 
 ## Current public links
 
-The [interactive workshop](https://pocket-pdf-workshop-ramtin.asa-adv-agency2.chatgpt.site) is published on static Sites hosting. The [GitHub project page](https://ramt11n.github.io/pocket-pdf/) is a shorter launch and contribution link. GitHub Actions tests the app and publishes the project page; the Cloudflare production workflow is prepared but not activated.
+The [interactive workshop](https://pocket-pdf-ramtin.pages.dev) is published on Cloudflare Pages in the owner’s account. The [GitHub project page](https://ramt11n.github.io/pocket-pdf/) is a shorter launch and contribution link. GitHub Actions tests the app and publishes the project page. The app is deployed through Cloudflare’s Direct Upload interface. Automatic app deployment remains unconfigured; the included Actions workflow needs a scoped Cloudflare token and account variables before it can be enabled.
 
 ## Alternative public host: Cloudflare Pages
 

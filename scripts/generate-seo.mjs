@@ -3,9 +3,7 @@ import path from 'node:path';
 import { loadEnv } from 'vite';
 import { tools } from '../src/lib/catalog.ts';
 const env = { ...loadEnv('production', process.cwd(), ''), ...process.env },
-  origin = (
-    env.VITE_SITE_URL || 'https://pocket-pdf-workshop-ramtin.asa-adv-agency2.chatgpt.site'
-  ).replace(/\/$/, ''),
+  origin = (env.VITE_SITE_URL || 'https://pocket-pdf-ramtin.pages.dev').replace(/\/$/, ''),
   content = JSON.parse(await readFile('src/seo/content.json', 'utf8')),
   base = await readFile('dist/index.html', 'utf8');
 const esc = (s) =>
