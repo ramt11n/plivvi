@@ -46,3 +46,13 @@ Set `VITE_SITE_URL`/`SITE_URL` to the actual new origin before building. Update 
 ## Stable GitHub project link
 
 The included `project-site` is a separate, small open-source documentation/launch page for GitHub Pages. It contains no document processing, accounts, paid transactions, or advertising. The interactive workshop remains on its separate production host. With Pages enabled and `ENABLE_PROJECT_PAGE=true`, the `project-page.yml` workflow publishes this project page at the repository's assigned `github.io` URL. This is a project-home/launch link, not a claim that the monetized PWA itself runs on GitHub Pages.
+
+## Dashboard ZIP upload
+
+The dashboard's ZIP input can reject an archive larger than 25 MiB even when each unpacked asset fits. After publishing a source commit and running the build, use:
+
+```sh
+node scripts/package-cloudflare.mjs FULL_PUBLISHED_COMMIT_SHA
+```
+
+Upload `.sites-runtime/plivvi-dashboard.zip`. It contains the built app and a `/source.zip` redirect to that exact public GitHub commit archive, avoiding a duplicate large source archive in the deployment payload. The ordinary `dist/source.zip` remains available for other hosts. Do not use an unpublished commit or a moving branch as the source destination.
