@@ -1,5 +1,6 @@
 import { brand, integrationConfig, type IntegrationConfig } from './config';
 import { deadline } from '../lib/deadline';
+import { prepareGoogleIdentity } from './googleIdentity';
 import type { Output } from '../lib/client';
 import type { PublicClientApplication } from '@azure/msal-browser';
 declare global {
@@ -68,7 +69,7 @@ export function prepareGoogle() {
   return (googlePreparation ??= (async () => {
     const [config] = await Promise.all([
       integrationConfig(),
-      script('https://accounts.google.com/gsi/client'),
+      prepareGoogleIdentity(),
       script('https://apis.google.com/js/api.js'),
     ]);
     await deadline(

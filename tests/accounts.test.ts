@@ -4,6 +4,9 @@ const mock = vi.hoisted(() => ({
   auth: new Map<string, any>(),
   session: new Map<string, string>(),
 }));
+vi.mock('../src/integrations/googleIdentity', () => ({
+  prepareGoogleIdentity: async () => 'public-client',
+}));
 vi.mock('firebase/app', () => ({
   getApps: () => [...mock.apps.values()],
   initializeApp: (_config: unknown, name: string) => {
@@ -73,7 +76,7 @@ beforeEach(() => {
   }));
 });
 describe('account session management', () => {
-  it('warms one Google session before the tap without loading a popup iframe for ordinary sessions', async () => {
+  it('prepares one Google session without loading a Firebase popup iframe', async () => {
     const auth = await import('../src/integrations/auth');
     await auth.initializeAccounts();
     const ordinary = await auth.newAccountSession();
@@ -83,7 +86,8 @@ describe('account session management', () => {
       auth.prepareGoogleSession(),
     ]);
     expect(first.id).toBe(second.id);
-    expect((first.auth as any).options.popupRedirectResolver).toBe('popup-resolver');
+    expect((first.auth as any).options.popupRedirectResolver).toBeUndefined();
+    expect(first.clientId).toBe('public-client');
     (first.auth as any).currentUser = user('alice');
     await auth.activateAccount(first.id);
     expect((await auth.prepareGoogleSession()).id).not.toBe(first.id);

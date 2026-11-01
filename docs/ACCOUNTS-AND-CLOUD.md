@@ -4,7 +4,7 @@ All PDF features work as a guest. Direct sign-in uses real owner-controlled publ
 
 Copy `.env.example` to an ignored `.env.local`, or edit `public/pocket-config.json` with public browser values. For deployment, prefer repository/build variables. No browser configuration should contain a client secret, service-account key, or admin credential.
 
-The public JSON is also bundled as a fallback, so a failed runtime configuration request cannot disable an otherwise configured provider. Empty CI variables do not overwrite valid public values. Configuration requests, including response parsing, have a 2.5-second deadline. Account dialogs warm the official Google popup resolver before enabling the button so Safari does not lose the tap while setup runs. Cloud consent and script loading have bounded waits with recovery messages.
+The public JSON is also bundled as a fallback, so a failed runtime configuration request cannot disable an otherwise configured provider. Empty CI variables do not overwrite valid public values. Configuration requests, including response parsing, have a 2.5-second deadline. Account dialogs preload Google Identity Services and a Firebase session before enabling Google. The tap calls Google's authorization window directly; Firebase exchanges the returned credential afterwards. Sign-in only requests identity scopes (`openid email profile`); Drive access is requested separately. This avoids Firebase's asynchronous popup iframe setup consuming Safari's user activation. Cloud consent and script loading have bounded waits with recovery messages. A browser that blocks authorization windows still needs its normal permission or email sign-in.
 
 ## Firebase Authentication
 

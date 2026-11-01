@@ -1,5 +1,6 @@
 import { integrationConfig } from './config';
 import { deadline } from '../lib/deadline';
+import { prepareGoogleIdentity } from './googleIdentity';
 import type { Auth, User } from 'firebase/auth';
 
 export type Account = { id: string; uid: string; name: string; email: string; verified: boolean };
@@ -18,7 +19,7 @@ export const account = (user: User, id = 'primary'): Account => ({
   verified: user.emailVerified,
 });
 const clients = new Map<string, Promise<Auth>>();
-let popupPreparation: Promise<{ id: string; auth: Auth }> | undefined,
+let popupPreparation: Promise<{ id: string; auth: Auth; clientId: string }> | undefined,
   popupSlot: string | undefined;
 const observed = new Map<string, () => void>();
 const listeners = new Set<(state: AccountState) => void>();
@@ -67,7 +68,7 @@ export function subscribeAccounts(listener: (state: AccountState) => void) {
     listeners.delete(listener);
   };
 }
-export async function authClient(id = activeId || 'primary', preparePopup = false) {
+export async function authClient(id = activeId || 'primary') {
   if (!/^[a-zA-Z0-9-]{1,80}$/.test(id)) throw Error('Invalid account session.');
   if (!clients.has(id)) {
     const promise = (async () => {
@@ -82,16 +83,14 @@ export async function authClient(id = activeId || 'primary', preparePopup = fals
           'Online accounts are not connected on this deployment yet. Your guest workspace is available.',
         );
       const { initializeApp, getApps } = await import('firebase/app');
-      const { initializeAuth, getAuth, browserSessionPersistence, browserPopupRedirectResolver } =
-        await import('firebase/auth');
+      const { initializeAuth, getAuth, browserSessionPersistence } = await import('firebase/auth');
       const name = id === 'primary' ? 'pocket' : `pocket-session-${id}`;
       const app = getApps().find((a) => a.name === name) ?? initializeApp(config.firebase, name);
       let auth: Auth;
       try {
-        // Ordinary sessions stay light; the account dialog warms its Google session before a tap.
+        // Google authorization uses its direct SDK, so no cross-origin Firebase popup iframe is needed.
         auth = initializeAuth(app, {
           persistence: browserSessionPersistence,
-          ...(preparePopup ? { popupRedirectResolver: browserPopupRedirectResolver } : {}),
         });
       } catch (error) {
         if ((error as { code?: string }).code !== 'auth/already-initialized') throw error;
@@ -158,20 +157,20 @@ export function initializeAccounts() {
     publish();
   })());
 }
-export async function newAccountSession(preparePopup = false): Promise<{ id: string; auth: Auth }> {
+export async function newAccountSession(): Promise<{ id: string; auth: Auth }> {
   if (state.accounts.length >= 10)
     throw Error(
       'Sign out of an account before adding another. Up to 10 accounts can stay signed in in this tab.',
     );
   const id = crypto.randomUUID();
-  return { id, auth: await authClient(id, preparePopup) };
+  return { id, auth: await authClient(id) };
 }
 export function prepareGoogleSession() {
   // Reuse one warm session across dialog opens and React StrictMode effects.
-  return (popupPreparation ??= newAccountSession(true)
-    .then((slot) => {
+  return (popupPreparation ??= Promise.all([newAccountSession(), prepareGoogleIdentity()])
+    .then(([slot, clientId]) => {
       popupSlot = slot.id;
-      return slot;
+      return { ...slot, clientId };
     })
     .catch((error) => {
       popupPreparation = undefined;

@@ -28,6 +28,7 @@ import { disconnectCloud } from '../integrations/cloud';
 import { brand } from '../integrations/config';
 import { workspaceId } from '../lib/workspace';
 import Brand from './Brand';
+import { requestGoogleSignIn } from '../integrations/googleIdentity';
 
 export default function AccountDialog({ onClose }: { onClose: () => void }) {
   const [state, setState] = useState(accountState),
@@ -43,7 +44,7 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
   const pending = useRef<Awaited<ReturnType<typeof newAccountSession>> | undefined>(undefined);
   const googleSession = useRef<
     | {
-        slot: Awaited<ReturnType<typeof newAccountSession>>;
+        slot: Awaited<ReturnType<typeof prepareGoogleSession>>;
         sdk: typeof import('firebase/auth');
       }
     | undefined
@@ -65,7 +66,7 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
     let alive = true;
     setGoogleReady(false);
     googleSession.current = undefined;
-    // Safari needs the SDK and its auth iframe ready BEFORE the user's tap.
+    // Google and Firebase must be ready BEFORE the user's tap.
     Promise.all([prepareGoogleSession(), import('firebase/auth')])
       .then(([slot, sdk]) => {
         if (!alive) return;
@@ -133,11 +134,10 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
         return;
       }
       if (google) {
-        const provider = new sdk.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
+        const token = await requestGoogleSignIn(prepared!.slot.clientId);
+        if (!current()) return;
         await signIn(
-          sdk.signInWithPopup(slot.auth, provider, sdk.browserPopupRedirectResolver),
-          120000,
+          sdk.signInWithCredential(slot.auth, sdk.GoogleAuthProvider.credential(null, token)),
         );
       } else if (mode === 'signup') {
         const result = await signIn(sdk.createUserWithEmailAndPassword(slot.auth, email, password));
