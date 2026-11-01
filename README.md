@@ -1,8 +1,8 @@
-# Pocket PDF Workshop
+# Plivvi
 
 **Free. Open source. Proudly vibe coded.** A responsive, installable PDF workshop made by [Ramtin Neshatvar](https://github.com/ramt11n).
 
-[Open the workshop](https://pocket-pdf-ramtin.pages.dev) · [Project home](https://ramt11n.github.io/pocket-pdf/) · [Contribute](CONTRIBUTING.md) · [Contact & sponsor](mailto:ramtinneshat4@gmail.com) · [AGPL-3.0-or-later](LICENSE)
+[Open the workshop](https://plivvi.pages.dev) · [Project home](https://ramt11n.github.io/pocket-pdf/) · [Contribute](CONTRIBUTING.md) · [Contact & sponsor](mailto:ramtinneshat4@gmail.com) · [AGPL-3.0-or-later](LICENSE)
 
 Read, mark up, scan, organize, sign, and convert documents on your device. No feature subscriptions, no required login, and no document-upload processing backend. Sponsorship and optional paid custom-workflow help support the project without restricting document tools.
 
@@ -83,3 +83,19 @@ AGPL-3.0-or-later. MuPDF uses its AGPL licensing option. About/source links prov
 [Third-party notices](public/THIRD-PARTY-NOTICES.txt) · [Feature research](FEATURE-RESEARCH.md)
 
 Made by **[Ramtin Neshatvar](https://github.com/ramt11n)** · [LinkedIn](https://linkedin.com/in/ramtin-neshatvar-185534263) · [CV](https://ramtin-neshatvar-cv.asa-adv-agency2.chatgpt.site) · [ramtinneshat4@gmail.com](mailto:ramtinneshat4@gmail.com)
+
+## Accounts, workspaces, and deployment readiness
+
+The account UI supports email signup/login, Google sign-in, verification, password reset, multiple signed-in accounts, and an explicit guest workspace. Account libraries and reader drafts are kept separate on this browser; signing in does not automatically upload or sync files.
+
+A deployment must have real Firebase and provider configuration before online sign-in, Google Drive, or OneDrive can work. Unconfigured services are labeled in the UI. See [accounts and cloud setup](docs/ACCOUNTS-AND-CLOUD.md). Type checking and mocked/isolated unit tests do not establish live OAuth correctness. Test the configured public origin with real test accounts before calling those services operational.
+
+The revised visual identity includes local Sora/Manrope typography and an original stylus feature showcase. See [design and asset provenance](docs/DESIGN.md).
+
+## Notebooks and languages
+
+Create named notebooks with colored covers and blank, ruled, dotted, grid, or Cornell paper. Pages and editable ink autosave per account workspace in this browser. Add photographs, text, highlights, and pressure/tilt-aware pen strokes; duplicate and reorder pages. Export PDF or page images. Local notebooks are not a server backup or automatic cross-device sync.
+
+Text-to-PDF and Office reading-copy conversion use MuPDF Unicode shaping with locally hosted Noto script fonts and built-in CJK fallback. Persian/Arabic direction is detected per paragraph. Common Indic scripts and extended Latin characters are supported. Fonts download only when their script is needed and can then be cached offline. The app does not upload text to a font service. Original Office pagination/design is not reproduced. OCR currently provides English, Persian and Arabic models.
+
+Plivvi is an invented name, pronounced **PLIV-ee**. Its logo, type, cobalt/mint colors, and paper illustrations form the app's visual identity.

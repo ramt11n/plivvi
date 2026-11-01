@@ -458,6 +458,10 @@
       {
         "q": "Are old DOC, XLS, or PPT files supported?",
         "a": "No. Save them as DOCX, XLSX, or PPTX in a compatible Office app before using this tool."
+      },
+      {
+        "q": "Can I convert Persian, Arabic, Chinese, Japanese, or Indic text?",
+        "a": "Yes. Text conversion uses script-aware shaping, local Noto fonts for supported Arabic and Indic scripts, and CJK fallback fonts. Persian and Arabic paragraphs use right-to-left layout. This creates a reading copy; complex original Office layouts are not reproduced."
       }
     ]
   },
@@ -480,6 +484,10 @@
       {
         "q": "Can embedded scripts run?",
         "a": "The conversion excludes script and style content and does not load external resources from the uploaded HTML."
+      },
+      {
+        "q": "Does it support accented and non-Latin characters?",
+        "a": "Yes. Extended Latin, Persian, Arabic, Chinese, Japanese, Korean, and common Indic scripts use Unicode text layout with script font fallback. Text remains selectable in the generated PDF."
       }
     ]
   },

@@ -1,4 +1,4 @@
-const CACHE = 'pocket-v2-1';
+const CACHE = 'pocket-v3-1';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -68,7 +68,7 @@ self.addEventListener('fetch', (event) => {
           const cached = (await caches.match(request)) || (await caches.match('/'));
           return (
             cached ||
-            new Response('Open Pocket online once to prepare offline use.', {
+            new Response('Open Plivvi online once to prepare offline use.', {
               status: 503,
               headers: { 'Content-Type': 'text/plain' },
             })

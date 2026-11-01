@@ -1,8 +1,12 @@
+import brand from '../brand.json';
+import { textDocument } from '../lib/unicode';
+import { notebookPDF, type Paper } from '../notebooks/model';
 import { mu, open, render } from '../lib/engine';
 import type { Input, Output } from '../lib/client';
 import {
   hexColor,
   pressureWidth,
+  strokePressure,
   type Mark,
   type ReaderInfo,
   type TextChar,
@@ -59,23 +63,20 @@ export function readerClose(session: string) {
   sessions.delete(session);
   return true;
 }
-export async function readerAppendPage(input: Input, password = ''): Promise<Output> {
+export async function readerAppendPage(
+  input: Input,
+  password = '',
+  paper: Paper = 'blank',
+): Promise<Output> {
   const doc = await open(input, password);
   try {
     if (doc.countPages() >= 300)
       throw Error('This document has reached the 300-page browser limit.');
-    const last = doc.loadPage(doc.countPages() - 1);
-    let bounds;
+    const source = new (await mu()).PDFDocument(await notebookPDF(paper));
     try {
-      bounds = last.getBounds();
+      doc.graftPage(-1, source, 0);
     } finally {
-      last.destroy();
-    }
-    const page = doc.addPage([0, 0, bounds[2] - bounds[0], bounds[3] - bounds[1]], 0, {}, '');
-    try {
-      doc.insertPage(-1, page);
-    } finally {
-      page.destroy();
+      source.destroy();
     }
     const buffer = doc.saveToBuffer('garbage=compact,compress=yes');
     try {
@@ -95,6 +96,37 @@ export async function readerRender(session: string, index: number, width: number
   const doc = get(session);
   if (index < 0 || index >= doc.countPages()) throw Error('That page does not exist.');
   return render(doc, index, Math.min(2400, width), false);
+}
+export async function readerReorder(
+  input: Input,
+  password: string,
+  order: number[],
+): Promise<Output> {
+  const m = await mu(),
+    source = await open(input, password),
+    target = new m.PDFDocument();
+  try {
+    if (
+      !order.length ||
+      order.length > 300 ||
+      order.some((i) => !Number.isInteger(i) || i < 0 || i >= source.countPages())
+    )
+      throw Error('Keep between 1 and 300 valid pages.');
+    for (const index of order) target.graftPage(-1, source, index);
+    const buffer = target.saveToBuffer('garbage=compact,compress=yes');
+    try {
+      return {
+        name: input.name,
+        type: 'application/pdf',
+        data: new Uint8Array(buffer.asUint8Array()),
+      };
+    } finally {
+      buffer.destroy();
+    }
+  } finally {
+    source.destroy();
+    target.destroy();
+  }
 }
 export function readerText(session: string, index: number) {
   const p = get(session).loadPage(index);
@@ -161,37 +193,28 @@ export function readerSearch(session: string, query: string) {
   return results;
 }
 export async function layoutReaderText(text: string, size: number, width: number) {
-  const m = await mu(),
-    font = new m.Font('Helvetica');
+  const doc = await textDocument(await mu(), text, Math.max(5, width), 30000, size, 0);
   try {
-    const measure = (s: string) =>
-        Array.from(s).reduce(
-          (sum, c) => sum + font.advanceGlyph(font.encodeCharacter(c.codePointAt(0)!), 0) * size,
-          0,
-        ),
-      lines: string[] = [];
-    for (const paragraph of text.split('\n')) {
-      let line = '';
-      for (const word of paragraph.split(/(?<=\s)/u)) {
-        if (line && measure(line + word) > width - 5) {
-          lines.push(line.trimEnd());
-          line = '';
-        }
-        for (const character of word) {
-          if (line && measure(line + character) > width - 5) {
-            lines.push(line.trimEnd());
-            line = '';
-          }
-          line += character;
-        }
+    const page = doc.loadPage(0);
+    try {
+      const structured = page.toStructuredText('preserve-whitespace');
+      try {
+        return structured
+          .asText()
+          .trimEnd()
+          .split('\n')
+          .filter((line, i, all) => line || all[i - 1] !== '');
+      } finally {
+        structured.destroy();
       }
-      lines.push(line.trimEnd());
+    } finally {
+      page.destroy();
     }
-    return lines;
   } finally {
-    font.destroy();
+    doc.destroy();
   }
 }
+
 export async function exportAnnotations(
   input: Input,
   password: string,
@@ -220,7 +243,9 @@ export async function exportAnnotations(
           for (let i = 1; i < mark.points.length; i++) {
             const a = mark.points[i - 1],
               z = mark.points[i],
-              pressure = Math.round(Math.max(0, Math.min(1, (a.pressure + z.pressure) / 2)) * 7),
+              pressure = Math.round(
+                Math.max(0, Math.min(1, strokePressure(a, z, mark.penStyle))) * 7,
+              ),
               paths = buckets.get(pressure) ?? [];
             paths.push([
               [b[0] + a.x * w, b[1] + a.y * h],
@@ -232,10 +257,10 @@ export async function exportAnnotations(
             const a = p.createAnnotation('Ink');
             try {
               a.setName(`Pocket-${mark.id}-${pressure}`);
-              a.setAuthor('Pocket PDF Workshop');
+              a.setAuthor(brand.name);
               a.setColor(color);
               a.setOpacity(mark.opacity);
-              a.setBorderWidth(pressureWidth(size, pressure / 7));
+              a.setBorderWidth(pressureWidth(size, pressure / 7, mark.penStyle));
               a.setInkList(paths as [number, number][][]);
               a.setFlags(a.getFlags() | m.PDFAnnotation.IS_PRINT);
               a.setContents('Handwritten ink');
@@ -244,12 +269,32 @@ export async function exportAnnotations(
               a.destroy();
             }
           }
+        } else if (mark.kind === 'image') {
+          if (!mark.image?.startsWith('data:image/png;base64,'))
+            throw Error('The placed image is invalid. Insert it again.');
+          const data = Uint8Array.from(atob(mark.image.split(',')[1]), (c) => c.charCodeAt(0)),
+            image = new m.Image(data),
+            annotation = p.createAnnotation('Stamp');
+          try {
+            annotation.setRect([
+              b[0] + r.x * w,
+              b[1] + r.y * h,
+              b[0] + (r.x + r.w) * w,
+              b[1] + (r.y + r.h) * h,
+            ]);
+            annotation.setStampImage(image);
+            annotation.setFlags(annotation.getFlags() | m.PDFAnnotation.IS_PRINT);
+            annotation.update();
+          } finally {
+            image.destroy();
+            annotation.destroy();
+          }
         } else {
           const type = mark.kind === 'text' ? 'FreeText' : mark.kind === 'note' ? 'Text' : 'Square',
             a = p.createAnnotation(type);
           try {
             a.setName(`Pocket-${mark.id}`);
-            a.setAuthor('Pocket PDF Workshop');
+            a.setAuthor(brand.name);
             if (mark.kind !== 'text') a.setColor(color);
             a.setOpacity(mark.opacity);
             a.setRect([
@@ -270,7 +315,31 @@ export async function exportAnnotations(
               ]);
               a.setBorderWidth(0);
               a.setDefaultAppearance('Helv', size, color);
-              a.setContents(lines.join('\n'));
+              a.setContents(mark.text ?? '');
+              const rect = a.getRect(),
+                height = rect[3] - rect[1];
+              const shaped = await textDocument(
+                m,
+                mark.text ?? '',
+                Math.max(5, r.w * w),
+                Math.max(size * 1.4, height),
+                size,
+                0,
+                mark.color,
+              );
+              try {
+                const page = shaped.loadPage(0),
+                  list = page.toDisplayList(false);
+                try {
+                  a.update();
+                  a.setAppearanceFromDisplayList(null, null, m.Matrix.identity, list);
+                } finally {
+                  list.destroy();
+                  page.destroy();
+                }
+              } finally {
+                shaped.destroy();
+              }
             } else if (mark.kind === 'note') {
               a.setIcon('Comment');
               a.setContents(mark.text ?? '');
@@ -278,7 +347,7 @@ export async function exportAnnotations(
               a.setInteriorColor(color);
               a.setBorderWidth(0);
             } else a.setBorderWidth(size);
-            a.update();
+            if (mark.kind !== 'text') a.update();
           } finally {
             a.destroy();
           }

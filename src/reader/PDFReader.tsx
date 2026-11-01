@@ -33,17 +33,31 @@ import {
   ZoomIn,
   ZoomOut,
   SunMoon,
+  ImagePlus,
+  Copy,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
-import { download, inputs, rpc, type Input, type Output } from '../lib/client';
+import { download, downloadAll, inputs, rpc, type Input, type Output } from '../lib/client';
 import PDFPage from './PDFPage';
 import PageThumbnail from './PageThumbnail';
+import { notebookPDF, type Paper } from '../notebooks/model';
+import { readerDraftKey } from '../lib/workspace';
+import { brand } from '../integrations/config';
 import ThemePicker from '../components/ThemePicker';
-import type { Mark, ReaderInfo, ReaderTool } from './types';
+import type { Mark, ReaderInfo, ReaderTool, PenStyle } from './types';
 type Props = {
+  workspace: string;
   initialFile?: File;
   onClose: () => void;
   onSave: (out: Output[]) => Promise<void>;
   onCloud: (out?: Output) => void;
+  notebook?: {
+    id: string;
+    marks: Mark[];
+    paper: Paper;
+    onDraft: (marks: Mark[], data: ArrayBuffer) => Promise<void>;
+  };
 };
 const palette = ['#28344b', '#6965d8', '#267ba8', '#b94c62', '#278466', '#e8bc32'];
 const tools: { id: ReaderTool; name: string; icon: typeof PenLine }[] = [
@@ -55,7 +69,14 @@ const tools: { id: ReaderTool; name: string; icon: typeof PenLine }[] = [
   { id: 'rectangle', name: 'Rectangle', icon: Square },
   { id: 'eraser', name: 'Erase my marks', icon: Eraser },
 ];
-export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Props) {
+export default function PDFReader({
+  workspace,
+  initialFile,
+  onClose,
+  onSave,
+  onCloud,
+  notebook,
+}: Props) {
   const [file, setFile] = useState<File | undefined>(initialFile),
     [info, setInfo] = useState<ReaderInfo>(),
     [password, setPassword] = useState(''),
@@ -68,7 +89,7 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
     [sidebar, setSidebar] = useState<'pages' | 'outline' | 'search' | 'marks' | null>(() =>
       window.innerWidth >= 1000 ? 'pages' : null,
     ),
-    [tool, setTool] = useState<ReaderTool>('select'),
+    [tool, setTool] = useState<ReaderTool>(notebook ? 'pen' : 'select'),
     [color, setColor] = useState(palette[0]),
     [size, setSize] = useState(2.5),
     [touchInk, setTouchInk] = useState(false),
@@ -88,6 +109,12 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
     [notice, setNotice] = useState(''),
     [flatten, setFlatten] = useState(false),
     [appearance, setAppearance] = useState(false);
+  const imageInput = useRef<HTMLInputElement>(null);
+  const [exportFormat, setExportFormat] = useState('pdf');
+  const [penStyle, setPenStyle] = useState<PenStyle>('fountain');
+  const [paper, setPaper] = useState<Paper>(notebook?.paper ?? 'blank');
+  const notebookRef = useRef(notebook);
+  notebookRef.current = notebook;
   const pendingLayouts = useRef(new Set<string>());
   const draftSnapshot = useRef<{ key: string; marks: Mark[] }>({ key: '', marks: [] }),
     carry = useRef<Mark[] | null>(null),
@@ -109,7 +136,7 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
   }, []);
 
   useEffect(() => {
-    if (info && pendingPage.current !== null) {
+    if (info && !loading && pendingPage.current !== null) {
       const target = pendingPage.current;
       pendingPage.current = null;
       setPage(target);
@@ -120,7 +147,7 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
           ?.scrollIntoView({ block: 'start', behavior: 'instant' }),
       );
     }
-  }, [info]);
+  }, [info, loading]);
   const marks = history[cursor] ?? [],
     selectedMark = marks.find((m) => m.id === selected);
   if (draftReady && draftKey) draftSnapshot.current = { key: draftKey, marks };
@@ -132,6 +159,7 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
     setError('');
     setInfo(undefined);
     setDraftReady(false);
+    draftSnapshot.current = { key: '', marks: [] };
     setHistory([[]]);
     setCursor(0);
     setPage(0);
@@ -149,19 +177,11 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
       }
       session.current = r.session;
       setInfo(r);
-      const digest = await crypto.subtle.digest(
-          'SHA-256',
-          data.data.slice(0, Math.min(data.data.byteLength, 1048576)),
-        ),
-        key =
-          'pocket-reader-' +
-          Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('') +
-          '-' +
-          data.data.byteLength;
+      const key = await readerDraftKey(workspace, data.data);
       setDraftKey(key);
       try {
         const { get } = await import('idb-keyval'),
-          saved = carry.current ?? (await get<Mark[]>(key));
+          saved = carry.current ?? notebookRef.current?.marks ?? (await get<Mark[]>(key));
         carry.current = null;
         if (alive && saved?.length) {
           setHistory([saved.filter((m) => m.page < r.count)]);
@@ -182,6 +202,8 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
     return () => {
       alive = false;
       const draft = draftSnapshot.current;
+      if (draft.key && raw.current)
+        notebookRef.current?.onDraft(draft.marks, raw.current.data).catch(() => {});
       if (draft.key)
         import('idb-keyval').then(({ set }) => set(draft.key, draft.marks)).catch(() => {});
       if (session.current) {
@@ -205,7 +227,16 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
     saveTimer.current = setTimeout(() => {
       import('idb-keyval')
         .then(({ set }) => set(draftKey, marks))
-        .then(() => setNotice('Draft saved on this device'))
+        .then(() =>
+          notebookRef.current && raw.current
+            ? notebookRef.current.onDraft(marks, raw.current.data)
+            : undefined,
+        )
+        .then(() =>
+          setNotice(
+            notebookRef.current ? 'Notebook saved on this device' : 'Draft saved on this device',
+          ),
+        )
         .catch(() => setNotice('Draft storage unavailable. Download your copy to keep changes.'));
     }, 650);
     return () => clearTimeout(saveTimer.current);
@@ -313,7 +344,32 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
       );
     try {
       const out = await exportCopy();
-      if (kind === 'download') download(out);
+      if (kind === 'download') {
+        if (exportFormat === 'pdf') download(out);
+        else {
+          const source: Input = {
+              name: out.name,
+              data: new Uint8Array(out.data).buffer,
+              type: out.type,
+            },
+            outputs: Output[] = [];
+          for (let i = 0; i < (info?.count ?? 0); i++) {
+            const rendered = await rpc<{ data: Uint8Array }>('render', {
+              input: source,
+              index: i,
+              width: 1800,
+              jpeg: exportFormat === 'jpg',
+            });
+            outputs.push({
+              name: `${file?.name.replace(/\.pdf$/i, '')}-page-${i + 1}.${exportFormat}`,
+              data: rendered.data,
+              type: exportFormat === 'jpg' ? 'image/jpeg' : 'image/png',
+            });
+          }
+          if (outputs.length === 1) download(outputs[0]);
+          else await downloadAll(outputs);
+        }
+      }
       if (kind === 'save') {
         await onSave([out]);
         setNotice('Saved a PDF copy to your local workspace.');
@@ -361,9 +417,44 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
     if (!raw.current || !info) return;
     setBusy('page');
     try {
-      const out = await rpc<Output>('reader-add-page', { input: raw.current, password });
+      const out = await rpc<Output>('reader-add-page', { input: raw.current, password, paper });
       carry.current = marks;
       pendingPage.current = info.count;
+      setFile(new File([out.data as BlobPart], out.name, { type: out.type }));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy('');
+    }
+  }
+  async function editPages(kind: 'duplicate' | 'remove' | 'up' | 'down') {
+    if (!raw.current || !info) return;
+    if (
+      kind === 'remove' &&
+      !window.confirm(
+        'Remove this page and its ink from the working document? Export a backup first if you want to keep it.',
+      )
+    )
+      return;
+    const order = info.pages.map((_, i) => i);
+    if (kind === 'remove') order.splice(page, 1);
+    if (kind === 'duplicate') order.splice(page + 1, 0, page);
+    if (kind === 'up' && page > 0) [order[page - 1], order[page]] = [order[page], order[page - 1]];
+    if (kind === 'down' && page < info.count - 1)
+      [order[page + 1], order[page]] = [order[page], order[page + 1]];
+    setBusy('page');
+    setError('');
+    try {
+      const out = await rpc<Output>('reader-reorder', { input: raw.current, password, order });
+      carry.current = order.flatMap((original, next) =>
+        marks
+          .filter((m) => m.page === original)
+          .map((m) => ({ ...m, id: crypto.randomUUID(), page: next })),
+      );
+      pendingPage.current = Math.min(
+        order.length - 1,
+        kind === 'up' ? page - 1 : kind === 'down' || kind === 'duplicate' ? page + 1 : page,
+      );
       setFile(new File([out.data as BlobPart], out.name, { type: out.type }));
     } catch (e) {
       setError((e as Error).message);
@@ -393,7 +484,7 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
       className="reader-shell"
       role="dialog"
       aria-modal="true"
-      aria-label="Pocket PDF reader and editor"
+      aria-label={`${brand.name} ${notebook ? 'notebook' : 'PDF reader and editor'}`}
     >
       <input
         type="file"
@@ -409,15 +500,67 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
           e.target.value = '';
         }}
       />
+      <input
+        type="file"
+        hidden
+        ref={imageInput}
+        accept="image/*"
+        onChange={async (e) => {
+          const image = e.target.files?.[0];
+          e.target.value = '';
+          if (!image || !info) return;
+          try {
+            const { loadImage } = await import('../lib/image');
+            const canvas = await loadImage(image, 1800),
+              w = 0.5,
+              h = Math.min(
+                0.6,
+                (((w * info.pages[page].width) / info.pages[page].height) * canvas.height) /
+                  canvas.width,
+              );
+            const mark: Mark = {
+              id: crypto.randomUUID(),
+              page,
+              kind: 'image',
+              image: canvas.toDataURL('image/png'),
+              color: '#000000',
+              opacity: 1,
+              size: 1,
+              points: [],
+              rect: { x: 0.15, y: 0.15, w, h },
+            };
+            commit((old) => [...old, mark]);
+            setTool('select');
+            setSelected(mark.id);
+          } catch (error) {
+            setError((error as Error).message);
+          }
+        }}
+      />
       <header className="reader-header">
-        <button className="reader-icon" aria-label="Close reader" onClick={onClose}>
+        <button
+          className="reader-icon"
+          aria-label="Close reader"
+          onClick={() => {
+            if (notebookRef.current && raw.current) {
+              setBusy('save');
+              notebookRef.current
+                .onDraft(marks, raw.current.data)
+                .then(onClose)
+                .catch((e) => {
+                  setError(e.message);
+                  setBusy('');
+                });
+            } else onClose();
+          }}
+        >
           <ArrowLeft size={21} />
         </button>
         <div className="reader-file-name">
           <strong>{file?.name ?? 'Your reading nook.'}</strong>
           <span>
             {info
-              ? `${info.count} pages · local processing · cloud optional`
+              ? `${info.count} ${info.count === 1 ? 'page' : 'pages'} · local processing · cloud optional`
               : 'Read, mark up, and make room for ideas.'}
           </span>
         </div>
@@ -454,9 +597,21 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
           <Save size={16} />
           <span>Save copy</span>
         </button>
+        {info && (
+          <select
+            className="reader-paper-select"
+            aria-label="Export format"
+            value={exportFormat}
+            onChange={(e) => setExportFormat(e.target.value)}
+          >
+            <option value="pdf">PDF</option>
+            <option value="png">PNG</option>
+            <option value="jpg">JPG</option>
+          </select>
+        )}
         <button
           className="button primary reader-download"
-          aria-label="Download annotated PDF"
+          aria-label={`Download annotated ${exportFormat.toUpperCase()}`}
           disabled={!info || !!busy}
           onClick={() => action('download')}
         >
@@ -483,6 +638,14 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
                 onClick={() => setSidebar(sidebar ? null : 'pages')}
               >
                 <LayoutPanelLeft size={19} />
+              </button>
+              <button
+                className="reader-tool"
+                aria-label="Insert photo"
+                onClick={() => imageInput.current?.click()}
+              >
+                <ImagePlus size={18} />
+                <span>Photo</span>
               </button>
               {tools.map((t) => (
                 <button
@@ -563,6 +726,20 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
           </div>
           {(tool !== 'select' || selectedMark) && (
             <div className="reader-properties">
+              {tool === 'pen' && (
+                <label className="reader-weight">
+                  Pen
+                  <select
+                    aria-label="Pen style"
+                    value={penStyle}
+                    onChange={(e) => setPenStyle(e.target.value as PenStyle)}
+                  >
+                    <option value="fountain">Fountain</option>
+                    <option value="ballpoint">Ballpoint</option>
+                    <option value="pencil">Pencil · tilt shading</option>
+                  </select>
+                </label>
+              )}
               <div className="ink-colors" aria-label="Ink colors">
                 {palette.map((c) => (
                   <button
@@ -722,6 +899,36 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
               </div>
               {sidebar === 'pages' && (
                 <>
+                  <div className="reader-page-actions" aria-label="Manage current page">
+                    <button
+                      aria-label="Move page earlier"
+                      disabled={!!busy || page === 0}
+                      onClick={() => editPages('up')}
+                    >
+                      <ArrowUp size={16} />
+                    </button>
+                    <button
+                      aria-label="Move page later"
+                      disabled={!!busy || page === info.count - 1}
+                      onClick={() => editPages('down')}
+                    >
+                      <ArrowDown size={16} />
+                    </button>
+                    <button
+                      aria-label="Duplicate current page"
+                      disabled={!!busy || info.count >= 300}
+                      onClick={() => editPages('duplicate')}
+                    >
+                      <Copy size={16} />
+                    </button>
+                    <button
+                      aria-label="Remove current page"
+                      disabled={!!busy || info.count === 1}
+                      onClick={() => editPages('remove')}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                   <div className="reader-page-list">
                     {info.pages.map((p, i) => (
                       <button
@@ -869,6 +1076,7 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
                   color={color}
                   size={size}
                   touchInk={touchInk}
+                  penStyle={penStyle}
                   selected={selected}
                   onSelect={setSelected}
                   onMark={(m) => commit((old) => [...old, m])}
@@ -904,6 +1112,7 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
               {(selectedMark.kind === 'text' || selectedMark.kind === 'note') && (
                 <textarea
                   aria-label="Annotation text"
+                  dir="auto"
                   defaultValue={selectedMark.text}
                   onBlur={(e) => {
                     const text = e.target.value;
@@ -913,6 +1122,36 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
                   placeholder="Write something…"
                   autoFocus
                 />
+              )}
+              {selectedMark.kind === 'image' && (
+                <label className="reader-image-scale">
+                  Image size
+                  <input
+                    aria-label="Image size"
+                    type="range"
+                    min=".08"
+                    max=".85"
+                    step=".01"
+                    value={selectedMark.rect.w}
+                    onChange={(e) => {
+                      const factor = Number(e.target.value) / selectedMark.rect.w;
+                      commit((old) =>
+                        old.map((m) =>
+                          m.id === selected
+                            ? {
+                                ...m,
+                                rect: {
+                                  ...m.rect,
+                                  w: Math.min(1 - m.rect.x, Number(e.target.value)),
+                                  h: Math.min(1 - m.rect.y, m.rect.h * factor),
+                                },
+                              }
+                            : m,
+                        ),
+                      );
+                    }}
+                  />
+                </label>
               )}
               <button
                 className="text-button danger"
@@ -975,6 +1214,18 @@ export default function PDFReader({ initialFile, onClose, onSave, onCloud }: Pro
             <Plus size={14} />
             Add page
           </button>
+          <select
+            className="reader-paper-select"
+            aria-label="New page paper"
+            value={paper}
+            onChange={(e) => setPaper(e.target.value as Paper)}
+          >
+            <option value="blank">Blank</option>
+            <option value="ruled">Ruled</option>
+            <option value="dots">Dotted</option>
+            <option value="grid">Grid</option>
+            <option value="cornell">Cornell</option>
+          </select>
           <span className="reader-draft-notice">
             {notice || `${marks.length} marks · original unchanged`}
           </span>

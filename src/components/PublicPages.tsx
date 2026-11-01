@@ -8,10 +8,11 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react';
-import { maker, repoUrl, sourceUrl } from '../integrations/config';
+import { brand, maker, repoUrl, sourceUrl } from '../integrations/config';
 import { navigateTo, relatedTools, toolContent, toolPath } from '../seo/routes';
 import type { Tool } from '../lib/catalog';
 import Icon from './Icon';
+import Brand from './Brand';
 export function InternalLink({
   href,
   children,
@@ -45,8 +46,8 @@ export function SponsorPlacement() {
         <strong>Every tool stays free. Help keep it that way.</strong>
         <p>Sponsor a small, open-source workshop with a useful everyday mission.</p>
       </div>
-      <a href={`mailto:${maker.email}?subject=Sponsor%20Pocket%20PDF%20Workshop`}>
-        Sponsor Pocket <ArrowUpRight size={15} />
+      <a href={`mailto:${maker.email}?subject=${encodeURIComponent(`Sponsor ${brand.name}`)}`}>
+        Sponsor {brand.name} <ArrowUpRight size={15} />
       </a>
       <small>Direct sponsorship</small>
     </aside>
@@ -57,9 +58,7 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="footer-top">
         <div>
-          <strong>
-            Pocket<span>.</span>
-          </strong>
+          <Brand />
           <p>
             A little less paperwork.
             <br />
@@ -166,9 +165,9 @@ export function ToolLanding({ tool, onStart }: { tool: Tool; onStart: () => void
         <details>
           <summary>Can I use this on a phone or without signing in?</summary>
           <p>
-            Yes. Pocket adapts to phones, tablets, laptops, and wide desktop screens. You can use
-            every document tool as a guest. Camera capture is optional; importing files is always
-            available.
+            Yes. {brand.name} adapts to phones, tablets, laptops, and wide desktop screens. You can
+            use every document tool as a guest. Camera capture is optional; importing files is
+            always available.
           </p>
         </details>
         <details>
@@ -203,8 +202,8 @@ export function PublicPage({ view }: { view: string }) {
         <span className="eyebrow">SMALL PROJECT. USEFUL PURPOSE.</span>
         <h1>Paperwork deserves a friendlier place.</h1>
         <p className="public-lead">
-          Pocket PDF Workshop is free, open-source, and proudly vibe coded—made by Ramtin Neshatvar
-          with AI-assisted development, practical testing, and room for community improvements.
+          {brand.name} is free, open-source, and proudly vibe coded—made by Ramtin Neshatvar with
+          AI-assisted development, practical testing, and room for community improvements.
         </p>
         <section>
           <span className="public-icon">
@@ -266,8 +265,8 @@ export function PublicPage({ view }: { view: string }) {
         <span className="eyebrow">CLEAR WORDS. NO FINE-PRINT MAZE.</span>
         <h1>Your paperwork stays yours.</h1>
         <p className="public-lead">
-          Pocket processes documents in your browser. You choose when to download, save, or send a
-          copy to a cloud provider.
+          {brand.name} processes documents in your browser. You choose when to download, save, or
+          send a copy to a cloud provider.
         </p>
         <section>
           <h2>Document processing</h2>
@@ -290,8 +289,10 @@ export function PublicPage({ view }: { view: string }) {
           <h2>Optional accounts</h2>
           <p>
             When accounts are enabled, Firebase Authentication handles sign-in, email addresses,
-            passwords, and profile information directly. Signing in does not upload or synchronize
-            your documents. Account availability depends on the deployment’s configuration.
+            passwords, and profile information directly. Each signed-in account has a separate
+            document library and reader drafts on this browser. Signing in does not upload or
+            synchronize your documents. Account availability depends on the deployment’s
+            configuration.
           </p>
           <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noreferrer">
             Firebase privacy information <ArrowUpRight size={13} />
@@ -303,8 +304,8 @@ export function PublicPage({ view }: { view: string }) {
             Opening cloud connections may load Google or Microsoft authentication code. If you
             choose a file or save an output, its content is transferred directly between your
             browser and that provider. Google Drive uses access to files you select or create with
-            Pocket. OneDrive requests delegated file access appropriate to importing or saving.
-            Cloud tokens are kept in the current session, not included in exported PDFs or
+            {brand.name}. OneDrive requests delegated file access appropriate to importing or
+            saving. Cloud tokens are kept in the current session, not included in exported PDFs or
             application source.
           </p>
         </section>
@@ -344,7 +345,9 @@ export function PublicPage({ view }: { view: string }) {
               Help keep the open-source workshop maintained. Discuss a community-support credit or
               an ongoing sponsorship.
             </p>
-            <a href={`mailto:${maker.email}?subject=Support%20Pocket%20PDF%20Workshop`}>
+            <a
+              href={`mailto:${maker.email}?subject=${encodeURIComponent(`Support ${brand.name}`)}`}
+            >
               Talk about support <ArrowRight size={15} />
             </a>
           </section>
@@ -355,7 +358,9 @@ export function PublicPage({ view }: { view: string }) {
               Discuss a clearly labeled placement on a public tool guide. Sponsor content stays away
               from private document views.
             </p>
-            <a href={`mailto:${maker.email}?subject=Sponsor%20a%20Pocket%20PDF%20tool`}>
+            <a
+              href={`mailto:${maker.email}?subject=${encodeURIComponent(`Sponsor a ${brand.name} tool`)}`}
+            >
               Discuss a placement <ArrowRight size={15} />
             </a>
           </section>
@@ -406,10 +411,12 @@ export function PublicPage({ view }: { view: string }) {
           <ArrowUpRight size={25} />
         </a>
         <div className="contact-options">
-          <a href={`mailto:${maker.email}?subject=Pocket%20PDF%20feedback`}>
+          <a href={`mailto:${maker.email}?subject=${encodeURIComponent(`${brand.name} feedback`)}`}>
             Product feedback <Mail size={18} />
           </a>
-          <a href={`mailto:${maker.email}?subject=Pocket%20PDF%20sponsorship`}>
+          <a
+            href={`mailto:${maker.email}?subject=${encodeURIComponent(`${brand.name} sponsorship`)}`}
+          >
             Sponsorship <Heart size={18} />
           </a>
           <a href={repoUrl ? repoUrl + '/issues' : maker.github} target="_blank" rel="noreferrer">
@@ -440,7 +447,7 @@ export function PublicPage({ view }: { view: string }) {
   return (
     <article className="public-page">
       <span className="eyebrow">A SMALL DETOUR.</span>
-      <h1>That page isn’t in this pocket.</h1>
+      <h1>This page has moved out of reach.</h1>
       <p className="public-lead">Find a document tool or return to your workspace.</p>
       <InternalLink href="/tools/" className="button primary">
         Explore the tools <ArrowRight size={16} />

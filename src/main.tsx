@@ -5,6 +5,9 @@ import './styles.css';
 import './reader/reader.css';
 import './theme.css';
 import './product.css';
+import './brand.css';
+import './features.css';
+import './notebooks/notebooks.css';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

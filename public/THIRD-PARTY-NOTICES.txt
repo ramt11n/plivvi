@@ -30,3 +30,11 @@ License: /MSAL-LICENSE.txt
 
 Prettier — MIT (development formatting dependency only)
 Source: https://github.com/prettier/prettier
+
+Manrope typeface — Copyright 2018 The Manrope Project Authors. SIL Open Font License 1.1. License: /fonts/MANROPE-OFL.txt. Source: https://github.com/google/fonts/tree/main/ofl/manrope
+
+Sora typeface — SIL Open Font License 1.1. License: /fonts/SORA-OFL.txt. Source: https://github.com/google/fonts/tree/main/ofl/sora
+
+Noto Sans script fonts (Arabic, Bengali, Devanagari, Gujarati, Gurmukhi, Hebrew, Kannada, Malayalam, Tamil, Telugu, Thai)
+Source: https://github.com/google/fonts
+License: SIL Open Font License 1.1; each font license is included in public/fonts. Script fonts load only when needed, from this application origin. CJK fallback is provided by MuPDF.

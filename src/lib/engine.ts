@@ -1,3 +1,5 @@
+import brand from '../brand.json';
+import { textDirection } from './unicode';
 import { parseRanges, selectedPages } from './catalog';
 import type { Input, Output, Preview } from './client';
 type Progress = (s: string) => void;
@@ -136,50 +138,8 @@ const output = (name: string, data: Uint8Array, type = 'application/pdf'): Outpu
 const enc = (s: string) => new TextEncoder().encode(s);
 let fontBytes: Promise<ArrayBuffer>;
 async function textPDF(text: string, title = 'Document') {
-  const { PDFDocument, rgb } = await import('pdf-lib'),
-    fontkit = await import('@pdf-lib/fontkit'),
-    pdf = await PDFDocument.create();
-  pdf.registerFontkit(fontkit.default);
-  fontBytes ??= fetch('/fonts/DejaVuSans.ttf').then((r) => {
-    if (!r.ok) throw Error('The document font could not load. Connect once and try again.');
-    return r.arrayBuffer();
-  });
-  const font = await pdf.embedFont(await fontBytes, { subset: true }),
-    size = 11,
-    margin = 48;
-  let page = pdf.addPage([595.28, 841.89]),
-    y = 790;
-  const newPage = () => {
-    page = pdf.addPage([595.28, 841.89]);
-    y = 790;
-  };
-  for (const paragraph of text.split('\n')) {
-    if (paragraph === '\f') {
-      newPage();
-      continue;
-    }
-    let line = '';
-    const words = paragraph.replace(/\t/g, '    ').split(/(?<=\s)/u);
-    const draw = () => {
-      if (y < margin) newPage();
-      page.drawText(line, { x: margin, y, size, font, color: rgb(0.12, 0.15, 0.2) });
-      y -= 17;
-      line = '';
-    };
-    for (const word of words) {
-      if (font.widthOfTextAtSize(line + word, size) > 495 && line) draw();
-      if (font.widthOfTextAtSize(word, size) > 495) {
-        for (const char of word) {
-          if (font.widthOfTextAtSize(line + char, size) > 495) draw();
-          line += char;
-        }
-      } else line += word;
-    }
-    draw();
-    y -= 3;
-  }
-  pdf.setTitle(title);
-  return pdf.save();
+  const { unicodePDF } = await import('./unicode');
+  return unicodePDF(await mu(), text, title);
 }
 export async function operate(
   id: string,
@@ -323,8 +283,8 @@ export async function operate(
               b[0] + w * (id === 'annotate' ? 0.95 : r.x + r.w),
               b[1] + h * (id === 'annotate' ? Math.min(1, r.y + 0.2) : r.y + r.h),
             ]);
-            a.setBorderWidth(0);
             if (id === 'annotate') {
+              a.setBorderWidth(0);
               if (!o.text?.trim()) throw Error('Enter the text you want to add.');
               a.setDefaultAppearance('Helv', Number(o.fontSize ?? 18), [0.13, 0.18, 0.28]);
               a.setContents(o.text);
@@ -408,7 +368,13 @@ export async function operate(
       const { Document, Paragraph, TextRun, Packer } = await import('docx');
       const doc = new Document({
         sections: pages.map((p) => ({
-          children: p.split('\n').map((line) => new Paragraph({ children: [new TextRun(line)] })),
+          children: p.split('\n').map(
+            (line) =>
+              new Paragraph({
+                bidirectional: textDirection(line) === 'rtl',
+                children: [new TextRun({ text: line, rightToLeft: textDirection(line) === 'rtl' })],
+              }),
+          ),
         })),
       });
       return [
@@ -422,7 +388,9 @@ export async function operate(
     const { default: ExcelJS } = await import('exceljs'),
       wb = new ExcelJS.Workbook();
     pages.forEach((p, i) => {
-      const s = wb.addWorksheet(`Page ${i + 1}`);
+      const s = wb.addWorksheet(`Page ${i + 1}`, {
+        views: [{ rightToLeft: textDirection(p) === 'rtl' }],
+      });
       p.split('\n')
         .filter(Boolean)
         .forEach((line) => s.addRow(line.trim().split(/\s{2,}|\t/)));
@@ -451,7 +419,7 @@ export async function operate(
         const { default: PptxGenJS } = await import('pptxgenjs');
         ppt = new PptxGenJS();
         ppt.layout = 'LAYOUT_WIDE';
-        ppt.author = 'Pocket PDF Workshop';
+        ppt.author = brand.name;
       }
       const count =
         id === 'compare'
@@ -545,11 +513,12 @@ export async function operate(
         const { default: ExcelJS } = await import('exceljs'),
           wb = new ExcelJS.Workbook();
         await wb.xlsx.load(file.data);
+        const sheets: string[] = [];
         wb.eachSheet((sheet) => {
-          text += `${sheet.name}\n\n`;
+          let sheetText = `${sheet.name}\n\n`;
           sheet.eachRow(
             (row) =>
-              (text +=
+              (sheetText +=
                 (row.values as any[])
                   .slice(1)
                   .map((v) =>
@@ -557,8 +526,9 @@ export async function operate(
                   )
                   .join('    ') + '\n'),
           );
-          text += '\n\f\n';
+          sheets.push(sheetText.trimEnd());
         });
+        text = sheets.join('\n\f\n');
       } else if (ext === 'pptx') {
         const { unzipSync } = await import('fflate'),
           zip = unzipSync(new Uint8Array(file.data));
@@ -587,7 +557,11 @@ export async function operate(
           );
       } else throw Error('Choose a DOCX, XLSX, PPTX, TXT, Markdown, or HTML file.');
       if (!text.trim()) throw Error('No readable text was found in that file.');
-      results.push(output(`${base(file.name)}.pdf`, await textPDF(text, base(file.name))));
+      const filename =
+        files.filter((f) => base(f.name) === base(file.name)).length > 1
+          ? `${base(file.name)}-${ext}.pdf`
+          : `${base(file.name)}.pdf`;
+      results.push(output(filename, await textPDF(text, base(file.name))));
     }
     return results;
   }
@@ -909,7 +883,7 @@ export async function template(id: string, o: any = {}): Promise<Output[]> {
       color: ink,
     });
   }
-  pdf.setTitle(`Pocket ${id}`);
+  pdf.setTitle(`${brand.name} ${id}`);
   return [output(`${id}-template.pdf`, await pdf.save())];
 }
 export async function sample(): Promise<Output> {
@@ -942,5 +916,5 @@ export async function sample(): Promise<Output> {
     );
     p.drawText(String(i + 1), { x: 290, y: 35, font, size: 11 });
   }
-  return output('Welcome to Pocket.pdf', await pdf.save());
+  return output(`Welcome to ${brand.name}.pdf`, await pdf.save());
 }

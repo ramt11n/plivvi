@@ -26,6 +26,7 @@ const roots = [
   'package-lock.json',
   'index.html',
   'vite.config.ts',
+  'vitest.config.ts',
   'tsconfig.json',
   '.gitignore',
 ];
@@ -44,7 +45,8 @@ async function add(relative) {
 }
 for (const name of roots) await add(name);
 files['pocket-pdf/SOURCE-NOTICE.txt'] = strToU8(
-  'Pocket PDF Workshop application source, AGPL-3.0-or-later. See README.md and public/THIRD-PARTY-NOTICES.txt for build instructions and corresponding dependency sources.\n',
+  JSON.parse(await readFile(path.join(root, 'src/brand.json'), 'utf8')).name +
+    ' application source, AGPL-3.0-or-later. See README.md and public/THIRD-PARTY-NOTICES.txt for build instructions and corresponding dependency sources.\n',
 );
 const archive = zipSync(files, { level: 6 });
 await writeFile(path.join(root, 'public/source.zip'), archive);

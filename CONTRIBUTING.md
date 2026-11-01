@@ -1,6 +1,6 @@
 # Make a little less paperwork
 
-Thanks for helping improve Pocket PDF Workshop. The project is free, open source, and proudly vibe coded. AI-assisted contributions are welcome; contributors remain responsible for understanding their changes, checking licenses, and verifying the resulting behavior.
+Thanks for helping improve Plivvi. The project is free, open source, and proudly vibe coded. AI-assisted contributions are welcome; contributors remain responsible for understanding their changes, checking licenses, and verifying the resulting behavior.
 
 ## Start here
 

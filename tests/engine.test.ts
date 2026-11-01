@@ -226,4 +226,89 @@ describe('PDF operations', () => {
     );
     expect((await extractText(input(o)))[0]).toContain('Recognized words');
   });
+  it('repairs a damaged cross-reference offset while preserving readable content', async () => {
+    const pdf = await PDFDocument.create(),
+      p = pdf.addPage([400, 400]);
+    p.drawText('RECOVER THIS CONTENT');
+    const damaged = Buffer.from(await pdf.save({ useObjectStreams: false }))
+      .toString('latin1')
+      .replace(/startxref\s+\d+/, 'startxref\n0');
+    const [out] = await operate('repair', [
+      {
+        name: 'damaged.pdf',
+        type: 'application/pdf',
+        data: new Uint8Array(Buffer.from(damaged, 'latin1')).buffer,
+      },
+    ]);
+    expect((await extractText(input(out)))[0]).toContain('RECOVER THIS CONTENT');
+  });
+  it('flattens a text annotation into visible page content', async () => {
+    const [marked] = await operate('annotate', [fixture], {
+      text: 'FLATTENED NOTE',
+      page: 1,
+      fontSize: 14,
+    });
+    const [flat] = await operate('flatten', [input(marked)]);
+    expect((await extractText(input(flat)))[0]).toContain('FLATTENED NOTE');
+    const doc = await open(input(flat)),
+      p = doc.loadPage(0);
+    expect(p.getAnnotations()).toHaveLength(0);
+    p.destroy();
+    doc.destroy();
+  });
+  it('exports text, Markdown, and an extractive summary using the document’s own words', async () => {
+    for (const id of ['text', 'markdown', 'summary']) {
+      const [out] = await operate(id, [fixture]);
+      const text = new TextDecoder().decode(out.data);
+      expect(text).toContain('local');
+      if (id === 'markdown') expect(text).toContain('## Page 1');
+      if (id === 'summary') expect(text).toContain('EXTRACTIVE SUMMARY');
+    }
+  });
+  it('creates a flattened raster compression copy with all pages', async () => {
+    const [out] = await operate('compress', [fixture], {
+      compression: 'raster',
+      resolution: 500,
+      quality: 60,
+    });
+    expect((await PDFDocument.load(out.data)).getPageCount()).toBe(3);
+    expect((await extractText(input(out))).join('').trim()).toBe('');
+  });
+  it('adds a drawn signature as a portable stamp annotation', async () => {
+    const [png] = await operate('pdf-image', [fixture], { format: 'png', resolution: 200 });
+    const signature = 'data:image/png;base64,' + Buffer.from(png.data).toString('base64');
+    const [out] = await operate('sign', [fixture], { signature, page: 1 });
+    const doc = await open(input(out)),
+      page = doc.loadPage(0),
+      annotations = page.getAnnotations();
+    expect(annotations.map((a) => a.getType())).toContain('Stamp');
+    annotations.forEach((a) => a.destroy());
+    page.destroy();
+    doc.destroy();
+  });
+  it('does not add an empty trailing page to an XLSX reading copy and disambiguates batch names', async () => {
+    const { default: ExcelJS } = await import('exceljs'),
+      wb = new ExcelJS.Workbook();
+    wb.addWorksheet('Sheet one').addRow(['AMOUNT', 42]);
+    const { default: PptxGenJS } = await import('pptxgenjs'),
+      ppt = new PptxGenJS();
+    ppt.addSlide().addText('PRESENTATION CHECK', { x: 1, y: 1, w: 6, h: 1 });
+    const files: Input[] = [
+      {
+        name: 'draft.xlsx',
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        data: new Uint8Array(await wb.xlsx.writeBuffer()).buffer,
+      },
+      {
+        name: 'draft.pptx',
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        data: (await ppt.write({ outputType: 'arraybuffer' })) as ArrayBuffer,
+      },
+    ];
+    const results = await operate('office-pdf', files);
+    expect(results.map((o) => o.name)).toEqual(['draft-xlsx.pdf', 'draft-pptx.pdf']);
+    expect((await PDFDocument.load(results[0].data)).getPageCount()).toBe(1);
+    expect((await extractText(input(results[0])))[0]).toContain('42');
+    expect((await extractText(input(results[1])))[0]).toContain('PRESENTATION CHECK');
+  });
 });

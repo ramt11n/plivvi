@@ -31,6 +31,7 @@ const entries = [
   'index.html',
   'redirect.html',
   'vite.config.ts',
+  'vitest.config.ts',
   'tsconfig.json',
 ];
 await mkdir(target, { recursive: true });

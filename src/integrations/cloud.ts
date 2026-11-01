@@ -1,4 +1,4 @@
-import { integrationConfig } from './config';
+import { brand, integrationConfig } from './config';
 import type { Output } from '../lib/client';
 import type { PublicClientApplication } from '@azure/msal-browser';
 declare global {
@@ -7,8 +7,30 @@ declare global {
     gapi: any;
   }
 }
-let googleAccess: { token: string; until: number } | undefined,
-  msalPromise: Promise<PublicClientApplication>;
+type GoogleSession = { token: string; until: number; email?: string; name?: string };
+const googleSessions = new Map<string, GoogleSession>();
+const microsoftClients = new Map<string, Promise<PublicClientApplication>>();
+export type CloudConnections = { google?: { email: string }; microsoft?: { email: string } };
+export async function cloudConnections(workspace: string): Promise<CloudConnections> {
+  const google = googleSessions.get(workspace);
+  const microsoft = microsoftClients.has(workspace)
+    ? (await microsoftClients.get(workspace)!).getActiveAccount()
+    : null;
+  return {
+    google: google ? { email: google.email || 'Google account' } : undefined,
+    microsoft: microsoft ? { email: microsoft.username } : undefined,
+  };
+}
+export function cloudCopyName(original: string) {
+  const safe =
+    original
+      .replace(/[<>:\x22/\\|?*\x00-\x1f]/g, '-')
+      .replace(/[. ]+$/, '')
+      .slice(0, 180) || 'document';
+  const dot = safe.lastIndexOf('.'),
+    stamp = Date.now() + '-' + crypto.randomUUID().slice(0, 8);
+  return dot > 0 ? `${safe.slice(0, dot)}-${stamp}${safe.slice(dot)}` : `${safe}-${stamp}`;
+}
 const scripts = new Map<string, Promise<void>>();
 function script(src: string) {
   if (scripts.has(src)) return scripts.get(src)!;
@@ -43,25 +65,31 @@ export async function prepareGoogle() {
     }),
   );
 }
-async function googleToken() {
-  if (googleAccess && googleAccess.until > Date.now() + 60000) return googleAccess.token;
+async function googleToken(workspace: string, selectAccount = false) {
+  const current = googleSessions.get(workspace);
+  if (!selectAccount && current && current.until > Date.now() + 60000) return current.token;
   const config = await integrationConfig();
   if (!config.google?.clientId) throw Error('Google Drive has not been enabled by the owner yet.');
   return new Promise<string>((resolve, reject) => {
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: config.google!.clientId,
-      scope: 'https://www.googleapis.com/auth/drive.file',
+      scope: 'openid email https://www.googleapis.com/auth/drive.file',
+      login_hint: !selectAccount ? current?.email : undefined,
       callback: (r: any) => {
         if (r.error) {
           reject(Error('Google Drive permission was not granted.'));
           return;
         }
-        googleAccess = { token: r.access_token, until: Date.now() + Number(r.expires_in) * 1000 };
+        googleSessions.set(workspace, {
+          token: r.access_token,
+          until: Date.now() + Number(r.expires_in) * 1000,
+          email: !selectAccount ? current?.email : undefined,
+        });
         resolve(r.access_token);
       },
       error_callback: () => reject(Error('The Google sign-in window was closed or blocked.')),
     });
-    client.requestAccessToken({ prompt: '' });
+    client.requestAccessToken({ prompt: selectAccount || !current ? 'select_account' : '' });
   });
 }
 async function checked(response: Response) {
@@ -73,9 +101,9 @@ async function checked(response: Response) {
   } catch {}
   throw Error(message);
 }
-export async function importGoogle(): Promise<File[]> {
+export async function importGoogle(workspace: string): Promise<File[]> {
   const config = await integrationConfig(),
-    token = await googleToken();
+    token = await googleToken(workspace);
   if (!config.google?.apiKey || !config.google.appId)
     throw Error('Google Drive has not been fully configured by the owner yet.');
   return new Promise((resolve, reject) => {
@@ -88,7 +116,7 @@ export async function importGoogle(): Promise<File[]> {
       .setDeveloperKey(config.google!.apiKey)
       .setAppId(config.google!.appId)
       .setOrigin(location.origin)
-      .setTitle('Choose documents for Pocket')
+      .setTitle(`Choose documents for ${brand.name}`)
       .setCallback(async (event: any) => {
         if (event.action === window.google.picker.Action.CANCEL) {
           resolve([]);
@@ -124,9 +152,9 @@ export async function importGoogle(): Promise<File[]> {
     picker.setVisible(true);
   });
 }
-export async function exportGoogle(out: Output, progress: (s: string) => void) {
-  const token = await googleToken(),
-    name = out.name.replace(/(\.[^.]+)$/, '-' + Date.now() + '$1'),
+export async function exportGoogle(out: Output, progress: (s: string) => void, workspace: string) {
+  const token = await googleToken(workspace),
+    name = cloudCopyName(out.name),
     start = await checked(
       await fetch(
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&fields=id,name,webViewLink',
@@ -165,14 +193,16 @@ export async function exportGoogle(out: Output, progress: (s: string) => void) {
     }
   }
   if (!result) throw Error('The upload has not completed. Please retry with a fresh copy.');
-  return result.name ?? name;
+  return { name: result.name ?? name, url: result.webViewLink as string | undefined };
 }
-export function microsoftClient() {
-  return (msalPromise ??= (async () => {
-    const config = await integrationConfig();
-    if (!config.microsoft?.clientId) throw Error('OneDrive has not been enabled by the owner yet.');
-    const { PublicClientApplication } = await import('@azure/msal-browser'),
-      client = new PublicClientApplication({
+export function microsoftClient(workspace: string) {
+  if (!microsoftClients.has(workspace)) {
+    const pending = (async () => {
+      const config = await integrationConfig();
+      if (!config.microsoft?.clientId)
+        throw Error('OneDrive needs owner configuration on this deployment.');
+      const { PublicClientApplication } = await import('@azure/msal-browser');
+      const client = new PublicClientApplication({
         auth: {
           clientId: config.microsoft.clientId,
           authority: `https://login.microsoftonline.com/${encodeURIComponent(config.microsoft.tenant ?? 'common')}`,
@@ -180,24 +210,48 @@ export function microsoftClient() {
         },
         cache: { cacheLocation: 'memoryStorage' },
       });
-    await client.initialize();
-    return client;
-  })());
+      await client.initialize();
+      return client;
+    })().catch((error) => {
+      microsoftClients.delete(workspace);
+      throw error;
+    });
+    microsoftClients.set(workspace, pending);
+  }
+  return microsoftClients.get(workspace)!;
 }
-async function microsoftToken(write = false) {
-  const client = await microsoftClient(),
-    scopes = [write ? 'Files.ReadWrite' : 'Files.Read'],
-    account = client.getActiveAccount() ?? client.getAllAccounts()[0];
-  if (account)
+async function microsoftToken(workspace: string, write = false, selectAccount = false) {
+  const client = await microsoftClient(workspace),
+    scopes = [write ? 'Files.ReadWrite' : 'Files.Read'];
+  const account = client.getActiveAccount();
+  if (account && !selectAccount) {
     try {
       return (await client.acquireTokenSilent({ account, scopes })).accessToken;
     } catch {}
+  }
   const response = await client.acquireTokenPopup({
     scopes,
-    prompt: account ? undefined : 'select_account',
+    account: selectAccount ? undefined : (account ?? undefined),
+    prompt: selectAccount || !account ? 'select_account' : undefined,
   });
   client.setActiveAccount(response.account);
   return response.accessToken;
+}
+export async function connectGoogle(workspace: string, selectAccount = true) {
+  const token = await googleToken(workspace, selectAccount);
+  const response = await checked(
+    await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  );
+  const profile = await response.json(),
+    session = googleSessions.get(workspace);
+  if (session) googleSessions.set(workspace, { ...session, email: profile.email });
+  return cloudConnections(workspace);
+}
+export async function connectOneDrive(workspace: string, selectAccount = true) {
+  await microsoftToken(workspace, false, selectAccount);
+  return cloudConnections(workspace);
 }
 export type CloudItem = {
   id: string;
@@ -207,19 +261,25 @@ export type CloudItem = {
   file?: { mimeType: string };
 };
 export async function listOneDrive(
+  workspace: string,
   folder?: string,
-): Promise<{ items: CloudItem[]; more: boolean }> {
-  const token = await microsoftToken(),
-    url = folder
-      ? `https://graph.microsoft.com/v1.0/me/drive/items/${encodeURIComponent(folder)}/children?$top=200&$select=id,name,size,folder,file`
-      : 'https://graph.microsoft.com/v1.0/me/drive/root/children?$top=200&$select=id,name,size,folder,file',
-    response = await checked(await fetch(url, { headers: { Authorization: `Bearer ${token}` } })),
+  next?: string,
+): Promise<{ items: CloudItem[]; next?: string }> {
+  const token = await microsoftToken(workspace),
+    url =
+      next ??
+      (folder
+        ? `https://graph.microsoft.com/v1.0/me/drive/items/${encodeURIComponent(folder)}/children?$top=200&$select=id,name,size,folder,file`
+        : 'https://graph.microsoft.com/v1.0/me/drive/root/children?$top=200&$select=id,name,size,folder,file'),
+    response = await checked(
+      await fetch(validGraphUrl(url), { headers: { Authorization: `Bearer ${token}` } }),
+    ),
     json = await response.json();
-  return { items: json.value ?? [], more: !!json['@odata.nextLink'] };
+  return { items: json.value ?? [], next: json['@odata.nextLink'] };
 }
-export async function importOneDrive(item: CloudItem) {
+export async function importOneDrive(item: CloudItem, workspace: string) {
   if (item.size > 100 * 1048576) throw Error('Choose files smaller than 100 MB.');
-  const token = await microsoftToken(),
+  const token = await microsoftToken(workspace),
     response = await checked(
       await fetch(
         `https://graph.microsoft.com/v1.0/me/drive/items/${encodeURIComponent(item.id)}/content`,
@@ -230,11 +290,11 @@ export async function importOneDrive(item: CloudItem) {
   if (blob.size > 100 * 1048576) throw Error('Choose files smaller than 100 MB.');
   return new File([blob], item.name, { type: item.file?.mimeType ?? blob.type });
 }
-export async function exportOneDrive(out: Output) {
+export async function exportOneDrive(out: Output, workspace: string) {
   if (out.data.length > 250 * 1048576)
     throw Error('This copy is too large for a simple OneDrive upload.');
-  const token = await microsoftToken(true),
-    name = out.name.replace(/(\.[^.]+)$/, '-' + Date.now() + '$1'),
+  const token = await microsoftToken(workspace, true),
+    name = cloudCopyName(out.name),
     response = await checked(
       await fetch(
         `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(name)}:/content`,
@@ -245,12 +305,20 @@ export async function exportOneDrive(out: Output) {
         },
       ),
     );
-  return (await response.json()).name ?? name;
+  const result = await response.json();
+  return { name: result.name ?? name, url: result.webUrl as string | undefined };
 }
-export async function disconnectCloud() {
-  googleAccess = undefined;
-  if (msalPromise) {
-    const client = await msalPromise;
+export function validGraphUrl(value: string) {
+  const url = new URL(value);
+  if (url.origin !== 'https://graph.microsoft.com' || !url.pathname.startsWith('/v1.0/me/drive/'))
+    throw Error('OneDrive returned an invalid page address.');
+  return url.href;
+}
+export async function disconnectCloud(workspace: string, provider?: 'google' | 'microsoft') {
+  if (!provider || provider === 'google') googleSessions.delete(workspace);
+  if ((!provider || provider === 'microsoft') && microsoftClients.has(workspace)) {
+    const client = await microsoftClients.get(workspace)!;
     await client.clearCache();
+    microsoftClients.delete(workspace);
   }
 }

@@ -1,5 +1,17 @@
 {
-  "firebase": null,
-  "google": { "clientId": "", "apiKey": "", "appId": "" },
-  "microsoft": { "clientId": "", "tenant": "common" }
+  "firebase": {
+    "apiKey": "AIzaSyBSYKyUVMW70N31wrK7EKF1E15ynU8_t_8",
+    "authDomain": "plivvi.firebaseapp.com",
+    "projectId": "plivvi",
+    "appId": "1:794411977137:web:4e85d6f16a26fc29b31590"
+  },
+  "google": {
+    "clientId": "",
+    "apiKey": "",
+    "appId": ""
+  },
+  "microsoft": {
+    "clientId": "",
+    "tenant": "common"
+  }
 }

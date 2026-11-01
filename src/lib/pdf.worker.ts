@@ -8,6 +8,7 @@ import {
   readerText,
   readerSearch,
   readerAppendPage,
+  readerReorder,
   layoutReaderText,
   exportAnnotations,
 } from '../reader/engine';
@@ -31,7 +32,9 @@ self.onmessage = async ({ data: { id, op, payload } }) => {
         payload.flatten,
       );
     else if (op === 'reader-add-page')
-      result = await readerAppendPage(payload.input, payload.password);
+      result = await readerAppendPage(payload.input, payload.password, payload.paper);
+    else if (op === 'reader-reorder')
+      result = await readerReorder(payload.input, payload.password, payload.order);
     else if (op === 'reader-layout-text')
       result = await layoutReaderText(payload.text, payload.size, payload.width);
     else if (op === 'preview')
@@ -45,7 +48,7 @@ self.onmessage = async ({ data: { id, op, payload } }) => {
     else if (op === 'render') {
       const doc = await open(payload.input, payload.password);
       try {
-        result = await render(doc, payload.index, payload.width ?? 1400, true);
+        result = await render(doc, payload.index, payload.width ?? 1400, payload.jpeg !== false);
       } finally {
         doc.destroy();
       }

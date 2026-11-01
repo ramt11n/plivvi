@@ -1,16 +1,16 @@
 # Host the workshop without renting a server
 
-Pocket builds to ordinary static files in `dist`. PDF work runs in the visitor’s browser. You do not need a rented VM, a continuously running Node server, or an Apple developer membership.
+Plivvi builds to ordinary static files in `dist`. PDF work runs in the visitor’s browser. You do not need a rented VM, a continuously running Node server, or an Apple developer membership.
 
 ## Current public links
 
-The [interactive workshop](https://pocket-pdf-ramtin.pages.dev) is published on Cloudflare Pages in the owner’s account. The [GitHub project page](https://ramt11n.github.io/pocket-pdf/) is a shorter launch and contribution link. GitHub Actions tests the app and publishes the project page. The app is deployed through Cloudflare’s Direct Upload interface. Automatic app deployment remains unconfigured; the included Actions workflow needs a scoped Cloudflare token and account variables before it can be enabled.
+The production address configured for this release is [plivvi.pages.dev](https://plivvi.pages.dev), in the owner’s Cloudflare account. The older release used `pocket-pdf-ramtin.pages.dev`; workspaces are local to each origin, so export saved files before moving. The [GitHub project page](https://ramt11n.github.io/pocket-pdf/) is the contribution and launch page. GitHub Actions tests the app and publishes the project page. Automatic app deployment remains unconfigured; the included Actions workflow needs a scoped Cloudflare token and account variables before it can be enabled.
 
 ## Alternative public host: Cloudflare Pages
 
-Cloudflare Pages provides a free `project-name.pages.dev` address, HTTPS, and static hosting. The free plan currently allows 500 builds/month, 20,000 files, and individual assets up to 25 MiB. Pocket’s largest bundled engine fits under that per-file limit. Account and service terms still apply; no third-party service promises a permanent domain forever. See [Pages limits](https://developers.cloudflare.com/pages/platform/limits/) and [custom domains](https://developers.cloudflare.com/pages/configuration/custom-domains/).
+Cloudflare Pages provides a free `project-name.pages.dev` address, HTTPS, and static hosting. The free plan currently allows 500 builds/month, 20,000 files, and individual assets up to 25 MiB. Plivvi’s largest bundled engine fits under that per-file limit. Account and service terms still apply; no third-party service promises a permanent domain forever. See [Pages limits](https://developers.cloudflare.com/pages/platform/limits/) and [custom domains](https://developers.cloudflare.com/pages/configuration/custom-domains/).
 
-1. Create a Pages project in your own Cloudflare account. Choose a short available name, such as `pocket-pdf-ramtin`; the actual URL is assigned by Cloudflare.
+1. Create a Pages project in your own Cloudflare account. Choose a short available name, such as `plivvi`; the actual URL is assigned by Cloudflare.
 2. Use direct-upload deployment if you want the included GitHub Actions workflow to publish it. Alternatively, connect the GitHub repository in Cloudflare and use `npm run build` with output directory `dist` and Node 24.
 3. For Actions, create an account-scoped API token limited to editing Cloudflare Pages for the relevant account. Store it as the repository secret `CLOUDFLARE_API_TOKEN`, and the account ID as `CLOUDFLARE_ACCOUNT_ID`.
 4. Add repository variables `CLOUDFLARE_PROJECT_NAME` and `SITE_URL` (the actual HTTPS website origin). The deployment workflow is intentionally skipped until the project name is set.

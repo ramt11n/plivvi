@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { rpc } from '../lib/client';
-import { pressureWidth, type Mark, type ReaderTool, type InkPoint, type TextChar } from './types';
+import {
+  pressureWidth,
+  strokePressure,
+  type PenStyle,
+  type Mark,
+  type ReaderTool,
+  type InkPoint,
+  type TextChar,
+} from './types';
 type Props = {
   session: string;
   index: number;
@@ -12,6 +20,7 @@ type Props = {
   color: string;
   size: number;
   touchInk: boolean;
+  penStyle: PenStyle;
   selected: string | null;
   onSelect: (id: string | null) => void;
   onMark: (m: Mark) => void;
@@ -107,12 +116,16 @@ export default function PDFPage(p: Props) {
     clientY: number;
     pressure?: number;
     pointerType?: string;
+    tiltX?: number;
+    tiltY?: number;
   }): InkPoint {
     const r = svg.current!.getBoundingClientRect();
     return {
       x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)),
       y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)),
       pressure: e.pointerType === 'pen' ? Math.max(0.05, e.pressure || 0.5) : 0.5,
+      tiltX: e.tiltX ?? 0,
+      tiltY: e.tiltY ?? 0,
     };
   }
   function erase(q: InkPoint) {
@@ -170,7 +183,8 @@ export default function PDFPage(p: Props) {
       kind,
       color: p.color,
       size: p.size,
-      opacity: kind === 'highlight' ? 0.3 : 1,
+      opacity: kind === 'highlight' ? 0.3 : kind === 'ink' && p.penStyle === 'pencil' ? 0.72 : 1,
+      penStyle: p.penStyle,
       points: [q],
       rect: {
         x: q.x,
@@ -240,6 +254,8 @@ export default function PDFPage(p: Props) {
             clientX: event.clientX,
             clientY: event.clientY,
             pressure: event.pressure,
+            tiltX: event.tiltX,
+            tiltY: event.tiltY,
             pointerType: e.pointerType,
           }),
           last = current.mark.points.at(-1)!;
@@ -291,7 +307,7 @@ export default function PDFPage(p: Props) {
     for (let i = 1; i < m.points.length; i++) {
       const a = m.points[i - 1],
         b = m.points[i],
-        q = Math.round(((a.pressure + b.pressure) / 2) * 7);
+        q = Math.round(strokePressure(a, b, m.penStyle) * 7);
       buckets.set(
         q,
         (buckets.get(q) ?? '') +
@@ -304,7 +320,7 @@ export default function PDFPage(p: Props) {
         d={d}
         fill="none"
         stroke={m.color}
-        strokeWidth={pressureWidth(m.size, pressure / 7)}
+        strokeWidth={pressureWidth(m.size, pressure / 7, m.penStyle)}
         strokeLinecap="round"
       />
     ));
@@ -349,20 +365,39 @@ export default function PDFPage(p: Props) {
           ) : (
             inkPaths(m)
           )
-        ) : m.kind === 'text' ? (
-          <text
+        ) : m.kind === 'image' ? (
+          <image
+            href={m.image}
             x={r.x * p.width}
-            y={r.y * p.height + m.size}
-            fill={m.color}
-            fontSize={m.size}
-            fontFamily="Arial,sans-serif"
+            y={r.y * p.height}
+            width={r.w * p.width}
+            height={r.h * p.height}
+            preserveAspectRatio="xMidYMid meet"
+          />
+        ) : m.kind === 'text' ? (
+          <foreignObject
+            x={r.x * p.width}
+            y={r.y * p.height}
+            width={r.w * p.width}
+            height={Math.max(r.h * p.height, (m.lines?.length ?? 1) * m.size * 1.7)}
+            overflow="visible"
           >
-            {(m.lines ?? (m.text ?? '').split('\n')).map((line, i) => (
-              <tspan key={i} x={r.x * p.width} dy={i ? m.size * 1.25 : 0}>
-                {line}
-              </tspan>
-            ))}
-          </text>
+            <div
+              dir="auto"
+              style={{
+                color: m.color,
+                fontSize: m.size,
+                fontFamily: 'PlivviDocument, Arial, sans-serif',
+                lineHeight: 1.7,
+                whiteSpace: 'pre-wrap',
+                overflowWrap: 'anywhere',
+                unicodeBidi: 'plaintext',
+                textAlign: 'start',
+              }}
+            >
+              {m.text}
+            </div>
+          </foreignObject>
         ) : m.kind === 'note' ? (
           <g>
             <rect

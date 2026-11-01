@@ -1,3 +1,4 @@
+import brand from '../brand.json';
 import content from './content.json';
 import { tools } from '../lib/catalog';
 export type ToolContent = {
@@ -19,6 +20,7 @@ export function currentRoute(): Route {
   const views: Record<string, string> = {
     '/tools': 'tools',
     '/documents': 'documents',
+    '/notebooks': 'notebooks',
     '/templates': 'templates',
     '/about': 'about',
     '/privacy': 'privacy',
@@ -40,43 +42,45 @@ export function navigateTo(path: string) {
 }
 const mainTitles: Record<string, [string, string]> = {
   home: [
-    'Pocket PDF Workshop — Free, Open-Source PDF Tools',
+    '{brand} — Free, Open-Source PDF Tools',
     'Free, open-source PDF reader, scanner, editor, and converter. Read, draw, merge, split, sign, and organize documents on your device. Vibe coded by Ramtin Neshatvar.',
   ],
   tools: [
-    'Free PDF Tools — Pocket PDF Workshop',
+    'Free PDF Tools — {brand}',
     'Browse free document tools for scanning, editing, merging, splitting, compression, conversion, and OCR. No feature paywalls or required account.',
   ],
+  notebooks: [
+    'Free Digital Notebook & Handwriting — {brand}',
+    'Create free digital notebooks with ruled, dotted, grid, Cornell, or blank paper. Write with Apple Pencil, add text, and export your pages as PDF or images.',
+  ],
   templates: [
-    'Document Templates & Copy Layouts — Pocket',
+    'Document Templates & Copy Layouts — {brand}',
     'Start with blank, lined, graph, invoice, letter, and checklist pages, or arrange genuine ID and passport scans.',
   ],
   about: [
-    'About Pocket — Open Source & Vibe Coded',
-    'Meet Pocket PDF Workshop, the free and open-source document toolkit made by Ramtin Neshatvar with AI-assisted development.',
+    'About {brand} — Open Source & Vibe Coded',
+    'Meet {brand}, the free and open-source document toolkit made by Ramtin Neshatvar with AI-assisted development.',
   ],
   privacy: [
-    'Privacy — Pocket PDF Workshop',
-    'How Pocket keeps document processing local, saves browser drafts, and handles optional sign-in and cloud connections.',
+    'Privacy — {brand}',
+    'How {brand} keeps document processing local, saves browser drafts, and handles optional sign-in and cloud connections.',
   ],
   contact: [
-    'Contact Ramtin — Pocket PDF Workshop',
-    'Contact Ramtin Neshatvar for Pocket PDF Workshop questions, sponsorship, contributions, or custom workflow help.',
+    'Contact Ramtin — {brand}',
+    'Contact Ramtin Neshatvar for {brand} questions, sponsorship, contributions, or custom workflow help.',
   ],
   support: [
-    'Sponsor Pocket — Keep Every Feature Free',
+    'Sponsor {brand} — Keep Every Feature Free',
     'Support an open-source PDF workshop through direct sponsorship or custom workflow work. No subscriptions or document-feature paywalls.',
   ],
 };
 export function updateSEO(route: Route) {
   const data = route.toolId ? toolContent[route.toolId] : undefined,
     [title, description] = data
-      ? [data.title + ' · Pocket', data.description]
-      : (mainTitles[route.view] ?? [
-          'Your workspace · Pocket PDF Workshop',
-          'Your local document workspace.',
-        ]);
-  document.title = title;
+      ? [data.title + ' · {brand}', data.description]
+      : (mainTitles[route.view] ?? ['Your workspace · {brand}', 'Your local document workspace.']);
+  const identity = (value: string) => value.replaceAll('{brand}', brand.name);
+  document.title = identity(title);
   const meta = (name: string, value: string, property = false) => {
     const key = property ? 'property' : 'name';
     let node = document.head.querySelector<HTMLMetaElement>(`meta[${key}="${name}"]`);
@@ -87,13 +91,14 @@ export function updateSEO(route: Route) {
     }
     node.content = value;
   };
-  meta('description', description);
+  meta('description', identity(description));
   meta(
     'robots',
     ['documents', 'account', '404'].includes(route.view) ? 'noindex,nofollow' : 'index,follow',
   );
-  meta('og:title', title, true);
-  meta('og:description', description, true);
+  meta('og:title', identity(title), true);
+  meta('og:site_name', brand.name, true);
+  meta('og:description', identity(description), true);
   const url =
     (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') +
     (data ? toolPath(route.toolId!) : pathForView(route.view));

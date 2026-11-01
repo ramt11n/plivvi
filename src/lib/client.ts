@@ -65,5 +65,5 @@ export async function downloadAll(outputs: Output[]) {
   const entries: Record<string, Uint8Array> = {};
   for (const [i, o] of outputs.entries())
     entries[entries[o.name] ? `${i + 1}-${o.name}` : o.name] = o.data;
-  download({ name: 'pocket-documents.zip', data: zipSync(entries), type: 'application/zip' });
+  download({ name: 'plivvi-documents.zip', data: zipSync(entries), type: 'application/zip' });
 }

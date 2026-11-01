@@ -1,96 +1,149 @@
-import { useEffect, useState } from 'react';
-import { ArrowRight, Check, LogOut, Mail, ShieldCheck, UserRound, X } from 'lucide-react';
-import { account, authClient, authMessage, type Account } from '../integrations/auth';
-import { integrationConfig, maker } from '../integrations/config';
-export default function AccountDialog({
-  onClose,
-  onAccount,
-}: {
-  onClose: () => void;
-  onAccount: (account: Account | null) => void;
-}) {
-  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin'),
-    [configured, setConfigured] = useState<boolean | null>(null),
-    [user, setUser] = useState<Account | null>(null),
+import { useEffect, useRef, useState } from 'react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  FolderOpen,
+  LogOut,
+  Mail,
+  Plus,
+  ShieldCheck,
+  UserRound,
+  X,
+} from 'lucide-react';
+import {
+  accountState,
+  subscribeAccounts,
+  newAccountSession,
+  activateAccount,
+  switchAccount,
+  signOutAccount,
+  authClient,
+  authMessage,
+  authDeadline,
+} from '../integrations/auth';
+import { disconnectCloud } from '../integrations/cloud';
+import { brand } from '../integrations/config';
+import { workspaceId } from '../lib/workspace';
+import Brand from './Brand';
+
+export default function AccountDialog({ onClose }: { onClose: () => void }) {
+  const [state, setState] = useState(accountState),
+    [mode, setMode] = useState<'manage' | 'signin' | 'signup' | 'reset'>(() =>
+      accountState().accounts.length ? 'manage' : 'signin',
+    ),
     [name, setName] = useState(''),
     [email, setEmail] = useState(''),
     [password, setPassword] = useState(''),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [message, setMessage] = useState('');
+  const pending = useRef<Awaited<ReturnType<typeof newAccountSession>> | undefined>(undefined);
+  const mounted = useRef(true),
+    operation = useRef(0);
+  useEffect(() => subscribeAccounts(setState), []);
   useEffect(() => {
-    let alive = true,
-      unsubscribe: () => void = () => {};
-    integrationConfig()
-      .then(async (c) => {
-        const ready = !!(
-          c.firebase?.apiKey &&
-          c.firebase.authDomain &&
-          c.firebase.appId &&
-          c.firebase.projectId
-        );
-        if (alive) setConfigured(ready);
-        if (!ready) return;
-        const auth = await authClient(),
-          { onAuthStateChanged } = await import('firebase/auth');
-        if (!alive) return;
-        unsubscribe = onAuthStateChanged(auth, (u) => {
-          const next = u ? account(u) : null;
-          setUser(next);
-          onAccount(next);
-        });
-      })
-      .catch((e) => {
-        if (alive) {
-          setConfigured(false);
-          setError(authMessage(e));
-        }
-      });
+    mounted.current = true;
     return () => {
-      alive = false;
-      unsubscribe();
+      mounted.current = false;
+      operation.current++;
     };
   }, []);
+  function changeMode(next: typeof mode) {
+    operation.current++;
+    pending.current = undefined;
+    setBusy(false);
+    setMode(next);
+    setError('');
+    setMessage('');
+    setPassword('');
+  }
   async function submit(google = false) {
+    const ticket = ++operation.current;
+    const current = () => mounted.current && operation.current === ticket;
     setBusy(true);
     setError('');
     setMessage('');
     try {
-      const auth = await authClient(),
+      const slot = (pending.current ??= await authDeadline(newAccountSession(), 20000)),
         sdk = await import('firebase/auth');
+      if (!current()) return;
+      let abandoned = false;
+      async function signIn<T>(job: Promise<T>, milliseconds = 30000) {
+        const tracked = job.then((result) => {
+          if (abandoned || !current()) {
+            sdk.signOut(slot.auth).catch(() => {});
+            throw Error('The sign-in request was cancelled.');
+          }
+          return result;
+        });
+        try {
+          return await authDeadline(tracked, milliseconds);
+        } catch (error) {
+          abandoned = true;
+          pending.current = undefined;
+          throw error;
+        }
+      }
+      if (mode === 'reset' && !google) {
+        try {
+          await authDeadline(sdk.sendPasswordResetEmail(slot.auth, email));
+        } catch (e) {
+          if ((e as { code?: string }).code !== 'auth/user-not-found') throw e;
+        }
+        if (current())
+          setMessage(
+            'If this address has an account, a reset email will arrive. Check your spam folder too.',
+          );
+        return;
+      }
       if (google) {
-        const result = await sdk.signInWithPopup(auth, new sdk.GoogleAuthProvider());
-        setUser(account(result.user));
-        onAccount(account(result.user));
-        setMessage('Signed in. Your PDFs remain on this device.');
-      } else if (mode === 'reset') {
-        await sdk.sendPasswordResetEmail(auth, email);
-        setMessage(
-          'If this address has an account, a password reset email will arrive. Check your spam folder too.',
+        const provider = new sdk.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        await signIn(
+          sdk.signInWithPopup(slot.auth, provider, sdk.browserPopupRedirectResolver),
+          120000,
         );
       } else if (mode === 'signup') {
-        const result = await sdk.createUserWithEmailAndPassword(auth, email, password);
-        if (name.trim()) await sdk.updateProfile(result.user, { displayName: name.trim() });
-        await sdk.sendEmailVerification(result.user);
-        setUser(account(result.user));
-        onAccount(account(result.user));
-        setMessage('Your account is ready. Check your email to verify your address.');
-      } else {
-        const result = await sdk.signInWithEmailAndPassword(auth, email, password);
-        setUser(account(result.user));
-        onAccount(account(result.user));
-        setMessage('Welcome back. Your local workspace is ready.');
+        const result = await signIn(sdk.createUserWithEmailAndPassword(slot.auth, email, password));
+        if (name.trim()) {
+          try {
+            await authDeadline(sdk.updateProfile(result.user, { displayName: name.trim() }));
+          } catch {
+            setMessage('Your account is created. The profile name could not be saved yet.');
+          }
+        }
+        try {
+          await authDeadline(sdk.sendEmailVerification(result.user));
+          setMessage('Account created. Check your email to verify your address.');
+        } catch {
+          setMessage(
+            'Account created. The verification email could not be sent; you can retry below.',
+          );
+        }
+      } else await signIn(sdk.signInWithEmailAndPassword(slot.auth, email, password));
+      if (!current()) {
+        await sdk.signOut(slot.auth);
+        return;
       }
+      await activateAccount(slot.id);
+      pending.current = undefined;
+      setPassword('');
+      setMode('manage');
+      if (google || mode === 'signin')
+        setMessage('Signed in. This account’s document workspace is ready.');
     } catch (e) {
-      setError(authMessage(e));
+      if (current()) setError(authMessage(e));
     } finally {
-      setBusy(false);
+      if (current()) setBusy(false);
     }
   }
+  const active = state.active;
   return (
     <div className="modal-shade account-shade">
       <section
-        className="info-dialog account-dialog"
+        className="info-dialog account-dialog account-hub"
         role="dialog"
         aria-modal="true"
         aria-labelledby="account-title"
@@ -98,203 +151,284 @@ export default function AccountDialog({
         <button className="icon-button dialog-close" aria-label="Close account" onClick={onClose}>
           <X />
         </button>
-        <span className="tool-icon violet">
-          <UserRound />
-        </span>
-        <span className="eyebrow">ALWAYS OPTIONAL. ALWAYS FREE.</span>
+        <div className="account-hub-brand">
+          <Brand />
+          <span>YOUR OWN LITTLE CORNER</span>
+        </div>
         <h2 id="account-title">
-          {user
-            ? 'Make yourself at home.'
+          {mode === 'manage'
+            ? 'One place. Your different worlds.'
             : mode === 'signup'
-              ? 'A small account. No paywalls.'
+              ? 'Make room for your work.'
               : mode === 'reset'
                 ? 'Let’s get you back in.'
-                : 'Welcome to your pocket.'}
+                : `Welcome to ${brand.name}.`}
         </h2>
-        {configured === null ? (
+        <p className="account-intro">
+          {mode === 'manage'
+            ? 'Switch accounts to open their separate document libraries.'
+            : 'Free tools, a personal document workspace, and no feature paywalls.'}
+        </p>
+        {!state.ready ? (
           <p className="processing-line">
             <span className="spinner" />
-            Checking sign-in…
+            Restoring your accounts…
           </p>
-        ) : !configured ? (
-          <>
-            <p>
-              Accounts are being prepared on this deployment. You can already use every PDF tool
-              without signing in.
-            </p>
-            <div className="account-guest-note">
-              <ShieldCheck size={21} />
-              <span>Your files stay in your browser. There is no account-based feature limit.</span>
-            </div>
-            <button className="button primary full" onClick={onClose}>
-              Continue as a guest <ArrowRight size={16} />
-            </button>
-            <a
-              className="text-button"
-              href={`mailto:${maker.email}?subject=Pocket%20account%20availability`}
-            >
-              Ask Ramtin about accounts <Mail size={14} />
-            </a>
-          </>
-        ) : user ? (
-          <>
-            <div className="account-profile">
-              <div>{user.name.charAt(0).toUpperCase()}</div>
-              <span>
-                <strong>{user.name}</strong>
-                <small>{user.email}</small>
-                <small>{user.verified ? 'Email verified' : 'Email not verified yet'}</small>
-              </span>
-            </div>
-            <p>
-              Signed in for your profile. Document processing and this workspace stay on the current
-              device. Cloud storage is a separate connection.
-            </p>
-            {!user.verified && (
-              <button
-                className="button secondary full"
-                disabled={busy}
-                onClick={async () => {
-                  setBusy(true);
-                  try {
-                    const auth = await authClient();
-                    if (auth.currentUser) {
-                      await (await import('firebase/auth')).sendEmailVerification(auth.currentUser);
-                      setMessage('Verification email sent.');
-                    }
-                  } catch (e) {
-                    setError(authMessage(e));
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                Send verification email
-              </button>
-            )}
-            <button
-              className="button secondary full"
-              disabled={busy}
-              onClick={async () => {
-                try {
-                  await (await import('firebase/auth')).signOut(await authClient());
-                  setUser(null);
-                  onAccount(null);
-                } catch (e) {
-                  setError(authMessage(e));
-                }
-              }}
-            >
-              <LogOut size={16} />
-              Sign out
-            </button>
-          </>
         ) : (
           <>
-            {mode !== 'reset' && (
+            {(mode === 'manage' || !state.configured) && (
+              <div className="account-session-list">
+                <button
+                  className={`account-session ${!active ? 'current' : ''}`}
+                  onClick={() => {
+                    switchAccount(null);
+                    onClose();
+                  }}
+                >
+                  <span className="session-avatar guest">
+                    <FolderOpen size={21} />
+                  </span>
+                  <span>
+                    <strong>Guest workspace</strong>
+                    <small>On this browser · no sign-in needed</small>
+                  </span>
+                  {!active ? <CheckCircle2 size={19} /> : <ArrowRight size={17} />}
+                </button>
+                {state.accounts.map((a) => (
+                  <div
+                    className={`account-session-wrap ${active?.id === a.id ? 'current' : ''}`}
+                    key={a.id}
+                  >
+                    <button
+                      className="account-session"
+                      disabled={busy}
+                      onClick={() => {
+                        switchAccount(a.id);
+                        onClose();
+                      }}
+                    >
+                      <span className="session-avatar">{a.name.charAt(0).toUpperCase()}</span>
+                      <span>
+                        <strong>{a.name}</strong>
+                        <small>{a.email}</small>
+                        <small>
+                          {a.verified ? 'Verified account' : 'Email verification pending'}
+                        </small>
+                      </span>
+                      {active?.id === a.id && <CheckCircle2 size={19} />}
+                    </button>
+                    <button
+                      className="icon-button"
+                      aria-label={`Sign out ${a.email}`}
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        setError('');
+                        try {
+                          await disconnectCloud(workspaceId(a.uid));
+                          await signOutAccount(a.id);
+                          setMessage('Signed out. Downloaded copies and local files are kept.');
+                        } catch (e) {
+                          setError(authMessage(e));
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      <LogOut size={17} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!state.configured ? (
+              <div className="account-service-note">
+                <ShieldCheck size={20} />
+                <div>
+                  <strong>Online sign-in needs owner setup.</strong>
+                  <p>
+                    This deployment isn’t connected to its authentication project yet. Your guest
+                    workspace and document tools are available.
+                  </p>
+                </div>
+              </div>
+            ) : mode === 'manage' ? (
               <>
                 <button
-                  className="button secondary full google-signin"
+                  className="button primary full"
                   disabled={busy}
-                  onClick={() => submit(true)}
+                  onClick={() => changeMode('signin')}
                 >
-                  <span className="google-g" aria-hidden="true">
-                    G
-                  </span>
-                  Continue with Google
+                  <Plus size={17} />
+                  Add another account
                 </button>
-                <div className="account-divider">
-                  <span>or use email</span>
+                {active && !active.verified && (
+                  <div className="verification-actions">
+                    <button
+                      className="text-button"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          const auth = await authClient(active.id);
+                          if (auth.currentUser)
+                            await (
+                              await import('firebase/auth')
+                            ).sendEmailVerification(auth.currentUser);
+                          setMessage('Verification email sent.');
+                        } catch (e) {
+                          setError(authMessage(e));
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      <Mail size={14} />
+                      Resend verification email
+                    </button>
+                    <button
+                      className="text-button"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          const auth = await authClient(active.id);
+                          if (auth.currentUser)
+                            await (await import('firebase/auth')).reload(auth.currentUser);
+                          await activateAccount(active.id);
+                          setMessage(
+                            auth.currentUser?.emailVerified
+                              ? 'Email verified.'
+                              : 'Verification is still pending.',
+                          );
+                        } catch (e) {
+                          setError(authMessage(e));
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      I’ve verified my email
+                    </button>
+                  </div>
+                )}
+                <p className="account-fineprint">
+                  Libraries and annotation drafts stay separate by account on this browser. Accounts
+                  do not automatically sync files between devices. Use a cloud connection or export
+                  for that.
+                </p>
+              </>
+            ) : (
+              <>
+                {state.accounts.length > 0 && (
+                  <button className="text-button account-back" onClick={() => changeMode('manage')}>
+                    <ArrowLeft size={14} />
+                    Back to accounts
+                  </button>
+                )}
+                {mode !== 'reset' && (
+                  <>
+                    <button
+                      className="button secondary full google-signin"
+                      disabled={busy}
+                      onClick={() => submit(true)}
+                    >
+                      <span className="google-g" aria-hidden="true">
+                        G
+                      </span>
+                      {busy ? 'Connecting securely…' : 'Continue with Google'}
+                    </button>
+                    <div className="account-divider">
+                      <span>or use email</span>
+                    </div>
+                  </>
+                )}
+                <form
+                  className="account-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    submit();
+                  }}
+                >
+                  {mode === 'signup' && (
+                    <label>
+                      Your name
+                      <input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        autoComplete="name"
+                        maxLength={80}
+                      />
+                    </label>
+                  )}
+                  <label>
+                    Email
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
+                    />
+                  </label>
+                  {mode !== 'reset' && (
+                    <label>
+                      Password
+                      <input
+                        type="password"
+                        required
+                        minLength={mode === 'signup' ? 10 : 1}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                      />
+                      {mode === 'signup' && (
+                        <small>
+                          At least 10 characters. Your password goes directly to Firebase
+                          Authentication.
+                        </small>
+                      )}
+                    </label>
+                  )}
+                  <button className="button primary full" disabled={busy}>
+                    {busy ? (
+                      <span className="spinner" />
+                    ) : mode === 'signup' ? (
+                      'Create free account'
+                    ) : mode === 'reset' ? (
+                      'Send reset email'
+                    ) : (
+                      'Sign in'
+                    )}
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+                <div className="account-switch">
+                  <button
+                    className="text-button"
+                    onClick={() => changeMode(mode === 'signup' ? 'signin' : 'signup')}
+                  >
+                    {mode === 'signup'
+                      ? 'Already have an account? Sign in'
+                      : 'New here? Create an account'}
+                  </button>
+                  {mode === 'signin' && (
+                    <button className="text-button" onClick={() => changeMode('reset')}>
+                      Forgot password?
+                    </button>
+                  )}
                 </div>
+                <p className="account-fineprint">
+                  You can keep up to 10 accounts signed in in this tab. Sessions end when this
+                  browser session is cleared. Every tool also works in your guest workspace.
+                </p>
               </>
             )}
-            <form
-              className="account-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                submit();
-              }}
-            >
-              {mode === 'signup' && (
-                <label>
-                  Your name
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    autoComplete="name"
-                    maxLength={80}
-                  />
-                </label>
-              )}
-              <label>
-                Email
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                />
-              </label>
-              {mode !== 'reset' && (
-                <label>
-                  Password
-                  <input
-                    type="password"
-                    required
-                    minLength={mode === 'signup' ? 10 : 1}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                  />
-                  {mode === 'signup' && (
-                    <small>
-                      Use at least 10 characters. Your password goes directly to the authentication
-                      provider.
-                    </small>
-                  )}
-                </label>
-              )}
-              <button className="button primary full" disabled={busy}>
-                {busy ? (
-                  <span className="spinner" />
-                ) : mode === 'signup' ? (
-                  'Create free account'
-                ) : mode === 'reset' ? (
-                  'Send reset email'
-                ) : (
-                  'Sign in'
-                )}
-                <ArrowRight size={16} />
-              </button>
-            </form>
-            <div className="account-switch">
-              <button
-                className="text-button"
-                onClick={() => {
-                  setMode(mode === 'signup' ? 'signin' : 'signup');
-                  setError('');
-                  setMessage('');
-                }}
-              >
-                {mode === 'signup'
-                  ? 'Already have an account? Sign in'
-                  : 'New here? Create an account'}
-              </button>
-              {mode === 'signin' && (
-                <button className="text-button" onClick={() => setMode('reset')}>
-                  Forgot password?
-                </button>
-              )}
-            </div>
-            <p className="account-fineprint">
-              All tools also work as a guest. Signing in does not upload or sync your documents.
-            </p>
           </>
         )}
-        {error && (
+        {(error || state.error) && (
           <p className="error-message" role="alert">
-            {error}
+            {error || state.error}
           </p>
         )}
         {message && (

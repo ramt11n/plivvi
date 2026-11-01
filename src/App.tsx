@@ -36,26 +36,31 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import ThemePicker from './components/ThemePicker';
+import Brand from './components/Brand';
+import FeatureShowcase from './components/FeatureShowcase';
+import { brand } from './integrations/config';
 import { PublicPage, SiteFooter, SponsorPlacement, ToolLanding } from './components/PublicPages';
 import { currentRoute, navigateTo, pathForView, toolPath, updateSEO } from './seo/routes';
 import { sourceUrl } from './integrations/config';
-import type { Account } from './integrations/auth';
+import { accountState, subscribeAccounts } from './integrations/auth';
+import {
+  workspaceId,
+  readDocuments,
+  appendDocuments,
+  removeDocument,
+  updateDocument,
+  clearDocuments,
+  type StoredDocument,
+} from './lib/workspace';
 import { tools, groups, popular, templates, bytes, type Tool } from './lib/catalog';
 import { rpc, download, downloadAll as exportAll, type Output } from './lib/client';
 import Icon from './components/Icon';
 const AccountDialog = lazy(() => import('./components/AccountDialog')),
   CloudDialog = lazy(() => import('./components/CloudDialog'));
 const PDFReader = lazy(() => import('./reader/PDFReader'));
+const Notebooks = lazy(() => import('./notebooks/Notebooks'));
 const ToolPanel = lazy(() => import('./components/ToolPanel')),
   CameraView = lazy(() => import('./components/Camera'));
-type Stored = {
-  id: string;
-  name: string;
-  type: string;
-  data: Uint8Array;
-  date: string;
-  size: number;
-};
 export default function App() {
   const [route, setRoute] = useState(currentRoute),
     [view, setView] = useState(() => currentRoute().view),
@@ -66,8 +71,9 @@ export default function App() {
     [dialog, setDialog] = useState<string | null>(null),
     [camera, setCamera] = useState(false),
     [mobileNav, setMobileNav] = useState(false),
-    [documents, setDocuments] = useState<Stored[]>([]),
+    [documentData, setDocuments] = useState<StoredDocument[]>([]),
     [ready, setReady] = useState(false),
+    [loadedWorkspace, setLoadedWorkspace] = useState<string>(),
     [toast, setToast] = useState(''),
     [busy, setBusy] = useState(false),
     [online, setOnline] = useState(navigator.onLine),
@@ -85,7 +91,55 @@ export default function App() {
     [cloudOutput, setCloudOutput] = useState<Output>(),
     [cloudOpen, setCloudOpen] = useState(false),
     [accountOpen, setAccountOpen] = useState(false),
-    [account, setAccount] = useState<Account | null>(null);
+    [authState, setAuthState] = useState(accountState);
+  const account = authState.active,
+    workspace = workspaceId(account?.uid),
+    workspaceRef = useRef(workspace);
+  workspaceRef.current = workspace;
+  const documents = loadedWorkspace === workspace ? documentData : [],
+    libraryReady = ready && loadedWorkspace === workspace;
+  const [fileQuery, setFileQuery] = useState(''),
+    [folderFilter, setFolderFilter] = useState('all');
+  const [fileEdit, setFileEdit] = useState<{
+    doc: StoredDocument;
+    action: 'rename' | 'folder';
+    value: string;
+    workspace: string;
+  } | null>(null);
+  useEffect(() => subscribeAccounts(setAuthState), []);
+  useEffect(() => {
+    let alive = true;
+    setReady(false);
+    setLoadedWorkspace(undefined);
+    setDocuments([]);
+    setFileQuery('');
+    setFolderFilter('all');
+    setSelected(null);
+    setReaderOpen(false);
+    setCloudOpen(false);
+    setCloudOutput(undefined);
+    setFileEdit(null);
+    setDialog(null);
+    if (!authState.ready) return;
+    readDocuments(workspace)
+      .then((d) => {
+        if (alive) {
+          setDocuments(d);
+          setLoadedWorkspace(workspace);
+          setReady(true);
+        }
+      })
+      .catch(() => {
+        if (alive) {
+          setReady(true);
+          setLoadedWorkspace(workspace);
+          setToast('Local storage is unavailable. You can still process and download files.');
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, [workspace, authState.ready]);
   useEffect(() => {
     const sync = () => {
       const r = currentRoute();
@@ -104,16 +158,6 @@ export default function App() {
   const upload = useRef<HTMLInputElement>(null),
     search = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    import('idb-keyval')
-      .then(({ get }) => get<Stored[]>('pocket-documents'))
-      .then((d) => {
-        setDocuments(d ?? []);
-        setReady(true);
-      })
-      .catch(() => {
-        setReady(true);
-        setToast('Local storage is unavailable. You can still process and download files.');
-      });
     const net = () => setOnline(navigator.onLine),
       install = (e: Event) => {
         e.preventDefault();
@@ -122,7 +166,8 @@ export default function App() {
       key = (e: KeyboardEvent) => {
         if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
           e.preventDefault();
-          search.current?.focus();
+          navigateTo('/tools/');
+          setTimeout(() => search.current?.focus(), 0);
         }
         if (e.key === 'Escape') {
           setDialog(null);
@@ -182,27 +227,31 @@ export default function App() {
     );
   }
   async function save(outputs: Output[]) {
-    const entries = outputs.map((o) => ({
-      id: crypto.randomUUID(),
-      name: o.name,
-      type: o.type,
-      data: o.data,
-      date: new Date().toISOString(),
-      size: o.data.length,
-    }));
-    const next = [...entries, ...documents];
-    const { set } = await import('idb-keyval');
-    await set('pocket-documents', next);
-    setDocuments(next);
-    setToast('Saved to this device’s workspace.');
+    if (!authState.ready)
+      throw Error('Your account is still loading. Try saving again in a moment.');
+    const target = workspace;
+    const next = await appendDocuments(target, outputs);
+    if (workspaceRef.current === target) {
+      setDocuments(next);
+      setToast('Saved to this account’s workspace on this device.');
+    }
     navigator.storage?.persist?.().catch(() => {});
   }
   async function remove(id: string) {
-    const next = documents.filter((d) => d.id !== id);
-    const { set } = await import('idb-keyval');
-    await set('pocket-documents', next);
-    setDocuments(next);
-    setToast('Removed from this workspace.');
+    const target = workspace,
+      next = await removeDocument(target, id);
+    if (workspaceRef.current === target) {
+      setDocuments(next);
+      setToast('Removed from this workspace.');
+    }
+  }
+  function editDocument(d: StoredDocument, action: 'rename' | 'folder') {
+    setFileEdit({
+      doc: d,
+      action,
+      value: action === 'rename' ? d.name : (d.folder ?? ''),
+      workspace,
+    });
   }
   async function sample() {
     setBusy(true);
@@ -265,6 +314,9 @@ export default function App() {
         openTool(tool);
       }}
     >
+      <span className="tool-serial" aria-hidden="true">
+        {String(tools.findIndex((t) => t.id === tool.id) + 1).padStart(2, '0')}
+      </span>
       <span className={`tool-icon ${tool.color}`}>
         <Icon name={tool.icon} />
       </span>
@@ -277,7 +329,15 @@ export default function App() {
   );
   const DocumentList = ({ all = false }: { all?: boolean }) => (
     <div className="document-list">
-      {(all ? documents : documents.slice(0, 4)).map((d) => (
+      {(all
+        ? documents.filter(
+            (d) =>
+              d.name.toLowerCase().includes(fileQuery.toLowerCase()) &&
+              (folderFilter === 'all' ||
+                (folderFilter === 'unfiled' ? !d.folder : 'folder:' + d.folder === folderFilter)),
+          )
+        : documents.slice(0, 4)
+      ).map((d) => (
         <div className="document-row" key={d.id}>
           <button
             className="document-open"
@@ -321,6 +381,24 @@ export default function App() {
             <Cloud size={17} />
           </button>
           {all && (
+            <>
+              <button
+                className="icon-button"
+                aria-label={`Rename ${d.name}`}
+                onClick={() => editDocument(d, 'rename')}
+              >
+                <FileText size={16} />
+              </button>
+              <button
+                className="icon-button"
+                aria-label={`Move ${d.name} to folder`}
+                onClick={() => editDocument(d, 'folder')}
+              >
+                <FolderPlus size={16} />
+              </button>
+            </>
+          )}
+          {all && (
             <button
               className="icon-button delete"
               aria-label={`Delete ${d.name}`}
@@ -335,103 +413,76 @@ export default function App() {
   );
   return (
     <div className="app-shell">
-      <aside className={`sidebar ${mobileNav ? 'open' : ''}`}>
-        <button className="brand" aria-label="Pocket home" onClick={() => nav('home')}>
-          <span className="brand-symbol">
-            <svg viewBox="0 0 28 28" fill="none">
-              <path d="M7 4.5h9l5 5V23H7V4.5Z" fill="white" fillOpacity=".95" />
-              <path d="M16 4.5v5h5" stroke="#7779dd" strokeWidth="1.5" />
-              <path
-                d="m10 15 3 3 5-5"
-                stroke="#6c6de1"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
-          <span>
-            Pocket<span className="brand-dot">.</span>
-          </span>
+      <aside className={`sidebar studio-rail ${mobileNav ? 'open' : ''}`}>
+        <button className="rail-home" aria-label={`${brand.name} home`} onClick={() => nav('home')}>
+          <Brand iconOnly />
+          <span className="rail-brand-name">{brand.name}</span>
         </button>
-        <div className="workspace-label">YOUR WORKSPACE</div>
-        <nav>
+        <nav aria-label="Workspace navigation">
           {[
-            { id: 'home', name: 'Overview', icon: Home },
-            { id: 'reader', name: 'PDF reader & editor', icon: BookOpen },
-            { id: 'tools', name: 'All tools', icon: Grid2X2 },
-            { id: 'documents', name: 'My documents', icon: FolderOpen },
-            { id: 'templates', name: 'Templates', icon: LayoutTemplate },
+            { id: 'home', name: 'Workbench', icon: Home },
+            { id: 'reader', name: 'Reader', icon: BookOpen },
+            { id: 'tools', name: 'Tools', icon: Grid2X2 },
+            { id: 'documents', name: 'Files', icon: FolderOpen },
+            { id: 'notebooks', name: 'Notebooks', icon: BookOpen },
+            { id: 'templates', name: 'Layouts', icon: LayoutTemplate },
           ].map((n) => (
             <button
               key={n.id}
-              className={`nav-item ${view === n.id ? 'active' : ''}`}
+              className={`rail-item ${view === n.id ? 'active' : ''}`}
+              aria-label={n.name}
+              aria-current={view === n.id ? 'page' : undefined}
               onClick={() => nav(n.id)}
             >
-              <n.icon size={19} />
+              <n.icon size={22} />
               <span>{n.name}</span>
-              {n.id === 'tools' && <small>{tools.length}</small>}
-              {n.id === 'documents' && documents.length > 0 && <small>{documents.length}</small>}
+              {n.id === 'documents' && documents.length > 0 && (
+                <i className="rail-count">{documents.length}</i>
+              )}
             </button>
           ))}
         </nav>
-        <div className="sidebar-divider" />
-        <div className="workspace-label">QUICK START</div>
-        <button
-          className="nav-item"
-          onClick={() => {
-            openTool(tools[0]);
-            setCamera(true);
-          }}
-        >
-          <Camera size={19} />
-          <span>Scan a document</span>
-          <Plus size={15} />
-        </button>
-        <button className="nav-item" onClick={() => upload.current?.click()}>
-          <Upload size={19} />
-          <span>Import files</span>
-        </button>
-        <button
-          className="nav-item"
-          onClick={() => {
-            setCloudOutput(undefined);
-            setCloudOpen(true);
-            setMobileNav(false);
-          }}
-        >
-          <Cloud size={19} />
-          <span>Cloud connections</span>
-        </button>
-        <div className="sidebar-bottom">
-          <div className="privacy-card">
-            <div className="privacy-symbol">
-              <ShieldCheck size={22} />
-            </div>
-            <strong>Your files. Your space.</strong>
-            <p>
-              Local by default.
-              <br />
-              Cloud only when you choose.
-            </p>
-            <button onClick={() => setDialog('privacy')}>
-              How privacy works <ArrowUpRight size={13} />
-            </button>
-          </div>
-          <ThemePicker compact />
-          <button className="nav-item" onClick={() => setDialog('install')}>
-            <Smartphone size={18} />
-            <span>Install Pocket</span>
-            <Download size={15} />
+        <div className="rail-bottom">
+          <button
+            className="rail-item"
+            aria-label="Import files"
+            onClick={() => upload.current?.click()}
+          >
+            <Upload size={21} />
+            <span>Import</span>
           </button>
-          <button className="nav-item" onClick={() => setDialog('settings')}>
-            <Settings size={18} />
+          <button
+            className="rail-item"
+            aria-label="Cloud connections"
+            onClick={() => {
+              setCloudOutput(undefined);
+              setCloudOpen(true);
+              setMobileNav(false);
+            }}
+          >
+            <Cloud size={21} />
+            <span>Cloud</span>
+          </button>
+          <button
+            className="rail-item"
+            aria-label="Appearance and settings"
+            onClick={() => {
+              setDialog('settings');
+              setMobileNav(false);
+            }}
+          >
+            <Settings size={21} />
             <span>Settings</span>
           </button>
-          <div className="sidebar-foot">
-            <span>Pocket PDF Workshop</span>
-            <span>Made for your everyday.</span>
-          </div>
+          <a
+            className="rail-source"
+            href="https://github.com/ramt11n/pocket-pdf"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Open source on GitHub"
+          >
+            <Code2 size={19} />
+          </a>
         </div>
       </aside>
       {mobileNav && (
@@ -442,48 +493,72 @@ export default function App() {
         />
       )}
       <div className="main-shell">
-        <header className="topbar">
-          <div className="topbar-context">
+        <header className="topbar studio-topbar">
+          <div className="studio-header-start">
             <button
-              className="icon-button mobile-menu"
+              className="icon-button studio-menu"
               aria-label="Open navigation"
+              aria-expanded={mobileNav}
               onClick={() => setMobileNav(true)}
             >
-              <Menu />
+              <Menu size={23} />
             </button>
-            <span className="workspace-avatar">
-              <FileText size={14} />
-            </span>
-            <span>Your workspace</span>
-            <ChevronRight size={14} />
-            <strong>
+            <button
+              className="header-brand"
+              aria-label={`${brand.name} home`}
+              onClick={() => nav('home')}
+            >
+              <Brand />
+            </button>
+            <span className="studio-header-divider" />
+            <span className="studio-view-name">
               {
                 {
-                  home: 'Overview',
-                  tools: 'All tools',
-                  documents: 'My documents',
-                  templates: 'Templates',
+                  home: 'Your workbench',
+                  tools: 'The toolbox',
+                  documents: 'Your files',
+                  notebooks: 'Your notebooks',
+                  templates: 'Page starters',
                   tool: tools.find((t) => t.id === route.toolId)?.title,
-                  about: 'About',
-                  privacy: 'Privacy',
-                  support: 'Support',
-                  contact: 'Contact',
-                  account: 'Account',
+                  about: 'Behind the app',
+                  privacy: 'Your privacy',
+                  support: 'Support the project',
+                  contact: 'Say hello',
+                  account: 'Your account',
                 }[view]
               }
-            </strong>
+            </span>
           </div>
           <div className="topbar-actions">
-            <span className={`connection-pill ${online ? '' : 'offline'}`}>
-              {online ? <span className="online-dot" /> : <WifiOff size={13} />}{' '}
-              {online ? 'On-device processing' : 'Offline mode'}
-            </span>
-            <button className="account-button" onClick={() => setAccountOpen(true)}>
-              <UserRound size={17} />
-              <span>{account?.name ?? 'Sign in'}</span>
+            <button className="header-search" aria-label="Find a tool" onClick={() => nav('tools')}>
+              <Search size={17} />
+              <span>Find a tool</span>
+              <kbd>⌘ K</kbd>
             </button>
-            <button className="icon-button" aria-label="Help" onClick={() => setDialog('help')}>
-              <HelpCircle size={20} />
+            <span className={`connection-pill ${online ? '' : 'offline'}`}>
+              {online ? <span className="online-dot" /> : <WifiOff size={13} />}
+              <span className="connection-text">{online ? 'On your device' : 'Offline'}</span>
+            </span>
+            <button
+              className="icon-button header-settings"
+              aria-label="Appearance and settings"
+              onClick={() => setDialog('settings')}
+            >
+              <Settings size={20} />
+            </button>
+            <button
+              className="account-button"
+              aria-label={account ? `Account: ${account.name}` : 'Account'}
+              onClick={() => setAccountOpen(true)}
+            >
+              {account ? (
+                <span className="account-initial">{account.name.charAt(0).toUpperCase()}</span>
+              ) : (
+                <UserRound size={20} />
+              )}
+              {authState.accounts.length > 1 && (
+                <i className="account-count">{authState.accounts.length}</i>
+              )}
             </button>
           </div>
         </header>
@@ -507,7 +582,7 @@ export default function App() {
               e.target.value = '';
             }}
           />
-          {['home', 'tools', 'documents', 'templates'].includes(view) && (
+          {['tools', 'documents', 'templates'].includes(view) && (
             <div className="page-heading">
               <div>
                 <span className="eyebrow">
@@ -543,103 +618,137 @@ export default function App() {
           )}
           {view === 'home' && (
             <>
-              <section className="hero">
-                <div className="hero-copy">
-                  <span className="hero-badge">
-                    <span /> Open source. Vibe coded. Always free.
-                  </span>
-                  <h2>
-                    From paper pile
+              <section className="workbench-hero">
+                <div className="workbench-copy">
+                  <div className="workbench-kicker">
+                    <span className="live-dot" /> YOUR FILES. YOUR CALL.
+                  </div>
+                  <h1>
+                    Your docs.
                     <br />
-                    to peace of mind.
-                  </h2>
+                    <span>Your next move.</span>
+                  </h1>
                   <p>
-                    Scan, organize, sign, and convert.
-                    <br />
-                    Everything your documents need, in one pocket.
+                    Read, scan, sign, and put your pages in order.
+                    <br className="desktop-break" /> A useful workspace that stays on your device.
                   </p>
-                  <div className="hero-actions">
-                    <button
-                      className="button primary"
-                      onClick={() => {
-                        openTool(tools[0]);
-                        setCamera(true);
-                      }}
-                    >
-                      <Camera size={18} />
-                      Scan a document
+                  <div className="workbench-actions">
+                    <button className="button primary" onClick={() => upload.current?.click()}>
+                      <Plus size={19} />
+                      Open a file
                     </button>
-                    <button
-                      className="button hero-secondary"
-                      onClick={() => upload.current?.click()}
-                    >
-                      <Upload size={17} />
-                      Upload files
+                    <button className="button secondary" onClick={() => nav('reader')}>
+                      <BookOpen size={18} />
+                      Start reading
                     </button>
                   </div>
-                  <div className="hero-trust">
-                    <ShieldCheck size={14} />
-                    <span>Private by design</span>
-                    <span className="dot-separator" /> <span>Files stay on your device</span>
+                  <div className="workbench-principles">
+                    <span>
+                      <ShieldCheck size={15} />
+                      Local processing
+                    </span>
+                    <span>
+                      <Code2 size={15} />
+                      Open source
+                    </span>
+                    <span>No feature paywalls</span>
                   </div>
                 </div>
-                <div className="hero-art" aria-hidden="true">
-                  <span className="art-orbit orbit-one" />
-                  <span className="art-orbit orbit-two" />
-                  <div className="art-spark spark-one">✦</div>
-                  <div className="art-spark spark-two">✦</div>
-                  <div className="paper-back">
-                    <div />
-                    <div />
-                    <div />
-                    <div />
+                <div className="drop-workbench">
+                  <div className="drop-caption-top">
+                    <span>YOUR DOCUMENT STARTS HERE</span>
+                    <span className="drop-shortcut">↗</span>
                   </div>
-                  <div className="paper-front">
-                    <div className="paper-brand">
-                      <span />
-                      pocket studio
-                    </div>
-                    <div className="paper-line wide" />
-                    <div className="paper-line mid" />
-                    <div className="paper-rule" />
-                    <div className="paper-row">
-                      <span>Less paperwork.</span>
-                      <span>✓</span>
-                    </div>
-                    <div className="paper-row">
-                      <span>More headspace.</span>
-                      <span>✓</span>
-                    </div>
-                    <div className="paper-lines">
-                      <i />
-                      <i />
-                      <i />
-                    </div>
-                    <div className="paper-signature">All sorted.</div>
-                    <span className="pdf-label">PDF</span>
-                  </div>
-                  <div className="art-done">
-                    <span>
-                      <Check size={17} />
+                  <button
+                    className="document-drop-card"
+                    aria-label="Choose documents from your device"
+                    onClick={() => upload.current?.click()}
+                  >
+                    <span className="page-character" aria-hidden="true">
+                      <span className="character-sheet sheet-mint" />
+                      <span className="character-sheet sheet-peach" />
+                      <span className="character-sheet sheet-white">
+                        <span className="character-stamp" />
+                        <span className="character-eyes">
+                          <i />
+                          <i />
+                        </span>
+                        <span className="character-line" />
+                        <span className="character-line short" />
+                        <span className="character-smile" />
+                      </span>
+                      <span className="character-plus">+</span>
                     </span>
-                    <div>
-                      <strong>Looking sharp.</strong>
-                      <small>Ready for whatever’s next.</small>
-                    </div>
-                  </div>
-                  <div className="art-floating-icon">
-                    <Icon name="ScanLine" size={27} />
+                    <strong>Drop it here.</strong>
+                    <span>
+                      Or choose a file from your device <ArrowRight size={15} />
+                    </span>
+                    <small>PDF, images, Office, and text files</small>
+                  </button>
+                  <div className="drop-footnote">
+                    <ShieldCheck size={13} />
+                    No uploads to a processing server.
                   </div>
                 </div>
               </section>
+              <section className="quick-moves" aria-label="Quick document tasks">
+                {[
+                  {
+                    id: 'scan',
+                    title: 'Scan & clean',
+                    note: 'Paper to pixels',
+                    icon: Camera,
+                    tone: 'mint',
+                  },
+                  {
+                    id: 'organize',
+                    title: 'Arrange pages',
+                    note: 'Get the order right',
+                    icon: Grid2X2,
+                    tone: 'peach',
+                  },
+                  {
+                    id: 'sign',
+                    title: 'Sign a document',
+                    note: 'Add your finishing touch',
+                    icon: FileText,
+                    tone: 'lilac',
+                  },
+                  {
+                    id: 'image-pdf',
+                    title: 'Make a PDF',
+                    note: 'Bring your images together',
+                    icon: Plus,
+                    tone: 'sky',
+                  },
+                ].map((t) => (
+                  <button
+                    key={t.id}
+                    className={`quick-move ${t.tone}`}
+                    onClick={() => openTool(tools.find((v) => v.id === t.id)!)}
+                  >
+                    <span className="quick-move-icon">
+                      <t.icon size={24} />
+                    </span>
+                    <span>
+                      <strong>{t.title}</strong>
+                      <small>{t.note}</small>
+                    </span>
+                    <ArrowUpRight size={18} />
+                  </button>
+                ))}
+              </section>
+              <FeatureShowcase
+                onNotebook={() => nav('notebooks')}
+                onAction={(id) => openTool(tools.find((t) => t.id === id)!)}
+              />
               <section className="section">
                 <div className="section-heading">
                   <div>
                     <h2>
-                      Your everyday essentials{' '}
-                      <span className="count-pill">{favorites.length}</span>
+                      Your tool shelf <span className="count-pill">{favorites.length}</span>
                     </h2>
-                    <p>A few favorites to make quick work of it.</p>
+                    <p>The tools you keep within reach.</p>
                   </div>
                   <button className="text-button" onClick={() => setDialog('favorites')}>
                     Customize <Settings size={14} />
@@ -660,14 +769,19 @@ export default function App() {
               <section className="section documents-section">
                 <div className="section-heading">
                   <div>
-                    <h2>Recent documents</h2>
-                    <p>Pick up where you left off.</p>
+                    <h2>Pick up where you left off</h2>
+                    <p>Your saved work, in this browser.</p>
                   </div>
                   <button className="text-button" onClick={() => nav('documents')}>
                     View all <ArrowRight size={14} />
                   </button>
                 </div>
-                {documents.length ? (
+                {!libraryReady ? (
+                  <p className="library-loading" role="status">
+                    <span className="spinner" />
+                    Opening your workspace…
+                  </p>
+                ) : documents.length ? (
                   <DocumentList />
                 ) : (
                   <div className="empty-documents">
@@ -675,7 +789,7 @@ export default function App() {
                       <FileText size={25} />
                     </div>
                     <div>
-                      <strong>Your next good idea starts here.</strong>
+                      <strong>A clear workspace. Yours to fill.</strong>
                       <p>Import a document, or try a real sample PDF to explore.</p>
                     </div>
                     <button className="button secondary" disabled={busy} onClick={sample}>
@@ -700,7 +814,7 @@ export default function App() {
                     <Smartphone size={21} />
                   </span>
                   <span>
-                    <strong>Keep Pocket close.</strong>
+                    <strong>Keep your tools close.</strong>
                     <small>Add it to your Home Screen.</small>
                   </span>
                   <ArrowUpRight size={17} />
@@ -711,6 +825,11 @@ export default function App() {
           )}
           {view === 'tools' && (
             <>
+              <FeatureShowcase
+                onNotebook={() => nav('notebooks')}
+                compact
+                onAction={(id) => openTool(tools.find((t) => t.id === id)!)}
+              />
               <div className="tool-search">
                 <Search size={20} />
                 <input
@@ -763,10 +882,16 @@ export default function App() {
           )}
           {view === 'documents' && (
             <>
-              {documents.length ? (
+              {!libraryReady ? (
+                <p className="library-loading" role="status">
+                  <span className="spinner" />
+                  Opening your workspace…
+                </p>
+              ) : documents.length ? (
                 <>
                   <div className="library-toolbar">
                     <span>
+                      {account ? `${account.name} · ` : 'Guest · '}
                       {documents.length} saved {documents.length === 1 ? 'file' : 'files'} ·{' '}
                       {bytes(used)}
                     </span>
@@ -774,7 +899,39 @@ export default function App() {
                       Export workspace ZIP <Download size={15} />
                     </button>
                   </div>
+                  <div className="library-filters">
+                    <label>
+                      <Search size={17} />
+                      <input
+                        aria-label="Search saved documents"
+                        placeholder="Search your files…"
+                        value={fileQuery}
+                        onChange={(e) => setFileQuery(e.target.value)}
+                      />
+                    </label>
+                    <select
+                      aria-label="Filter document folder"
+                      value={folderFilter}
+                      onChange={(e) => setFolderFilter(e.target.value)}
+                    >
+                      <option value="all">All folders</option>
+                      <option value="unfiled">Unfiled</option>
+                      {[...new Set(documents.map((d) => d.folder).filter(Boolean))].map((f) => (
+                        <option key={f} value={'folder:' + f}>
+                          {f}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <DocumentList all />
+                  {!documents.some(
+                    (d) =>
+                      d.name.toLowerCase().includes(fileQuery.toLowerCase()) &&
+                      (folderFilter === 'all' ||
+                        (folderFilter === 'unfiled'
+                          ? !d.folder
+                          : 'folder:' + d.folder === folderFilter)),
+                  ) && <p className="library-no-results">No files match this search and folder.</p>}
                 </>
               ) : (
                 <div className="empty-state library-empty">
@@ -792,10 +949,26 @@ export default function App() {
               )}
               <p className="library-note">
                 <CloudOff size={16} />
-                This workspace is stored in your browser. Export important files; clearing browser
-                data can remove saved documents.
+                {account
+                  ? `${account.name}’s documents are separate from other signed-in accounts. `
+                  : 'This is your guest workspace. '}
+                Files are saved on this browser, without automatic cloud sync. Download important
+                copies.
               </p>
             </>
+          )}
+          {view === 'notebooks' && (
+            <Suspense fallback={<p>Opening your shelf…</p>}>
+              <Notebooks
+                key={workspace}
+                workspace={workspace}
+                onSave={save}
+                onCloud={(out) => {
+                  setCloudOutput(out);
+                  setCloudOpen(true);
+                }}
+              />
+            </Suspense>
           )}
           {view === 'templates' && (
             <>
@@ -863,7 +1036,7 @@ export default function App() {
           { id: 'tools', icon: Grid2X2, label: 'Tools' },
           { id: 'scan', icon: Camera, label: 'Scan' },
           { id: 'documents', icon: FolderOpen, label: 'Files' },
-          { id: 'templates', icon: LayoutTemplate, label: 'Layouts' },
+          { id: 'notebooks', icon: BookOpen, label: 'Notes' },
         ].map((n) => (
           <button
             key={n.id}
@@ -887,7 +1060,7 @@ export default function App() {
           }}
         >
           <Upload size={45} />
-          <h2>Drop it in your pocket.</h2>
+          <h2>Drop your documents here.</h2>
           <p>PDFs, photos, Office documents, and text files</p>
         </div>
       )}
@@ -902,7 +1075,7 @@ export default function App() {
             </div>
           }
         >
-          <AccountDialog onClose={() => setAccountOpen(false)} onAccount={setAccount} />
+          <AccountDialog onClose={() => setAccountOpen(false)} />
         </Suspense>
       )}
       {cloudOpen && (
@@ -917,6 +1090,8 @@ export default function App() {
           }
         >
           <CloudDialog
+            workspace={workspace}
+            workspaceLabel={account?.name ?? 'Guest workspace'}
             output={cloudOutput}
             onImport={importFiles}
             onClose={() => setCloudOpen(false)}
@@ -935,6 +1110,8 @@ export default function App() {
           }
         >
           <PDFReader
+            key={workspace}
+            workspace={workspace}
             initialFile={readerFile}
             onClose={() => setReaderOpen(false)}
             onSave={save}
@@ -1018,7 +1195,7 @@ export default function App() {
             <h2 id="info-title">
               {
                 {
-                  install: 'A workshop in your pocket.',
+                  install: 'Your workspace. One tap away.',
                   privacy: 'Private means private.',
                   settings: 'Make yourself at home.',
                   help: 'A little guidance.',
@@ -1030,7 +1207,7 @@ export default function App() {
             </h2>
             {dialog === 'install' && (
               <>
-                <p>Add Pocket to your Home Screen for a focused, app-like workspace.</p>
+                <p>Add {brand.name} to your Home Screen for a focused, app-like workspace.</p>
                 {installEvent && (
                   <button
                     className="button primary full"
@@ -1040,7 +1217,7 @@ export default function App() {
                     }}
                   >
                     <Download size={17} />
-                    Install Pocket
+                    Install {brand.name}
                   </button>
                 )}
                 <ol className="help-list">
@@ -1103,7 +1280,7 @@ export default function App() {
                       {documents.length} files · {bytes(used)}
                     </span>
                   </div>
-                  <span className="pill">{ready ? 'Ready' : 'Loading'}</span>
+                  <span className="pill">{libraryReady ? 'Ready' : 'Loading'}</span>
                 </div>
                 <div className="setting-row">
                   <div>
@@ -1137,10 +1314,11 @@ export default function App() {
                     )
                       return;
                     try {
-                      const { del } = await import('idb-keyval');
-                      await del('pocket-documents');
-                      setDocuments([]);
-                      setToast('Local workspace cleared.');
+                      await clearDocuments(workspace);
+                      if (workspaceRef.current === workspace) {
+                        setDocuments([]);
+                        setToast('This workspace’s saved files were cleared.');
+                      }
                     } catch {
                       setToast('Could not clear browser storage.');
                     }
@@ -1242,8 +1420,8 @@ export default function App() {
             {dialog === 'about' && (
               <>
                 <p>
-                  Pocket PDF Workshop is a responsive, installable document toolkit built with
-                  React, TypeScript, MuPDF, pdf-lib and Tesseract.js.
+                  {brand.name} is a responsive, installable document toolkit built with React,
+                  TypeScript, MuPDF, pdf-lib and Tesseract.js.
                 </p>
                 <p className="small muted">
                   Independent software, not affiliated with CamScanner or iLovePDF. Vibe coded by
@@ -1265,6 +1443,59 @@ export default function App() {
           </section>
         </div>
       )}
+      {fileEdit && (
+        <div className="modal-shade">
+          <form
+            className="info-dialog file-edit-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="file-edit-title"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const edit = fileEdit,
+                value = edit.value.trim();
+              if (edit.action === 'rename' && !value) return;
+              try {
+                const next = await updateDocument(
+                  edit.workspace,
+                  edit.doc.id,
+                  edit.action === 'rename' ? { name: value } : { folder: value },
+                );
+                if (workspaceRef.current === edit.workspace) setDocuments(next);
+                setFileEdit(null);
+              } catch {
+                setToast('Could not update this file. Try again.');
+              }
+            }}
+          >
+            <h2 id="file-edit-title">
+              {fileEdit.action === 'rename' ? 'Give it a new name.' : 'A place for this file.'}
+            </h2>
+            <p>{fileEdit.doc.name}</p>
+            <label>
+              {fileEdit.action === 'rename' ? 'Document name' : 'Folder name'}
+              <input
+                autoFocus
+                required={fileEdit.action === 'rename'}
+                maxLength={160}
+                value={fileEdit.value}
+                onChange={(e) => setFileEdit({ ...fileEdit, value: e.target.value })}
+              />
+            </label>
+            {fileEdit.action === 'folder' && (
+              <small>
+                Use an existing folder name or create a new one. Leave blank for Unfiled.
+              </small>
+            )}
+            <div>
+              <button type="button" className="button secondary" onClick={() => setFileEdit(null)}>
+                Cancel
+              </button>
+              <button className="button primary">Save changes</button>
+            </div>
+          </form>
+        </div>
+      )}
       {toast && (
         <div className="toast" role="status">
           <Check size={17} />
@@ -1280,7 +1511,7 @@ export default function App() {
 function InfoIcon() {
   return <HelpCircle size={14} />;
 }
-async function downloadAll(documents: Stored[]) {
+async function downloadAll(documents: StoredDocument[]) {
   return exportAll(documents);
 }
 
