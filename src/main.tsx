@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import WorkspaceRecovery from './components/WorkspaceRecovery';
 import './styles.css';
 import './reader/reader.css';
 import './theme.css';
@@ -10,7 +11,9 @@ import './features.css';
 import './notebooks/notebooks.css';
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <WorkspaceRecovery>
+      <App />
+    </WorkspaceRecovery>
   </React.StrictMode>,
 );
 if ('serviceWorker' in navigator && import.meta.env.PROD) {

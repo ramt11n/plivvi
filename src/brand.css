@@ -6,6 +6,37 @@
   font-display: swap;
 }
 
+.workspace-recovery {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.workspace-recovery-card {
+  width: min(100%, 560px);
+  padding: clamp(24px, 5vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: var(--surface);
+}
+.workspace-recovery-card h1 {
+  margin-top: 32px;
+  font-size: clamp(28px, 5vw, 38px);
+  line-height: 1.2;
+  letter-spacing: -1px;
+}
+.workspace-recovery-card p,
+.workspace-recovery-card small {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.workspace-recovery-card .button {
+  margin: 16px 0 24px;
+}
+.workspace-recovery-card small {
+  display: block;
+}
+
 :root {
   font-family:
     Manrope,
