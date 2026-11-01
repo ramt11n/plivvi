@@ -96,6 +96,22 @@ export default function CloudDialog({
     google: !!(config?.google?.clientId && config.google.apiKey && config.google.appId),
     microsoft: !!config?.microsoft?.clientId,
   };
+  async function deviceFiles() {
+    setError('');
+    if (!output) {
+      input.current?.click();
+      return;
+    }
+    try {
+      const file = new File([output.data as BlobPart], output.name, { type: output.type });
+      if (navigator.canShare?.({ files: [file] }))
+        await navigator.share({ files: [file], title: output.name });
+      else download(output);
+    } catch (e) {
+      if ((e as Error).name !== 'AbortError')
+        setError('Use Download to save this copy through your browser.');
+    }
+  }
   async function connect(provider: 'google' | 'microsoft') {
     setBusy(provider);
     setError('');
@@ -336,27 +352,7 @@ export default function CloudDialog({
           </div>
         ) : (
           <>
-            <button
-              className="cloud-device-action"
-              disabled={!!busy}
-              onClick={async () => {
-                if (!output) {
-                  input.current?.click();
-                  return;
-                }
-                try {
-                  const file = new File([output.data as BlobPart], output.name, {
-                    type: output.type,
-                  });
-                  if (navigator.canShare?.({ files: [file] }))
-                    await navigator.share({ files: [file], title: output.name });
-                  else download(output);
-                } catch (e) {
-                  if ((e as Error).name !== 'AbortError')
-                    setError('Use Download to save this copy through your browser.');
-                }
-              }}
-            >
+            <button className="cloud-device-action" disabled={!!busy} onClick={deviceFiles}>
               <span className="cloud-device-icon">
                 <FolderOpen size={25} />
               </span>
@@ -366,7 +362,7 @@ export default function CloudDialog({
               </span>
               {output ? <Download size={20} /> : <Upload size={20} />}
             </button>
-            <div className="cloud-section-label">DIRECT CONNECTIONS</div>
+            <div className="cloud-section-label">YOUR CLOUD ACCOUNTS</div>
             <div className="cloud-connection-grid">
               {(['google', 'microsoft'] as const).map((provider) => {
                 const connected = connections[provider],
@@ -386,7 +382,7 @@ export default function CloudDialog({
                         {!config
                           ? 'Checking'
                           : !enabled[provider]
-                            ? 'Owner setup needed'
+                            ? 'Via your device'
                             : connected
                               ? 'Connected'
                               : 'Ready to connect'}
@@ -396,20 +392,32 @@ export default function CloudDialog({
                     <p>
                       {connected
                         ? connected.email
-                        : provider === 'google'
-                          ? 'Choose files in Google Picker. Save new copies to Drive.'
-                          : 'Browse folders, select files, and save new copies to OneDrive.'}
+                        : config && !enabled[provider]
+                          ? `Choose ${title} in your device’s file picker. Install its app and enable it in Files on iPhone or iPad.`
+                          : provider === 'google'
+                            ? 'Choose files in Google Picker. Save new copies to Drive.'
+                            : 'Browse folders, select files, and save new copies to OneDrive.'}
                     </p>
                     <button
                       className="button primary full"
-                      disabled={!enabled[provider] || !ready[provider] || !!busy}
-                      onClick={() => (connected ? run(provider) : connect(provider))}
+                      disabled={!config || (enabled[provider] && !ready[provider]) || !!busy}
+                      onClick={() =>
+                        !enabled[provider]
+                          ? deviceFiles()
+                          : connected
+                            ? run(provider)
+                            : connect(provider)
+                      }
                     >
-                      {connected
+                      {config && !enabled[provider]
                         ? output
-                          ? 'Save a new copy'
-                          : 'Browse files'
-                        : 'Connect account'}
+                          ? 'Save through your device'
+                          : 'Open via Files'
+                        : connected
+                          ? output
+                            ? 'Save a new copy'
+                            : 'Browse files'
+                          : 'Connect account'}
                       <ArrowUpRight size={15} />
                     </button>
                     {connected && (
@@ -448,8 +456,9 @@ export default function CloudDialog({
             </div>
             {config && (!enabled.google || !enabled.microsoft) && (
               <p className="cloud-setup-note">
-                Direct providers marked “Owner setup needed” have no live app registration on this
-                deployment yet. The Files option above is available now.
+                {!enabled.microsoft ? 'Direct OneDrive sign-in is not available yet. ' : ''}
+                Files opens the providers available on your device. On a computer, download your
+                cloud file first, then select it here.
               </p>
             )}
           </>

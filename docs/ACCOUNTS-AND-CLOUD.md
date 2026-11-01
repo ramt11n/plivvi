@@ -1,8 +1,10 @@
 # Optional accounts and cloud connections
 
-All PDF features work as a guest. Account and cloud buttons become active only when real owner-controlled public configuration is provided. There are no fake sign-in sessions, embedded shared credentials, or document-upload processing servers.
+All PDF features work as a guest. Direct sign-in uses real owner-controlled public configuration. A provider without direct integration offers the device's Files route, with its limitation explained. There are no fake sign-in sessions, embedded shared credentials, or document-upload processing servers.
 
 Copy `.env.example` to an ignored `.env.local`, or edit `public/pocket-config.json` with public browser values. For deployment, prefer repository/build variables. No browser configuration should contain a client secret, service-account key, or admin credential.
+
+The public JSON is also bundled as a fallback, so a failed runtime configuration request cannot disable an otherwise configured provider. Empty CI variables do not overwrite valid public values. Configuration requests, including response parsing, have a 2.5-second deadline. Account dialogs warm the official Google popup resolver before enabling the button so Safari does not lose the tap while setup runs. Cloud consent and script loading have bounded waits with recovery messages.
 
 ## Firebase Authentication
 
@@ -46,4 +48,4 @@ The Files option uses the operating system’s file picker/share sheet. It can a
 
 ## Verification boundary
 
-Type checking, build checks, and local UI checks do not prove live OAuth correctness. A configured owner-owned project and real test-provider account are required to verify each sign-in/import/export flow. Leave unconfigured services clearly marked until that setup is complete.
+Type checking, build checks, and local UI checks do not prove live OAuth correctness. A configured owner-owned project and real test-provider account are required to verify each sign-in/import/export flow. Direct OneDrive is not configured on the current deployment; its Files route is available. Google Drive has public configuration, but a successful live import/export is still required before calling it verified.

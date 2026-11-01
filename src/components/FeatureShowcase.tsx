@@ -157,15 +157,17 @@ export default function FeatureShowcase({
               </li>
             ))}
           </ul>
-          <button className="feature-cta" onClick={() => onAction(item.tool)}>
-            {item.action}
-            <ArrowRight size={17} />
-          </button>
-          {item.key === 'ink' && (
-            <button className="feature-notebook-link" onClick={onNotebook}>
-              Start a free notebook <ArrowRight size={14} />
+          <div className="feature-actions">
+            <button className="feature-cta" onClick={() => onAction(item.tool)}>
+              {item.action}
+              <ArrowRight size={17} />
             </button>
-          )}
+            {item.key === 'ink' && onNotebook && (
+              <button className="feature-notebook-link" onClick={onNotebook}>
+                Start a free notebook <ArrowRight size={16} />
+              </button>
+            )}
+          </div>
           {item.key === 'ink' && (
             <small className="feature-device-note">
               Apple Pencil requires a compatible iPad. Finger drawing is available too.

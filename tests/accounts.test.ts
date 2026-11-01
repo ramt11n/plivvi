@@ -14,13 +14,15 @@ vi.mock('firebase/app', () => ({
 }));
 vi.mock('firebase/auth', () => ({
   browserSessionPersistence: 'session',
+  browserPopupRedirectResolver: 'popup-resolver',
   setPersistence: async () => {},
-  initializeAuth: (app: any) => {
+  initializeAuth: (app: any, options: unknown) => {
     if (!mock.auth.has(app.name))
       mock.auth.set(app.name, {
         currentUser: null,
         authStateReady: async () => {},
         listeners: new Set<Function>(),
+        options,
       });
     return mock.auth.get(app.name);
   },
@@ -71,6 +73,21 @@ beforeEach(() => {
   }));
 });
 describe('account session management', () => {
+  it('warms one Google session before the tap without loading a popup iframe for ordinary sessions', async () => {
+    const auth = await import('../src/integrations/auth');
+    await auth.initializeAccounts();
+    const ordinary = await auth.newAccountSession();
+    expect((ordinary.auth as any).options.popupRedirectResolver).toBeUndefined();
+    const [first, second] = await Promise.all([
+      auth.prepareGoogleSession(),
+      auth.prepareGoogleSession(),
+    ]);
+    expect(first.id).toBe(second.id);
+    expect((first.auth as any).options.popupRedirectResolver).toBe('popup-resolver');
+    (first.auth as any).currentUser = user('alice');
+    await auth.activateAccount(first.id);
+    expect((await auth.prepareGoogleSession()).id).not.toBe(first.id);
+  });
   it('ends stalled authentication waits and clears the timeout', async () => {
     const { authDeadline } = await import('../src/integrations/auth');
     vi.useFakeTimers();

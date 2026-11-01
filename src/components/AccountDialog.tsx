@@ -16,6 +16,7 @@ import {
   accountState,
   subscribeAccounts,
   newAccountSession,
+  prepareGoogleSession,
   activateAccount,
   switchAccount,
   signOutAccount,
@@ -40,6 +41,15 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
     [error, setError] = useState(''),
     [message, setMessage] = useState('');
   const pending = useRef<Awaited<ReturnType<typeof newAccountSession>> | undefined>(undefined);
+  const googleSession = useRef<
+    | {
+        slot: Awaited<ReturnType<typeof newAccountSession>>;
+        sdk: typeof import('firebase/auth');
+      }
+    | undefined
+  >(undefined);
+  const [googleReady, setGoogleReady] = useState(false),
+    [googleAttempt, setGoogleAttempt] = useState(0);
   const mounted = useRef(true),
     operation = useRef(0);
   useEffect(() => subscribeAccounts(setState), []);
@@ -50,6 +60,25 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
       operation.current++;
     };
   }, []);
+  useEffect(() => {
+    if (!state.configured || mode === 'manage' || mode === 'reset') return;
+    let alive = true;
+    setGoogleReady(false);
+    googleSession.current = undefined;
+    // Safari needs the SDK and its auth iframe ready BEFORE the user's tap.
+    Promise.all([prepareGoogleSession(), import('firebase/auth')])
+      .then(([slot, sdk]) => {
+        if (!alive) return;
+        googleSession.current = { slot, sdk };
+        setGoogleReady(true);
+      })
+      .catch((error) => {
+        if (alive) setError(authMessage(error));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [state.configured, mode === 'manage' || mode === 'reset', googleAttempt]);
   function changeMode(next: typeof mode) {
     operation.current++;
     pending.current = undefined;
@@ -66,8 +95,13 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
     setError('');
     setMessage('');
     try {
-      const slot = (pending.current ??= await authDeadline(newAccountSession(), 20000)),
-        sdk = await import('firebase/auth');
+      const prepared = googleSession.current;
+      if (google && !prepared)
+        throw Error('Google is still preparing. Please try again in a moment.');
+      const slot = google
+          ? prepared!.slot
+          : (pending.current ??= await authDeadline(newAccountSession(), 20000)),
+        sdk = google ? prepared!.sdk : await import('firebase/auth');
       if (!current()) return;
       let abandoned = false;
       async function signIn<T>(job: Promise<T>, milliseconds = 30000) {
@@ -330,14 +364,29 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
                   <>
                     <button
                       className="button secondary full google-signin"
-                      disabled={busy}
+                      disabled={busy || !googleReady}
                       onClick={() => submit(true)}
                     >
                       <span className="google-g" aria-hidden="true">
                         G
                       </span>
-                      {busy ? 'Connecting securely…' : 'Continue with Google'}
+                      {busy
+                        ? 'Connecting securely…'
+                        : !googleReady
+                          ? 'Preparing Google…'
+                          : 'Continue with Google'}
                     </button>
+                    {!googleReady && error && (
+                      <button
+                        className="text-button"
+                        onClick={() => {
+                          setError('');
+                          setGoogleAttempt((n) => n + 1);
+                        }}
+                      >
+                        Retry Google sign-in
+                      </button>
+                    )}
                     <div className="account-divider">
                       <span>or use email</span>
                     </div>

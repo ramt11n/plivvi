@@ -1,4 +1,5 @@
 import { integrationConfig } from './config';
+import { deadline } from '../lib/deadline';
 import type { Auth, User } from 'firebase/auth';
 
 export type Account = { id: string; uid: string; name: string; email: string; verified: boolean };
@@ -17,6 +18,8 @@ export const account = (user: User, id = 'primary'): Account => ({
   verified: user.emailVerified,
 });
 const clients = new Map<string, Promise<Auth>>();
+let popupPreparation: Promise<{ id: string; auth: Auth }> | undefined,
+  popupSlot: string | undefined;
 const observed = new Map<string, () => void>();
 const listeners = new Set<(state: AccountState) => void>();
 const legacySelection = readSession('pocket-active-auth', '__unset') === '__unset';
@@ -64,7 +67,7 @@ export function subscribeAccounts(listener: (state: AccountState) => void) {
     listeners.delete(listener);
   };
 }
-export async function authClient(id = activeId || 'primary') {
+export async function authClient(id = activeId || 'primary', preparePopup = false) {
   if (!/^[a-zA-Z0-9-]{1,80}$/.test(id)) throw Error('Invalid account session.');
   if (!clients.has(id)) {
     const promise = (async () => {
@@ -79,13 +82,17 @@ export async function authClient(id = activeId || 'primary') {
           'Online accounts are not connected on this deployment yet. Your guest workspace is available.',
         );
       const { initializeApp, getApps } = await import('firebase/app');
-      const { initializeAuth, getAuth, browserSessionPersistence } = await import('firebase/auth');
+      const { initializeAuth, getAuth, browserSessionPersistence, browserPopupRedirectResolver } =
+        await import('firebase/auth');
       const name = id === 'primary' ? 'pocket' : `pocket-session-${id}`;
       const app = getApps().find((a) => a.name === name) ?? initializeApp(config.firebase, name);
       let auth: Auth;
       try {
-        // Defer the cross-origin OAuth iframe until the user actually chooses Google.
-        auth = initializeAuth(app, { persistence: browserSessionPersistence });
+        // Ordinary sessions stay light; the account dialog warms its Google session before a tap.
+        auth = initializeAuth(app, {
+          persistence: browserSessionPersistence,
+          ...(preparePopup ? { popupRedirectResolver: browserPopupRedirectResolver } : {}),
+        });
       } catch (error) {
         if ((error as { code?: string }).code !== 'auth/already-initialized') throw error;
         auth = getAuth(app);
@@ -151,13 +158,26 @@ export function initializeAccounts() {
     publish();
   })());
 }
-export async function newAccountSession() {
+export async function newAccountSession(preparePopup = false): Promise<{ id: string; auth: Auth }> {
   if (state.accounts.length >= 10)
     throw Error(
       'Sign out of an account before adding another. Up to 10 accounts can stay signed in in this tab.',
     );
   const id = crypto.randomUUID();
-  return { id, auth: await authClient(id) };
+  return { id, auth: await authClient(id, preparePopup) };
+}
+export function prepareGoogleSession() {
+  // Reuse one warm session across dialog opens and React StrictMode effects.
+  return (popupPreparation ??= newAccountSession(true)
+    .then((slot) => {
+      popupSlot = slot.id;
+      return slot;
+    })
+    .catch((error) => {
+      popupPreparation = undefined;
+      popupSlot = undefined;
+      throw error;
+    }));
 }
 export async function activateAccount(id: string) {
   const auth = await authClient(id);
@@ -177,6 +197,10 @@ export async function activateAccount(id: string) {
   }
   persist();
   publish();
+  if (popupSlot === id) {
+    popupPreparation = undefined;
+    popupSlot = undefined;
+  }
 }
 export function switchAccount(id: string | null) {
   if (id && !state.accounts.some((a) => a.id === id))
@@ -224,21 +248,9 @@ export function authMessage(error: unknown) {
 }
 
 export async function authDeadline<T>(pending: Promise<T>, milliseconds = 30000): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () =>
-        reject(
-          Error(
-            'The sign-in service took too long to respond. Check your connection and try again. Your local workspace is still available.',
-          ),
-        ),
-      milliseconds,
-    );
-  });
-  try {
-    return await Promise.race([pending, timeout]);
-  } finally {
-    clearTimeout(timer);
-  }
+  return deadline(
+    pending,
+    milliseconds,
+    'The sign-in service took too long to respond. Check your connection and try again. Your local workspace is still available.',
+  );
 }

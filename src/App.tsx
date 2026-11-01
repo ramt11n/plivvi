@@ -108,10 +108,6 @@ export default function App() {
   } | null>(null);
   useEffect(() => subscribeAccounts(setAuthState), []);
   useEffect(() => {
-    let alive = true;
-    setReady(false);
-    setLoadedWorkspace(undefined);
-    setDocuments([]);
     setFileQuery('');
     setFolderFilter('all');
     setSelected(null);
@@ -120,6 +116,12 @@ export default function App() {
     setCloudOutput(undefined);
     setFileEdit(null);
     setDialog(null);
+  }, [workspace]);
+  useEffect(() => {
+    let alive = true;
+    setReady(false);
+    setLoadedWorkspace(undefined);
+    setDocuments([]);
     if (!authState.ready) return;
     readDocuments(workspace)
       .then((d) => {

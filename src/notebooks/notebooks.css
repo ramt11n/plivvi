@@ -345,13 +345,40 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 15px;
+  min-height: 43px;
   color: inherit;
   font-weight: 700;
   font-size: 12px;
   background: transparent;
-  border: 0;
-  padding: 0;
+  border: 1px solid currentColor;
+  border-radius: 11px;
+  padding: 11px 15px;
+  line-height: 1.45;
+}
+.feature-actions {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.feature-actions > button {
+  justify-content: center;
+  max-width: 100%;
+  min-width: 0;
+}
+.feature-actions > button svg {
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .feature-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .feature-actions > button {
+    width: 100%;
+    min-height: 48px;
+  }
 }
 .reader-paper-select:focus-visible,
 .notebook-new-card:focus-visible,

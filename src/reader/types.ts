@@ -1,4 +1,5 @@
 export type PenStyle = 'fountain' | 'ballpoint' | 'pencil';
+export type PenActivity = { pointer: number | null; until: number };
 export type InkPoint = { x: number; y: number; pressure: number; tiltX?: number; tiltY?: number };
 export type MarkKind = 'ink' | 'highlight' | 'text' | 'rectangle' | 'note' | 'image';
 export type Mark = {

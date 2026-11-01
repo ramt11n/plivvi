@@ -1,4 +1,5 @@
-import { brand, integrationConfig } from './config';
+import { brand, integrationConfig, type IntegrationConfig } from './config';
+import { deadline } from '../lib/deadline';
 import type { Output } from '../lib/client';
 import type { PublicClientApplication } from '@azure/msal-browser';
 declare global {
@@ -34,48 +35,73 @@ export function cloudCopyName(original: string) {
 const scripts = new Map<string, Promise<void>>();
 function script(src: string) {
   if (scripts.has(src)) return scripts.get(src)!;
-  const promise = new Promise<void>((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = src;
-    s.async = true;
-    s.onload = () => resolve();
-    s.onerror = () => {
-      scripts.delete(src);
-      s.remove();
-      reject(
-        Error(
-          'The cloud provider could not load. Check your connection or browser content blockers.',
-        ),
-      );
-    };
-    document.head.append(s);
+  const s = document.createElement('script');
+  const promise = deadline(
+    new Promise<void>((resolve, reject) => {
+      s.src = src;
+      s.async = true;
+      s.onload = () => resolve();
+      s.onerror = () => {
+        scripts.delete(src);
+        s.remove();
+        reject(
+          Error(
+            'The cloud provider could not load. Check your connection or browser content blockers.',
+          ),
+        );
+      };
+      document.head.append(s);
+    }),
+    20000,
+    'The cloud provider took too long to load. Check your connection or browser content blockers.',
+  ).catch((error) => {
+    scripts.delete(src);
+    s.remove();
+    throw error;
   });
   scripts.set(src, promise);
   return promise;
 }
-export async function prepareGoogle() {
-  await Promise.all([
-    script('https://accounts.google.com/gsi/client'),
-    script('https://apis.google.com/js/api.js'),
-  ]);
-  await new Promise<void>((resolve, reject) =>
-    window.gapi.load('picker', {
-      callback: resolve,
-      onerror: () => reject(Error('Google Picker could not load.')),
-    }),
-  );
+let googleConfig: IntegrationConfig['google'];
+let googlePreparation: Promise<void> | undefined;
+export function prepareGoogle() {
+  return (googlePreparation ??= (async () => {
+    const [config] = await Promise.all([
+      integrationConfig(),
+      script('https://accounts.google.com/gsi/client'),
+      script('https://apis.google.com/js/api.js'),
+    ]);
+    await deadline(
+      new Promise<void>((resolve, reject) =>
+        window.gapi.load('picker', {
+          callback: resolve,
+          onerror: () => reject(Error('Google Picker could not load.')),
+        }),
+      ),
+      20000,
+      'Google Picker took too long to load. Check your connection and try again.',
+    );
+    googleConfig = config.google;
+  })().catch((error) => {
+    googlePreparation = undefined;
+    throw error;
+  }));
 }
 async function googleToken(workspace: string, selectAccount = false) {
   const current = googleSessions.get(workspace);
   if (!selectAccount && current && current.until > Date.now() + 60000) return current.token;
-  const config = await integrationConfig();
-  if (!config.google?.clientId) throw Error('Google Drive has not been enabled by the owner yet.');
-  return new Promise<string>((resolve, reject) => {
+  // The dialog prepares configuration and scripts before enabling Connect.
+  // Avoid an async setup step between Safari's tap and the consent popup.
+  const config = googleConfig ?? (await integrationConfig()).google;
+  if (!config?.clientId) throw Error('Google Drive has not been enabled by the owner yet.');
+  let active = true;
+  const pending = new Promise<string>((resolve, reject) => {
     const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: config.google!.clientId,
+      client_id: config.clientId,
       scope: 'openid email https://www.googleapis.com/auth/drive.file',
       login_hint: !selectAccount ? current?.email : undefined,
       callback: (r: any) => {
+        if (!active) return;
         if (r.error) {
           reject(Error('Google Drive permission was not granted.'));
           return;
@@ -90,6 +116,13 @@ async function googleToken(workspace: string, selectAccount = false) {
       error_callback: () => reject(Error('The Google sign-in window was closed or blocked.')),
     });
     client.requestAccessToken({ prompt: selectAccount || !current ? 'select_account' : '' });
+  });
+  return deadline(
+    pending,
+    120000,
+    'Google Drive did not finish connecting. Check the Google consent window, allow pop-ups for this site, or open Plivvi in Safari, Chrome, Firefox, or Brave and try again.',
+  ).finally(() => {
+    active = false;
   });
 }
 async function checked(response: Response) {
@@ -210,7 +243,11 @@ export function microsoftClient(workspace: string) {
         },
         cache: { cacheLocation: 'memoryStorage' },
       });
-      await client.initialize();
+      await deadline(
+        client.initialize(),
+        20000,
+        'OneDrive took too long to load. Check your connection and try again.',
+      );
       return client;
     })().catch((error) => {
       microsoftClients.delete(workspace);
@@ -229,11 +266,15 @@ async function microsoftToken(workspace: string, write = false, selectAccount = 
       return (await client.acquireTokenSilent({ account, scopes })).accessToken;
     } catch {}
   }
-  const response = await client.acquireTokenPopup({
-    scopes,
-    account: selectAccount ? undefined : (account ?? undefined),
-    prompt: selectAccount || !account ? 'select_account' : undefined,
-  });
+  const response = await deadline(
+    client.acquireTokenPopup({
+      scopes,
+      account: selectAccount ? undefined : (account ?? undefined),
+      prompt: selectAccount || !account ? 'select_account' : undefined,
+    }),
+    120000,
+    'OneDrive did not finish connecting. Check the Microsoft sign-in window and try again.',
+  );
   client.setActiveAccount(response.account);
   return response.accessToken;
 }

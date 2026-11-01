@@ -6,9 +6,9 @@
     "appId": "1:794411977137:web:4e85d6f16a26fc29b31590"
   },
   "google": {
-    "clientId": "",
-    "apiKey": "",
-    "appId": ""
+    "clientId": "794411977137-dboqfght9ldv6e9q5r09pk7ipk0luuej.apps.googleusercontent.com",
+    "apiKey": "AIzaSyBwlWKd_fosppKLGdHc8uLbZqaaDffRX50",
+    "appId": "794411977137"
   },
   "microsoft": {
     "clientId": "",

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { rpc } from '../lib/client';
+import InkStroke from './InkStroke';
 import {
   pressureWidth,
   strokePressure,
@@ -8,6 +9,7 @@ import {
   type ReaderTool,
   type InkPoint,
   type TextChar,
+  type PenActivity,
 } from './types';
 type Props = {
   session: string;
@@ -21,6 +23,7 @@ type Props = {
   size: number;
   touchInk: boolean;
   penStyle: PenStyle;
+  penActivity?: PenActivity;
   selected: string | null;
   onSelect: (id: string | null) => void;
   onMark: (m: Mark) => void;
@@ -33,6 +36,7 @@ type Props = {
 export default function PDFPage(p: Props) {
   const root = useRef<HTMLDivElement>(null),
     svg = useRef<SVGSVGElement>(null),
+    inkCanvas = useRef<HTMLCanvasElement>(null),
     [near, setNear] = useState(false),
     [url, setUrl] = useState(''),
     [chars, setChars] = useState<TextChar[]>([]),
@@ -41,11 +45,85 @@ export default function PDFPage(p: Props) {
     [draft, setDraft] = useState<Mark | null>(null),
     [moved, setMoved] = useState<Mark | null>(null),
     [renderWidth, setRenderWidth] = useState(p.displayWidth),
-    active = useRef<{ pointer: number; mark: Mark } | null>(null),
+    active = useRef<{
+      pointer: number;
+      type: string;
+      mark: Mark;
+      bounds: DOMRect;
+      painted: number;
+    } | null>(null),
     moveStart = useRef<{ pointer: number; start: InkPoint; original: Mark } | null>(null),
-    penUntil = useRef(0),
+    localPen = useRef<PenActivity>({ pointer: null, until: 0 }),
     touches = useRef(new Map<number, { x: number; y: number }>()),
     pinch = useRef(0);
+  const penActivity = p.penActivity ?? localPen.current;
+  const draftFrame = useRef<number | null>(null),
+    nextDraft = useRef<Mark | null>(null);
+  function scheduleDraft(mark: Mark) {
+    nextDraft.current = mark;
+    if (draftFrame.current !== null) return;
+    draftFrame.current = requestAnimationFrame(() => {
+      draftFrame.current = null;
+      setDraft(nextDraft.current);
+    });
+  }
+  function clearPreview() {
+    if (draftFrame.current !== null) cancelAnimationFrame(draftFrame.current);
+    draftFrame.current = null;
+    nextDraft.current = null;
+    const canvas = inkCanvas.current;
+    if (canvas) canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
+    setDraft(null);
+  }
+  function paintInk() {
+    const stroke = active.current,
+      canvas = inkCanvas.current;
+    if (!stroke || !canvas || stroke.mark.kind !== 'ink') return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const m = stroke.mark;
+    ctx.save();
+    ctx.scale(canvas.width / p.width, canvas.height / p.height);
+    ctx.strokeStyle = m.color;
+    ctx.fillStyle = m.color;
+    ctx.globalAlpha = m.opacity;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (!stroke.painted) {
+      const q = m.points[0];
+      ctx.beginPath();
+      ctx.arc(
+        q.x * p.width,
+        q.y * p.height,
+        pressureWidth(m.size, q.pressure, m.penStyle) / 2,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+      stroke.painted = 1;
+    }
+    for (let i = stroke.painted; i < m.points.length; i++) {
+      const a = m.points[i - 1],
+        b = m.points[i];
+      ctx.lineWidth = pressureWidth(m.size, strokePressure(a, b, m.penStyle), m.penStyle);
+      ctx.beginPath();
+      ctx.moveTo(a.x * p.width, a.y * p.height);
+      ctx.lineTo(b.x * p.width, b.y * p.height);
+      ctx.stroke();
+    }
+    stroke.painted = m.points.length;
+    ctx.restore();
+  }
+  useEffect(
+    () => () => {
+      if (draftFrame.current !== null) cancelAnimationFrame(draftFrame.current);
+      if (active.current?.type === 'pen' && penActivity.pointer === active.current.pointer) {
+        penActivity.pointer = null;
+        penActivity.until = 0;
+      }
+    },
+    [],
+  );
   useEffect(() => {
     const scroll = root.current?.closest('.reader-scroll'),
       nearObserver = new IntersectionObserver((entries) => setNear(entries[0].isIntersecting), {
@@ -111,15 +189,18 @@ export default function PDFPage(p: Props) {
       alive = false;
     };
   }, [p.session, p.index, p.tool, near]);
-  function point(e: {
-    clientX: number;
-    clientY: number;
-    pressure?: number;
-    pointerType?: string;
-    tiltX?: number;
-    tiltY?: number;
-  }): InkPoint {
-    const r = svg.current!.getBoundingClientRect();
+  function point(
+    e: {
+      clientX: number;
+      clientY: number;
+      pressure?: number;
+      pointerType?: string;
+      tiltX?: number;
+      tiltY?: number;
+    },
+    bounds?: DOMRect,
+  ): InkPoint {
+    const r = bounds ?? svg.current!.getBoundingClientRect();
     return {
       x: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)),
       y: Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)),
@@ -149,8 +230,9 @@ export default function PDFPage(p: Props) {
   }
   function down(e: ReactPointerEvent<SVGSVGElement>) {
     if (p.tool === 'select') return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     if (e.pointerType === 'touch' && !p.touchInk) {
-      if (performance.now() < penUntil.current) return;
+      if (penActivity.pointer !== null || performance.now() < penActivity.until) return;
       e.preventDefault();
       touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -160,15 +242,41 @@ export default function PDFPage(p: Props) {
       }
       return;
     }
-    if (e.pointerType === 'touch' && performance.now() < penUntil.current) return;
-    if (active.current) return;
+    if (
+      e.pointerType === 'touch' &&
+      (penActivity.pointer !== null || performance.now() < penActivity.until)
+    )
+      return;
+    if (active.current) {
+      if (e.pointerType !== 'pen') return;
+      // Recover from a missing pointerup/lost capture before accepting the next pen stroke.
+      if (active.current.type === 'pen' && active.current.mark.kind === 'ink')
+        p.onMark(active.current.mark);
+      active.current = null;
+      clearPreview();
+    }
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    if (e.pointerType === 'pen') penUntil.current = performance.now() + 600;
-    const q = point(e);
+    if (e.pointerType === 'pen') {
+      penActivity.pointer = e.pointerId;
+      penActivity.until = performance.now() + 600;
+      for (const id of touches.current.keys()) {
+        if (e.currentTarget.hasPointerCapture(id)) e.currentTarget.releasePointerCapture(id);
+      }
+      touches.current.clear();
+      pinch.current = 0;
+    }
+    const bounds = svg.current!.getBoundingClientRect(),
+      q = point(e, bounds);
     if (p.tool === 'eraser' || e.buttons & 32) {
       erase(q);
-      active.current = { pointer: e.pointerId, mark: { id: 'eraser' } as Mark };
+      active.current = {
+        pointer: e.pointerId,
+        type: e.pointerType,
+        mark: { id: 'eraser' } as Mark,
+        bounds,
+        painted: 0,
+      };
       return;
     }
     const kind =
@@ -199,8 +307,18 @@ export default function PDFPage(p: Props) {
       p.onSelect(mark.id);
       return;
     }
-    active.current = { pointer: e.pointerId, mark };
-    setDraft(mark);
+    active.current = { pointer: e.pointerId, type: e.pointerType, mark, bounds, painted: 0 };
+    if (kind === 'ink') {
+      const canvas = inkCanvas.current!;
+      const ratio = Math.min(
+        2,
+        devicePixelRatio || 1,
+        2400 / Math.max(bounds.width, bounds.height),
+      );
+      canvas.width = Math.max(1, Math.round(bounds.width * ratio));
+      canvas.height = Math.max(1, Math.round(bounds.height * ratio));
+      paintInk();
+    } else setDraft(mark);
     p.onSelect(null);
   }
   function move(e: ReactPointerEvent<SVGSVGElement>) {
@@ -223,6 +341,11 @@ export default function PDFPage(p: Props) {
 
     const touch = touches.current.get(e.pointerId);
     if (touch) {
+      if (penActivity.pointer !== null || performance.now() < penActivity.until) {
+        touches.current.delete(e.pointerId);
+        pinch.current = 0;
+        return;
+      }
       e.preventDefault();
       const old = { ...touch };
       touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -240,7 +363,7 @@ export default function PDFPage(p: Props) {
     const current = active.current;
     if (!current || current.pointer !== e.pointerId) return;
     e.preventDefault();
-    if (e.pointerType === 'pen') penUntil.current = performance.now() + 600;
+    if (e.pointerType === 'pen') penActivity.until = performance.now() + 600;
     if (current.mark.id === 'eraser') {
       erase(point(e));
       return;
@@ -249,15 +372,17 @@ export default function PDFPage(p: Props) {
       const batch = e.nativeEvent.getCoalescedEvents?.(),
         events = batch?.length ? batch : [e.nativeEvent];
       for (const event of events) {
-        const q = point({
-            ...event,
-            clientX: event.clientX,
-            clientY: event.clientY,
-            pressure: event.pressure,
-            tiltX: event.tiltX,
-            tiltY: event.tiltY,
-            pointerType: e.pointerType,
-          }),
+        const q = point(
+            {
+              clientX: event.clientX,
+              clientY: event.clientY,
+              pressure: event.pressure,
+              tiltX: event.tiltX,
+              tiltY: event.tiltY,
+              pointerType: e.pointerType,
+            },
+            current.bounds,
+          ),
           last = current.mark.points.at(-1)!;
         if (
           Math.hypot((q.x - last.x) * p.width, (q.y - last.y) * p.height) > 0.5 &&
@@ -265,7 +390,7 @@ export default function PDFPage(p: Props) {
         )
           current.mark.points.push(q);
       }
-      setDraft({ ...current.mark, points: [...current.mark.points] });
+      paintInk();
     } else {
       const q = point(e),
         s = current.mark.points[0];
@@ -275,10 +400,15 @@ export default function PDFPage(p: Props) {
         w: Math.abs(q.x - s.x),
         h: Math.abs(q.y - s.y),
       };
-      setDraft({ ...current.mark });
+      scheduleDraft({ ...current.mark });
     }
   }
   function end(e: ReactPointerEvent<SVGSVGElement>, cancel = false) {
+    if (penActivity.pointer === e.pointerId) {
+      penActivity.pointer = null;
+      penActivity.until = performance.now() + 350;
+      touches.current.clear();
+    }
     if (moveStart.current?.pointer === e.pointerId) {
       if (!cancel && moved) p.onUpdate(moved);
       moveStart.current = null;
@@ -289,42 +419,21 @@ export default function PDFPage(p: Props) {
     pinch.current = 0;
     const current = active.current;
     if (current?.pointer !== e.pointerId) return;
-    active.current = null;
-    setDraft(null);
-    if (e.pointerType === 'pen') {
-      penUntil.current = performance.now() + 350;
-      touches.current.clear();
+    if (!cancel && current.mark.kind === 'ink') {
+      const q = point(e, current.bounds),
+        last = current.mark.points.at(-1)!;
+      if (Math.hypot((q.x - last.x) * p.width, (q.y - last.y) * p.height) > 0.25)
+        current.mark.points.push({ ...q, pressure: last.pressure });
     }
+    active.current = null;
+    clearPreview();
     if (
-      !cancel &&
       current.mark.id !== 'eraser' &&
-      (current.mark.kind === 'ink' || (current.mark.rect.w > 0.003 && current.mark.rect.h > 0.003))
+      (current.mark.kind === 'ink' ||
+        (!cancel && current.mark.rect.w > 0.003 && current.mark.rect.h > 0.003))
     )
       p.onMark(current.mark);
   }
-  const inkPaths = (m: Mark) => {
-    const buckets = new Map<number, string>();
-    for (let i = 1; i < m.points.length; i++) {
-      const a = m.points[i - 1],
-        b = m.points[i],
-        q = Math.round(strokePressure(a, b, m.penStyle) * 7);
-      buckets.set(
-        q,
-        (buckets.get(q) ?? '') +
-          `M${a.x * p.width} ${a.y * p.height}L${b.x * p.width} ${b.y * p.height}`,
-      );
-    }
-    return [...buckets].map(([pressure, d]) => (
-      <path
-        key={pressure}
-        d={d}
-        fill="none"
-        stroke={m.color}
-        strokeWidth={pressureWidth(m.size, pressure / 7, m.penStyle)}
-        strokeLinecap="round"
-      />
-    ));
-  };
   const draw = (source: Mark) => {
     const m = moved?.id === source.id ? moved : source,
       r = m.rect,
@@ -355,16 +464,7 @@ export default function PDFPage(p: Props) {
         }}
       >
         {m.kind === 'ink' ? (
-          m.points.length === 1 ? (
-            <circle
-              cx={m.points[0].x * p.width}
-              cy={m.points[0].y * p.height}
-              r={m.size / 2}
-              fill={m.color}
-            />
-          ) : (
-            inkPaths(m)
-          )
+          <InkStroke mark={m} width={p.width} height={p.height} />
         ) : m.kind === 'image' ? (
           <image
             href={m.image}
@@ -488,6 +588,10 @@ export default function PDFPage(p: Props) {
         onPointerMove={move}
         onPointerUp={(e) => end(e)}
         onPointerCancel={(e) => end(e, true)}
+        onLostPointerCapture={(e) => end(e, true)}
+        onContextMenu={(e) => {
+          if (p.tool !== 'select') e.preventDefault();
+        }}
         onClick={() => p.tool === 'select' && p.onSelect(null)}
         aria-label={`Annotation canvas, page ${p.index + 1}`}
       >
@@ -507,9 +611,16 @@ export default function PDFPage(p: Props) {
             />
           );
         })}
-        {p.marks.map(draw)}
+        {near && p.marks.map(draw)}
         {draft && draw(draft)}
       </svg>
+      <canvas
+        ref={inkCanvas}
+        width={1}
+        height={1}
+        className="reader-ink-preview"
+        aria-hidden="true"
+      />
       <span className="reader-page-label">{p.index + 1}</span>
     </div>
   );

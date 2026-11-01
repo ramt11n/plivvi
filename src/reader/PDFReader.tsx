@@ -45,7 +45,7 @@ import { notebookPDF, type Paper } from '../notebooks/model';
 import { readerDraftKey } from '../lib/workspace';
 import { brand } from '../integrations/config';
 import ThemePicker from '../components/ThemePicker';
-import type { Mark, ReaderInfo, ReaderTool, PenStyle } from './types';
+import type { Mark, ReaderInfo, ReaderTool, PenStyle, PenActivity } from './types';
 type Props = {
   workspace: string;
   initialFile?: File;
@@ -110,6 +110,7 @@ export default function PDFReader({
     [flatten, setFlatten] = useState(false),
     [appearance, setAppearance] = useState(false);
   const imageInput = useRef<HTMLInputElement>(null);
+  const penActivity = useRef<PenActivity>({ pointer: null, until: 0 });
   const [exportFormat, setExportFormat] = useState('pdf');
   const [penStyle, setPenStyle] = useState<PenStyle>('fountain');
   const [paper, setPaper] = useState<Paper>(notebook?.paper ?? 'blank');
@@ -204,7 +205,7 @@ export default function PDFReader({
       const draft = draftSnapshot.current;
       if (draft.key && raw.current)
         notebookRef.current?.onDraft(draft.marks, raw.current.data).catch(() => {});
-      if (draft.key)
+      if (draft.key && !notebookRef.current)
         import('idb-keyval').then(({ set }) => set(draft.key, draft.marks)).catch(() => {});
       if (session.current) {
         rpc('reader-close', { session: session.current }).catch(() => {});
@@ -225,13 +226,10 @@ export default function PDFReader({
     if (!draftReady || !draftKey) return;
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      import('idb-keyval')
-        .then(({ set }) => set(draftKey, marks))
-        .then(() =>
-          notebookRef.current && raw.current
-            ? notebookRef.current.onDraft(marks, raw.current.data)
-            : undefined,
-        )
+      (notebookRef.current && raw.current
+        ? notebookRef.current.onDraft(marks, raw.current.data)
+        : import('idb-keyval').then(({ set }) => set(draftKey, marks))
+      )
         .then(() =>
           setNotice(
             notebookRef.current ? 'Notebook saved on this device' : 'Draft saved on this device',
@@ -274,8 +272,11 @@ export default function PDFReader({
   const commit = useCallback((next: Mark[] | ((old: Mark[]) => Mark[])) => {
     const { history: h, cursor: c } = latest.current,
       value = typeof next === 'function' ? next(h[c]) : next;
-    setHistory([...h.slice(Math.max(0, c - 79), c + 1), value]);
-    setCursor(Math.min(80, c + 1));
+    const nextHistory = [...h.slice(Math.max(0, c - 79), c + 1), value],
+      nextCursor = Math.min(80, c + 1);
+    latest.current = { history: nextHistory, cursor: nextCursor };
+    setHistory(nextHistory);
+    setCursor(nextCursor);
   }, []);
   function undo() {
     setCursor((c) => Math.max(0, c - 1));
@@ -1077,6 +1078,7 @@ export default function PDFReader({
                   size={size}
                   touchInk={touchInk}
                   penStyle={penStyle}
+                  penActivity={penActivity.current}
                   selected={selected}
                   onSelect={setSelected}
                   onMark={(m) => commit((old) => [...old, m])}

@@ -12,33 +12,34 @@
     "format": "prettier --write src scripts tests docs .github project-site \"*.{json,ts,html,md}\" public/sw.js"
   },
   "dependencies": {
-    "react": "latest",
-    "react-dom": "latest",
+    "@azure/msal-browser": "latest",
+    "@pdf-lib/fontkit": "latest",
+    "docx": "latest",
+    "dompurify": "latest",
+    "exceljs": "latest",
+    "fflate": "latest",
+    "firebase": "latest",
+    "html-to-image": "latest",
+    "idb-keyval": "latest",
     "lucide-react": "latest",
+    "mammoth": "latest",
     "mupdf": "latest",
     "pdf-lib": "latest",
-    "@pdf-lib/fontkit": "latest",
-    "tesseract.js": "latest",
-    "docx": "latest",
-    "mammoth": "latest",
-    "exceljs": "latest",
     "pptxgenjs": "latest",
-    "fflate": "latest",
-    "idb-keyval": "latest",
-    "dompurify": "latest",
-    "html-to-image": "latest",
-    "firebase": "latest",
-    "@azure/msal-browser": "latest"
+    "react": "latest",
+    "react-dom": "latest",
+    "tesseract.js": "latest"
   },
   "devDependencies": {
-    "typescript": "latest",
-    "vite": "latest",
-    "@vitejs/plugin-react": "latest",
+    "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "@types/node": "latest",
-    "vitest": "latest",
-    "prettier": "latest"
+    "@vitejs/plugin-react": "latest",
+    "happy-dom": "^21.0.4",
+    "prettier": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest"
   },
   "overrides": {
     "@grpc/grpc-js": "^1.13.6"
