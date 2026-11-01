@@ -36,39 +36,50 @@ export function prepareGoogleIdentity() {
     throw error;
   }));
 }
-// Call only from the user's click, after prepareGoogleIdentity has finished.
-// Google's window opens synchronously; Firebase receives the token afterwards.
-export function requestGoogleSignIn(clientId: string) {
-  let active = true;
-  const pending = new Promise<string>((resolve, reject) => {
-    const client = window.google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: 'openid email profile',
-      include_granted_scopes: false,
-      callback: (result: { access_token?: string; error?: string }) => {
-        if (!active) return;
-        if (result.error || !result.access_token)
-          reject(Error('Google sign-in was not completed. You can try again or use email.'));
-        else resolve(result.access_token);
-      },
-      error_callback: (error: { type?: string }) => {
-        if (!active) return;
-        reject(
-          Error(
-            error.type === 'popup_failed_to_open'
-              ? 'Google’s window was blocked. Open Plivvi in Safari or Chrome and allow its sign-in window, or use email.'
-              : 'The Google sign-in window was closed. You can try again.',
-          ),
-        );
-      },
-    });
-    client.requestAccessToken({ prompt: 'select_account' });
-  });
-  return deadline(
-    pending,
-    120000,
-    'Google sign-in did not finish. Open Plivvi in Safari or Chrome, allow its sign-in window, or use email.',
-  ).finally(() => {
+// Prepare the client before enabling either Google button. Its request is a
+// one-shot operation, so a late reply cannot be mistaken for a later attempt.
+export function createGoogleSignInRequest(clientId: string) {
+  let used = false,
     active = false;
+  let accept: (token: string) => void, decline: (error: Error) => void;
+  const client = window.google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: 'openid email profile',
+    include_granted_scopes: false,
+    callback: (result: { access_token?: string; error?: string }) => {
+      if (!active) return;
+      if (result.error || !result.access_token)
+        decline(Error('Google sign-in was not completed. You can try again or use email.'));
+      else accept(result.access_token);
+    },
+    error_callback: (error: { type?: string }) => {
+      if (!active) return;
+      decline(
+        Error(
+          error.type === 'popup_failed_to_open'
+            ? 'Google’s window was blocked. Open Plivvi in Safari or Chrome and allow its sign-in window, or use email.'
+            : 'The Google sign-in window was closed. You can try again.',
+        ),
+      );
+    },
   });
+  return function requestGoogleSignIn() {
+    if (used)
+      return Promise.reject(Error('Please wait for Google to prepare a fresh sign-in attempt.'));
+    used = true;
+    active = true;
+    const pending = new Promise<string>((resolve, reject) => {
+      accept = resolve;
+      decline = reject;
+      // No initialization, imports, or awaits between the tap and this call.
+      client.requestAccessToken({ prompt: 'select_account' });
+    });
+    return deadline(
+      pending,
+      120000,
+      'Google sign-in did not finish. Open Plivvi in Safari or Chrome, allow its sign-in window, or use email.',
+    ).finally(() => {
+      active = false;
+    });
+  };
 }

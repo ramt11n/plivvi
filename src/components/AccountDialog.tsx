@@ -28,7 +28,6 @@ import { disconnectCloud } from '../integrations/cloud';
 import { brand } from '../integrations/config';
 import { workspaceId } from '../lib/workspace';
 import Brand from './Brand';
-import { requestGoogleSignIn } from '../integrations/googleIdentity';
 
 export default function AccountDialog({ onClose }: { onClose: () => void }) {
   const [state, setState] = useState(accountState),
@@ -50,7 +49,8 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
     | undefined
   >(undefined);
   const [googleReady, setGoogleReady] = useState(false),
-    [googleAttempt, setGoogleAttempt] = useState(0);
+    [googleAttempt, setGoogleAttempt] = useState(0),
+    [googleProgress, setGoogleProgress] = useState('');
   const mounted = useRef(true),
     operation = useRef(0);
   useEffect(() => subscribeAccounts(setState), []);
@@ -134,8 +134,10 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
         return;
       }
       if (google) {
-        const token = await requestGoogleSignIn(prepared!.slot.clientId);
+        setGoogleProgress('Waiting for Google…');
+        const token = await prepared!.slot.request();
         if (!current()) return;
+        setGoogleProgress('Signing you in…');
         await signIn(
           sdk.signInWithCredential(slot.auth, sdk.GoogleAuthProvider.credential(null, token)),
         );
@@ -170,7 +172,15 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
     } catch (e) {
       if (current()) setError(authMessage(e));
     } finally {
-      if (current()) setBusy(false);
+      if (current()) {
+        setBusy(false);
+        setGoogleProgress('');
+        if (google) {
+          googleSession.current = undefined;
+          setGoogleReady(false);
+          setGoogleAttempt((n) => n + 1);
+        }
+      }
     }
   }
   const active = state.active;
@@ -355,7 +365,11 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
             ) : (
               <>
                 {state.accounts.length > 0 && (
-                  <button className="text-button account-back" onClick={() => changeMode('manage')}>
+                  <button
+                    className="text-button account-back"
+                    disabled={busy}
+                    onClick={() => changeMode('manage')}
+                  >
                     <ArrowLeft size={14} />
                     Back to accounts
                   </button>
@@ -371,7 +385,7 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
                         G
                       </span>
                       {busy
-                        ? 'Connecting securely…'
+                        ? googleProgress || 'Connecting securely…'
                         : !googleReady
                           ? 'Preparing Google…'
                           : 'Continue with Google'}
@@ -455,6 +469,7 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
                 <div className="account-switch">
                   <button
                     className="text-button"
+                    disabled={busy}
                     onClick={() => changeMode(mode === 'signup' ? 'signin' : 'signup')}
                   >
                     {mode === 'signup'
@@ -462,7 +477,11 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
                       : 'New here? Create an account'}
                   </button>
                   {mode === 'signin' && (
-                    <button className="text-button" onClick={() => changeMode('reset')}>
+                    <button
+                      className="text-button"
+                      disabled={busy}
+                      onClick={() => changeMode('reset')}
+                    >
                       Forgot password?
                     </button>
                   )}
@@ -470,6 +489,8 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
                 <p className="account-fineprint">
                   You can keep up to 10 accounts signed in in this tab. Sessions end when this
                   browser session is cleared. Every tool also works in your guest workspace.
+                  <br />
+                  {brand.name} {brand.version}
                 </p>
               </>
             )}

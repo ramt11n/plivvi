@@ -9,12 +9,12 @@ const mocks = vi.hoisted(() => ({
   exchange: vi.fn(),
   activate: vi.fn(),
 }));
-vi.mock('../src/integrations/googleIdentity', () => ({ requestGoogleSignIn: mocks.popup }));
 vi.mock('../src/integrations/auth', () => ({
   accountState: () => ({ ready: true, configured: true, active: null, accounts: [] }),
   subscribeAccounts: () => () => {},
   newAccountSession: vi.fn(),
   prepareGoogleSession: mocks.prepare,
+  resetGooglePreparation: vi.fn(),
   activateAccount: mocks.activate,
   switchAccount: vi.fn(),
   signOutAccount: vi.fn(),
@@ -33,35 +33,54 @@ vi.mock('firebase/auth', () => ({
 import AccountDialog from '../src/components/AccountDialog';
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => vi.unstubAllGlobals());
-it('calls the prepared Google popup during the click, before yielding user activation', async () => {
-  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  mocks.prepare.mockResolvedValue({ id: 'prepared', auth: {}, clientId: 'public-client' });
-  mocks.popup.mockReturnValue(new Promise(() => {}));
-  const host = document.createElement('div');
-  document.body.append(host);
-  const root = createRoot(host);
-  try {
-    await act(async () => root.render(createElement(AccountDialog, { onClose() {} })));
-    const google = [...host.querySelectorAll('button')].find((b) =>
-      b.textContent?.includes('Continue with Google'),
-    )!;
-    expect(google.disabled).toBe(false);
-    await act(async () => {
-      google.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      // No awaited configuration/SDK/iframe setup may precede Google's authorization window.
-      expect(mocks.popup).toHaveBeenCalledTimes(1);
-      expect(mocks.popup.mock.calls[0][0]).toBe('public-client');
+it.each(['signin', 'signup'])(
+  'calls the prepared Google popup synchronously from %s',
+  async (mode) => {
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    mocks.prepare.mockResolvedValue({
+      id: 'prepared',
+      auth: {},
+      clientId: 'public-client',
+      request: mocks.popup,
     });
-  } finally {
-    await act(async () => root.unmount());
-    host.remove();
-  }
-});
+    mocks.popup.mockReturnValue(new Promise(() => {}));
+    const host = document.createElement('div');
+    document.body.append(host);
+    const root = createRoot(host);
+    try {
+      await act(async () => root.render(createElement(AccountDialog, { onClose() {} })));
+      if (mode === 'signup')
+        await act(async () => {
+          [...host.querySelectorAll('button')]
+            .find((b) => b.textContent?.includes('New here?'))!
+            .click();
+        });
+      const google = [...host.querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Continue with Google'),
+      )!;
+      expect(google.disabled).toBe(false);
+      await act(async () => {
+        google.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        // No awaited configuration/SDK/iframe setup may precede Google's authorization window.
+        expect(mocks.popup).toHaveBeenCalledTimes(1);
+        expect(mocks.popup).toHaveBeenCalledWith();
+      });
+    } finally {
+      await act(async () => root.unmount());
+      host.remove();
+    }
+  },
+);
 it('exchanges the returned Google identity token with Firebase before activating its account', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   const auth = { currentUser: null },
     credential = { providerId: 'google.com' };
-  mocks.prepare.mockResolvedValue({ id: 'prepared', auth, clientId: 'public-client' });
+  mocks.prepare.mockResolvedValue({
+    id: 'prepared',
+    auth,
+    clientId: 'public-client',
+    request: mocks.popup,
+  });
   mocks.popup.mockResolvedValue('profile-only-token');
   mocks.credential.mockReturnValue(credential);
   mocks.exchange.mockResolvedValue({ user: { uid: 'alice' } });

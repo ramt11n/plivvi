@@ -28,10 +28,12 @@ describe('direct Google authorization', () => {
         },
       },
     });
-    const { prepareGoogleIdentity, requestGoogleSignIn } =
+    const { prepareGoogleIdentity, createGoogleSignInRequest } =
       await import('../src/integrations/googleIdentity');
     const clientId = await prepareGoogleIdentity();
-    const pending = requestGoogleSignIn(clientId);
+    const request = createGoogleSignInRequest(clientId);
+    expect(requested).toBe(false);
+    const pending = request();
     expect(requested).toBe(true);
     expect(options.scope).toBe('openid email profile');
     expect(options.include_granted_scopes).toBe(false);
@@ -50,8 +52,8 @@ describe('direct Google authorization', () => {
         },
       },
     });
-    const { requestGoogleSignIn } = await import('../src/integrations/googleIdentity');
-    await expect(requestGoogleSignIn('public-client')).rejects.toThrow('blocked');
+    const { createGoogleSignInRequest } = await import('../src/integrations/googleIdentity');
+    await expect(createGoogleSignInRequest('public-client')()).rejects.toThrow('blocked');
     expect(vi.getTimerCount()).toBe(0);
   });
   it('ignores a response arriving after a stalled authorization has timed out', async () => {
@@ -69,8 +71,8 @@ describe('direct Google authorization', () => {
         },
       },
     });
-    const { requestGoogleSignIn } = await import('../src/integrations/googleIdentity');
-    const pending = requestGoogleSignIn('public-client');
+    const { createGoogleSignInRequest } = await import('../src/integrations/googleIdentity');
+    const pending = createGoogleSignInRequest('public-client')();
     const rejected = expect(pending).rejects.toThrow('did not finish');
     await vi.advanceTimersByTimeAsync(120000);
     await rejected;

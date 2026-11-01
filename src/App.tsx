@@ -1277,6 +1277,14 @@ export default function App() {
                 <OfflineStatus />
                 <div className="setting-row">
                   <div>
+                    <strong>App version</strong>
+                    <span>
+                      {brand.name} {brand.version}
+                    </span>
+                  </div>
+                </div>
+                <div className="setting-row">
+                  <div>
                     <strong>Local workspace</strong>
                     <span>
                       {documents.length} files · {bytes(used)}

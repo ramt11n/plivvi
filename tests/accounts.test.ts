@@ -6,6 +6,7 @@ const mock = vi.hoisted(() => ({
 }));
 vi.mock('../src/integrations/googleIdentity', () => ({
   prepareGoogleIdentity: async () => 'public-client',
+  createGoogleSignInRequest: () => async () => 'test-token',
 }));
 vi.mock('firebase/app', () => ({
   getApps: () => [...mock.apps.values()],

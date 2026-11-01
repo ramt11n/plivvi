@@ -1,6 +1,6 @@
 import { integrationConfig } from './config';
 import { deadline } from '../lib/deadline';
-import { prepareGoogleIdentity } from './googleIdentity';
+import { prepareGoogleIdentity, createGoogleSignInRequest } from './googleIdentity';
 import type { Auth, User } from 'firebase/auth';
 
 export type Account = { id: string; uid: string; name: string; email: string; verified: boolean };
@@ -19,7 +19,9 @@ export const account = (user: User, id = 'primary'): Account => ({
   verified: user.emailVerified,
 });
 const clients = new Map<string, Promise<Auth>>();
-let popupPreparation: Promise<{ id: string; auth: Auth; clientId: string }> | undefined,
+let popupPreparation:
+    | Promise<{ id: string; auth: Auth; clientId: string; request: () => Promise<string> }>
+    | undefined,
   popupSlot: string | undefined;
 const observed = new Map<string, () => void>();
 const listeners = new Set<(state: AccountState) => void>();
@@ -170,13 +172,26 @@ export function prepareGoogleSession() {
   return (popupPreparation ??= Promise.all([newAccountSession(), prepareGoogleIdentity()])
     .then(([slot, clientId]) => {
       popupSlot = slot.id;
-      return { ...slot, clientId };
+      const request = createGoogleSignInRequest(clientId);
+      return {
+        ...slot,
+        clientId,
+        request: () => {
+          // A reopened dialog must get its own attempt while this window is pending.
+          if (popupSlot === slot.id) resetGooglePreparation();
+          return request();
+        },
+      };
     })
     .catch((error) => {
       popupPreparation = undefined;
       popupSlot = undefined;
       throw error;
     }));
+}
+export function resetGooglePreparation() {
+  popupPreparation = undefined;
+  popupSlot = undefined;
 }
 export async function activateAccount(id: string) {
   const auth = await authClient(id);
