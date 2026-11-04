@@ -125,7 +125,7 @@ export default function App() {
     setStorageError('');
     setLoadedWorkspace(undefined);
     setDocuments([]);
-    if (!authState.ready) return;
+    // Local files can open while the independent sign-in service restores.
     readDocuments(workspace)
       .then((d) => {
         if (alive) {
@@ -147,7 +147,7 @@ export default function App() {
     return () => {
       alive = false;
     };
-  }, [workspace, authState.ready, libraryAttempt]);
+  }, [workspace, libraryAttempt]);
   useEffect(() => {
     const sync = () => {
       const r = currentRoute();
