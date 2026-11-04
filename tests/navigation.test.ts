@@ -2,8 +2,9 @@
 import { afterEach, beforeEach, expect, it, vi, type Mock } from 'vitest';
 import { bindNavigation } from '../src/reader/navigation';
 let surface: HTMLDivElement, first: HTMLDivElement, second: HTMLDivElement, cleanup: () => void;
-let zoom: Mock<(ratio: number, anchor: { x: number; y: number }) => void>,
-  pan: Mock<(x: number, y: number) => void>,
+let change: Mock<(scale: number, center: { x: number; y: number }) => void>,
+  startGesture: Mock<(center: { x: number; y: number }) => void>,
+  endGesture: Mock<() => void>,
   pen: boolean;
 let frames: Map<number, FrameRequestCallback>, sequence: number;
 beforeEach(() => {
@@ -25,12 +26,14 @@ beforeEach(() => {
     hasPointerCapture: () => false,
     releasePointerCapture() {},
   });
-  pan = vi.fn();
-  zoom = vi.fn();
-  Object.assign(surface, { scrollBy: pan });
+  change = vi.fn();
+  startGesture = vi.fn();
+  endGesture = vi.fn();
   cleanup = bindNavigation(surface, {
     penActive: () => pen,
-    zoom: (ratio, anchor) => zoom(ratio, anchor),
+    start: (center) => startGesture(center),
+    change: (scale, center) => change(scale, center),
+    end: () => endGesture(),
   });
 });
 afterEach(() => {
@@ -66,49 +69,47 @@ function start() {
   pointer('pointerdown', 1, 100, 100);
   pointer('pointerdown', 2, 200, 100, 'touch', second);
 }
-it('pans across page boundaries without zooming from alternating finger events or small distance jitter', () => {
+
+it('combines alternating finger events into one absolute transform across pages', () => {
   start();
+  expect(startGesture).toHaveBeenCalledWith({ x: 150, y: 100 });
   pointer('pointermove', 1, 120, 130);
   pointer('pointermove', 2, 221, 130, 'touch', second);
-  expect(pan).not.toHaveBeenCalled();
+  expect(change).not.toHaveBeenCalled();
   frame();
-  expect(pan).toHaveBeenCalledWith(-20.5, -30);
+  expect(change).toHaveBeenLastCalledWith(1, { x: 170.5, y: 130 });
   pointer('pointermove', 1, 130, 150);
-  pointer('pointermove', 2, 229, 150, 'touch', second);
+  pointer('pointermove', 2, 229, 150);
   frame();
-  expect(zoom).not.toHaveBeenCalled();
+  expect(change).toHaveBeenLastCalledWith(1, { x: 179.5, y: 150 });
 });
-it('pinches in and out around the original midpoint without also scrolling', () => {
+it('reports absolute pinch in/out while moving the same anchor', () => {
   start();
-  pointer('pointermove', 1, 80, 100);
-  pointer('pointermove', 2, 220, 100);
-  frame();
-  expect(zoom).toHaveBeenLastCalledWith(1.4, { x: 150, y: 100 });
-  pointer('pointermove', 1, 110, 100);
-  pointer('pointermove', 2, 190, 100);
-  frame();
-  expect(zoom.mock.calls[1][0]).toBeCloseTo(80 / 140);
-  expect(pan).not.toHaveBeenCalled();
-});
-it('keeps gesture intent locked, then permits a different gesture after lifting a finger', () => {
-  start();
-  pointer('pointermove', 1, 100, 120);
-  pointer('pointermove', 2, 200, 120);
-  frame();
-  pointer('pointermove', 1, 60, 120);
+  pointer('pointermove', 1, 80, 120);
   pointer('pointermove', 2, 240, 120);
   frame();
-  expect(zoom).not.toHaveBeenCalled();
-  pointer('pointerup', 2, 240, 120);
-  pointer('pointerdown', 2, 200, 120);
-  pan.mockClear();
-  pointer('pointermove', 1, 40, 120);
-  pointer('pointermove', 2, 220, 120);
+  expect(change).toHaveBeenLastCalledWith(1.6, { x: 160, y: 120 });
+  pointer('pointermove', 1, 120, 150);
+  pointer('pointermove', 2, 200, 150);
   frame();
-  expect(zoom).toHaveBeenCalled();
-  expect(pan).not.toHaveBeenCalled();
+  expect(change).toHaveBeenLastCalledWith(0.8, { x: 160, y: 150 });
 });
-it('cancels queued navigation on Pencil contact and does not swallow the pen event', () => {
+it('transitions from pan into pinch and back without lifting a finger', () => {
+  start();
+  pointer('pointermove', 1, 100, 130);
+  pointer('pointermove', 2, 200, 130);
+  frame();
+  expect(change).toHaveBeenLastCalledWith(1, { x: 150, y: 130 });
+  pointer('pointermove', 1, 80, 140);
+  pointer('pointermove', 2, 240, 140);
+  frame();
+  expect(change).toHaveBeenLastCalledWith(1.6, { x: 160, y: 140 });
+  pointer('pointermove', 1, 110, 170);
+  pointer('pointermove', 2, 210, 170);
+  frame();
+  expect(change).toHaveBeenLastCalledWith(1, { x: 160, y: 170 });
+});
+it('cancels queued navigation on Pencil contact without swallowing pen input', () => {
   start();
   pointer('pointermove', 1, 100, 130);
   pointer('pointermove', 2, 200, 130);
@@ -118,23 +119,32 @@ it('cancels queued navigation on Pencil contact and does not swallow the pen eve
   pen = true;
   frame();
   expect(draw).toHaveBeenCalledOnce();
-  expect(pan).not.toHaveBeenCalled();
-  expect(zoom).not.toHaveBeenCalled();
+  expect(change).not.toHaveBeenCalled();
+  expect(endGesture).toHaveBeenCalledOnce();
 });
-it('discards cancelled and single-finger gestures and removes listeners on teardown', () => {
+it('ignores a palm, cancels incomplete gestures, and removes listeners', () => {
   pointer('pointerdown', 1, 100, 100);
   pointer('pointermove', 1, 100, 170);
   frame();
-  expect(pan).not.toHaveBeenCalled();
+  expect(change).not.toHaveBeenCalled();
   pointer('pointerdown', 2, 200, 100);
   pointer('pointermove', 2, 200, 150);
   pointer('pointercancel', 2, 200, 150);
   frame();
-  expect(pan).not.toHaveBeenCalled();
-  expect(zoom).not.toHaveBeenCalled();
+  expect(change).not.toHaveBeenCalled();
   cleanup();
   start();
   pointer('pointermove', 1, 50, 100);
   frame();
-  expect(zoom).not.toHaveBeenCalled();
+  expect(change).not.toHaveBeenCalled();
+});
+it('flushes final finger coordinates before closing the gesture', () => {
+  start();
+  pointer('pointermove', 1, 100, 130);
+  pointer('pointermove', 2, 200, 130);
+  pointer('pointerup', 2, 210, 140);
+  expect(change).toHaveBeenCalledOnce();
+  expect(endGesture).toHaveBeenCalledOnce();
+  frame();
+  expect(change).toHaveBeenCalledOnce();
 });

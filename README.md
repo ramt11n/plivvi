@@ -2,7 +2,7 @@
 
 **Free. Open source. Proudly vibe coded.** A responsive, installable PDF workshop made by [Ramtin Neshatvar](https://github.com/ramt11n).
 
-[Open the workshop](https://plivvi.pages.dev) · [Project home](https://ramt11n.github.io/pocket-pdf/) · [Contribute](CONTRIBUTING.md) · [Contact & sponsor](mailto:ramtinneshat4@gmail.com) · [AGPL-3.0-or-later](LICENSE)
+[Open the workshop](https://plivvi.pages.dev) · [Project home](https://ramt11n.github.io/plivvi/) · [Contribute](CONTRIBUTING.md) · [Support the maker](https://plivvi.pages.dev/support/) · [AGPL-3.0-or-later](LICENSE)
 
 Read, mark up, scan, organize, sign, and convert documents on your device. No feature subscriptions, no required login, and no document-upload processing backend. Sponsorship and optional paid custom-workflow help support the project without restricting document tools.
 
@@ -99,3 +99,13 @@ Create named notebooks with colored covers and blank, ruled, dotted, grid, or Co
 Text-to-PDF and Office reading-copy conversion use MuPDF Unicode shaping with locally hosted Noto script fonts and built-in CJK fallback. Persian/Arabic direction is detected per paragraph. Common Indic scripts and extended Latin characters are supported. Fonts download only when their script is needed and can then be cached offline. The app does not upload text to a font service. Original Office pagination/design is not reproduced. OCR currently provides English, Persian and Arabic models.
 
 Plivvi is an invented name, pronounced **PLIV-ee**. Its logo, type, cobalt/mint colors, and paper illustrations form the app's visual identity.
+
+## Plivvi 3.2
+
+Optional crypto support is now available at [plivvi.pages.dev/support](https://plivvi.pages.dev/support/): 14 owner-supplied receiving routes, including USDT on five networks. The site does not connect to wallets or process payments. Every document feature stays free.
+
+Ten focused workflow URLs open real presets for JPG/PNG, Word, Excel, PowerPoint, Persian/Arabic OCR, and Apple Pencil annotation. Together with the core tool guides, Plivvi generates 53 indexable pages. Document and account workspaces remain excluded from indexing.
+
+The pen workspace includes a first-visit gesture guide and a toolbar help button. Two-finger translation and pinch share one page anchor, with absolute per-frame scale updates. Automated pointer tests do not replace testing on a physical iPad.
+
+[Donation configuration and research](docs/DONATIONS.md) · [Shareable launch copy](docs/SHARE-PLIVVI.md)

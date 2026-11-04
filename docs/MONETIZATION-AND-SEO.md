@@ -1,6 +1,6 @@
 # Keep every document feature free
 
-The release supports direct sponsorship and paid custom workflow help through `ramtinneshat4@gmail.com`. Sponsor invitations appear on public pages, with no feature locks, invented visitor counts, or fake paying sponsors. A visitor can use the workshop without an account.
+The release supports optional direct crypto donations, direct sponsorship and paid custom workflow help through `ramtinneshat4@gmail.com`. Sponsor invitations appear on public pages, with no feature locks, invented visitor counts, or fake paying sponsors. A visitor can use the workshop without an account.
 
 ## Practical income options
 
@@ -39,3 +39,13 @@ The routes hydrate into the same client application for SPA navigation. The gene
 5. Improve the tools using real bug reports, usage feedback, accessibility checks, and measured performance.
 
 SEO cannot guarantee rankings, fame, traffic, ad acceptance, or income. A free short link is a convenience redirect, not an SEO strategy or a permanent ownership guarantee.
+
+## Version 3.2 search and support additions
+
+The build creates 53 indexable pages: 35 core tools, ten focused conversion/handwriting/language workflows, and eight public site pages. Each focused route has original instructions, limits, FAQs, exact self-canonical URL, social metadata, and matching WebPage/WebApplication/breadcrumb data. The SPA refreshes structured data and Twitter metadata on navigation. The tools directory and related workflow links expose the routes to crawlers. Persian/Arabic OCR links select actual OCR language settings; they are English guides, not translated interfaces, so no fabricated hreflang is emitted.
+
+Homepage WebSite data identifies Plivvi and its alternate descriptive name. Source metadata links the renamed repository. The GitHub project landing page canonicals to the app's About page. Google site-verification metadata is included for the owner's Search Console property. Verification and sitemap acceptance are operational steps to confirm after publishing, not assumed from the presence of a meta tag.
+
+Optional donations use the owner's supplied receiving details. See [configuration and design research](DONATIONS.md). Account/document paths are noindex, and search metadata contains no private file names or content. No extra analytics or third-party ad scripts were added for SEO.
+
+Primary references: [Google JavaScript SEO](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics), [site names](https://developers.google.com/search/docs/appearance/site-names), [sitemaps](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap), and [GitHub repository renaming](https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository). Renamed repository links redirect; GitHub Pages project URLs are an exception and use the new repository name.

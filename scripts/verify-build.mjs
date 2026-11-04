@@ -1,6 +1,9 @@
 import { readFile, stat } from 'node:fs/promises';
 import { strict as assert } from 'node:assert';
-const content = JSON.parse(await readFile('src/seo/content.json', 'utf8')),
+const content = {
+    ...JSON.parse(await readFile('src/seo/content.json', 'utf8')),
+    ...JSON.parse(await readFile('src/seo/features.json', 'utf8')),
+  },
   sitemap = await readFile('dist/sitemap.xml', 'utf8');
 for (const [id, tool] of Object.entries(content)) {
   const html = await readFile(`dist/${tool.slug}/index.html`, 'utf8');
@@ -15,6 +18,13 @@ for (const [id, tool] of Object.entries(content)) {
     `${id}: missing description`,
   );
   assert(html.includes(`/${tool.slug}/`), `${id}: missing canonical path`);
+  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)[1];
+  assert.equal(canonical, `https://plivvi.pages.dev/${tool.slug}/`);
+  const ld = JSON.parse(
+    html.match(/<script id="plivvi-seo-data" type="application\/ld\+json">([\s\S]*?)<\/script>/)[1],
+  );
+  assert.equal(ld['@graph'].find((node) => node['@type'] === 'WebPage').url, canonical);
+  assert.equal((html.match(/id="plivvi-seo-data"/g) ?? []).length, 1);
   assert(html.includes('application/ld+json'), `${id}: missing structured data`);
   assert(sitemap.includes('/' + tool.slug + '/'), `${id}: missing sitemap route`);
 }

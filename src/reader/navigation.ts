@@ -1,30 +1,32 @@
-type Point = { x: number; y: number };
-type Options = { penActive: () => boolean; zoom: (ratio: number, anchor: Point) => void };
-const geometry = (points: Point[]) => ({
+export type NavigationPoint = { x: number; y: number };
+type Options = {
+  penActive: () => boolean;
+  start: (origin: NavigationPoint) => void;
+  change: (scale: number, center: NavigationPoint) => void;
+  end: () => void;
+};
+const geometry = (points: NavigationPoint[]) => ({
   center: { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 },
   distance: Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y),
 });
-// One controller for the entire viewport, including fingers on different pages.
+// The viewport receives one absolute transform per frame. Translation and scale
+// share the same document anchor; neither competes with a separate scrollBy.
 export function bindNavigation(surface: HTMLElement, options: Options) {
-  const points = new Map<number, Point>();
+  const points = new Map<number, NavigationPoint>();
   let frame = 0;
-  let gesture:
-    | {
-        start: ReturnType<typeof geometry>;
-        previous: ReturnType<typeof geometry>;
-        mode?: 'pan' | 'pinch';
-      }
-    | undefined;
+  let gesture: { initial: ReturnType<typeof geometry>; scaling: boolean } | undefined;
   function clear() {
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
+    if (gesture) options.end();
     gesture = undefined;
   }
   function reset() {
     clear();
     if (points.size === 2) {
-      const start = geometry([...points.values()]);
-      gesture = { start, previous: start };
+      const initial = geometry([...points.values()]);
+      gesture = { initial, scaling: false };
+      options.start(initial.center);
     }
   }
   function cancel() {
@@ -41,26 +43,17 @@ export function bindNavigation(surface: HTMLElement, options: Options) {
     }
     if (!gesture || points.size !== 2) return;
     const current = geometry([...points.values()]);
-    const translation = Math.hypot(
-      current.center.x - gesture.start.center.x,
-      current.center.y - gesture.start.center.y,
+    const initial = gesture.initial;
+    const ratio = initial.distance > 1 ? current.distance / initial.distance : 1;
+    // Ignore small separation jitter during translation, but allow pan to become
+    // a pinch (and vice versa) without lifting either finger.
+    if (Math.abs(ratio - 1) >= 0.025) gesture.scaling = true;
+    const travel = Math.hypot(
+      current.center.x - initial.center.x,
+      current.center.y - initial.center.y,
     );
-    const separation = Math.abs(current.distance - gesture.start.distance);
-    if (!gesture.mode) {
-      if (separation >= 10 && separation > translation * 1.4) gesture.mode = 'pinch';
-      else if (translation >= 8 && translation > separation * 0.7) gesture.mode = 'pan';
-      else return;
-    }
-    // Lock the intent until a finger lifts. Never scroll and zoom in one update.
-    if (gesture.mode === 'pan') {
-      surface.scrollBy(
-        gesture.previous.center.x - current.center.x,
-        gesture.previous.center.y - current.center.y,
-      );
-    } else if (gesture.previous.distance > 1 && current.distance > 1) {
-      options.zoom(current.distance / gesture.previous.distance, gesture.start.center);
-    }
-    gesture.previous = current;
+    if (!gesture.scaling && travel < 3) return;
+    options.change(gesture.scaling ? ratio : 1, current.center);
   }
   function down(event: PointerEvent) {
     if (event.pointerType === 'pen') {
@@ -80,11 +73,17 @@ export function bindNavigation(surface: HTMLElement, options: Options) {
     event.preventDefault();
     event.stopPropagation();
     points.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    // Both fingers' events are sampled together, avoiding alternating half-gestures.
     if (!frame) frame = requestAnimationFrame(update);
   }
   function end(event: PointerEvent) {
-    if (!points.delete(event.pointerId)) return;
+    if (!points.has(event.pointerId)) return;
+    if (event.type === 'pointerup' && points.size === 2) {
+      points.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      update();
+    }
+    points.delete(event.pointerId);
     event.stopPropagation();
     reset();
   }

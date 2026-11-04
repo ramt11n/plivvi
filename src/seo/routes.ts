@@ -1,5 +1,7 @@
 import brand from '../brand.json';
 import content from './content.json';
+import featureData from './features.json';
+import { structuredData } from './schema';
 import { tools } from '../lib/catalog';
 export type ToolContent = {
   slug: string;
@@ -10,7 +12,9 @@ export type ToolContent = {
   faqs: { q: string; a: string }[];
 };
 export const toolContent = content as Record<string, ToolContent>;
-export type Route = { view: string; toolId?: string };
+export type FeatureContent = ToolContent & { toolId: string; options: Record<string, string> };
+export const featureContent = featureData as Record<string, FeatureContent>;
+export type Route = { view: string; toolId?: string; featureId?: string };
 export function toolPath(id: string) {
   return '/' + (toolContent[id]?.slug ?? id) + '/';
 }
@@ -29,6 +33,8 @@ export function currentRoute(): Route {
     '/account': 'account',
   };
   if (views[path]) return { view: views[path] };
+  const feature = Object.entries(featureContent).find(([, f]) => '/' + f.slug === path);
+  if (feature) return { view: 'tool', toolId: feature[1].toolId, featureId: feature[0] };
   const entry = Object.entries(toolContent).find(([, c]) => '/' + c.slug === path);
   return entry ? { view: 'tool', toolId: entry[0] } : { view: '404' };
 }
@@ -42,7 +48,7 @@ export function navigateTo(path: string) {
 }
 const mainTitles: Record<string, [string, string]> = {
   home: [
-    '{brand} — Free, Open-Source PDF Tools',
+    '{brand} — Free PDF Tools, Editor & Digital Notebooks',
     'Free, open-source PDF reader, scanner, editor, and converter. Read, draw, merge, split, sign, and organize documents on your device. Vibe coded by Ramtin Neshatvar.',
   ],
   tools: [
@@ -70,12 +76,16 @@ const mainTitles: Record<string, [string, string]> = {
     'Contact Ramtin Neshatvar for {brand} questions, sponsorship, contributions, or custom workflow help.',
   ],
   support: [
-    'Sponsor {brand} — Keep Every Feature Free',
-    'Support an open-source PDF workshop through direct sponsorship or custom workflow work. No subscriptions or document-feature paywalls.',
+    'Support {brand} — Keep Every Feature Free',
+    'Support Plivvi with optional crypto donations: USDT on five networks, Bitcoin, Ethereum, and more. Keep every open-source document tool free.',
   ],
 };
 export function updateSEO(route: Route) {
-  const data = route.toolId ? toolContent[route.toolId] : undefined,
+  const data = route.featureId
+      ? featureContent[route.featureId]
+      : route.toolId
+        ? toolContent[route.toolId]
+        : undefined,
     [title, description] = data
       ? [data.title + ' · {brand}', data.description]
       : (mainTitles[route.view] ?? ['Your workspace · {brand}', 'Your local document workspace.']);
@@ -101,7 +111,7 @@ export function updateSEO(route: Route) {
   meta('og:description', identity(description), true);
   const url =
     (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') +
-    (data ? toolPath(route.toolId!) : pathForView(route.view));
+    (data ? '/' + data.slug + '/' : pathForView(route.view));
   let canonical = document.head.querySelector<HTMLLinkElement>('link[rel=canonical]');
   if (!canonical) {
     canonical = document.createElement('link');
@@ -110,6 +120,34 @@ export function updateSEO(route: Route) {
   }
   canonical.href = url;
   meta('og:url', url, true);
+  meta(
+    'og:image',
+    (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') + '/og.png',
+    true,
+  );
+  meta('og:image:alt', 'Plivvi — free PDF tools and digital notebooks', true);
+  meta('twitter:title', identity(title));
+  meta('twitter:description', identity(description));
+  meta(
+    'twitter:image',
+    (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') + '/og.png',
+  );
+  let ld = document.head.querySelector<HTMLScriptElement>('#plivvi-seo-data');
+  if (!ld) {
+    ld = document.createElement('script');
+    ld.id = 'plivvi-seo-data';
+    ld.type = 'application/ld+json';
+    document.head.append(ld);
+  }
+  ld.textContent = JSON.stringify(
+    structuredData(
+      (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, ''),
+      data ? '/' + data.slug + '/' : pathForView(route.view),
+      title,
+      description,
+      route.toolId,
+    ),
+  );
 }
 export function relatedTools(id: string) {
   const tool = tools.find((t) => t.id === id);

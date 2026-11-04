@@ -1,0 +1,114 @@
+[
+  {
+    "id": "usdt-ethereum",
+    "asset": "USDT",
+    "network": "Ethereum",
+    "standard": "ERC-20",
+    "address": "0x56222E1fda6f0093036717DF5883CacE9AA9947B",
+    "assetId": "c60_t0xdAC17F958D2ee523a2206206994597C13D831ec7"
+  },
+  {
+    "id": "usdt-tron",
+    "asset": "USDT",
+    "network": "TRON",
+    "standard": "TRC-20",
+    "address": "TJKzMLL251B3rn7fSfMEabjCQEASTHs2Yf",
+    "assetId": "c195_tTR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
+  },
+  {
+    "id": "usdt-bnb",
+    "asset": "USDT",
+    "network": "BNB Smart Chain",
+    "standard": "BEP-20",
+    "address": "0x56222E1fda6f0093036717DF5883CacE9AA9947B",
+    "assetId": "c20000714_t0x55d398326f99059fF775485246999027B3197955"
+  },
+  {
+    "id": "usdt-polygon",
+    "asset": "USDT",
+    "network": "Polygon",
+    "standard": "Polygon PoS",
+    "address": "0x56222E1fda6f0093036717DF5883CacE9AA9947B",
+    "assetId": "c966_t0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+  },
+  {
+    "id": "usdt-avalanche",
+    "asset": "USDT",
+    "network": "Avalanche",
+    "standard": "C-Chain",
+    "address": "0x56222E1fda6f0093036717DF5883CacE9AA9947B",
+    "assetId": "c10009000_t0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7"
+  },
+  {
+    "id": "btc",
+    "asset": "BTC",
+    "network": "Bitcoin",
+    "standard": "Bitcoin mainnet",
+    "address": "bc1q6sxt392cwhl0txw9hhddeq63tzpya7e8kkpxfc",
+    "assetId": "c0"
+  },
+  {
+    "id": "eth",
+    "asset": "ETH",
+    "network": "Ethereum",
+    "standard": "Ethereum mainnet",
+    "address": "0x56222E1fda6f0093036717DF5883CacE9AA9947B",
+    "assetId": "c60"
+  },
+  {
+    "id": "sol",
+    "asset": "SOL",
+    "network": "Solana",
+    "standard": "Solana mainnet",
+    "address": "EnFsznZpRqprF6T3NsXRXJQ7ZbPMw75JTYnrfVqHpHDa",
+    "assetId": "c501"
+  },
+  {
+    "id": "twt",
+    "asset": "TWT",
+    "network": "BNB Smart Chain",
+    "standard": "BEP-20",
+    "address": "0x56222E1fda6f0093036717DF5883CacE9AA9947B",
+    "assetId": "c20000714_t0x4B0F1812e5Df2A09796481Ff14017e6005508003"
+  },
+  {
+    "id": "trx",
+    "asset": "TRX",
+    "network": "TRON",
+    "standard": "TRON mainnet",
+    "address": "TJKzMLL251B3rn7fSfMEabjCQEASTHs2Yf",
+    "assetId": "c195"
+  },
+  {
+    "id": "doge",
+    "asset": "DOGE",
+    "network": "Dogecoin",
+    "standard": "Dogecoin mainnet",
+    "address": "DEnbNwjyedt6NpBTyKoS6dh7ghWgqGCgSw",
+    "assetId": "c3"
+  },
+  {
+    "id": "pol",
+    "asset": "POL",
+    "network": "Polygon",
+    "standard": "Polygon PoS",
+    "address": "0x56222E1fda6f0093036717DF5883CacE9AA9947B",
+    "assetId": "c966"
+  },
+  {
+    "id": "xrp",
+    "asset": "XRP",
+    "network": "XRP Ledger",
+    "standard": "XRP Ledger mainnet",
+    "address": "raTARLpZreEyiFdtweZVKtFRd9WBdP9jo3",
+    "assetId": "c144"
+  },
+  {
+    "id": "bch",
+    "asset": "BCH",
+    "network": "Bitcoin Cash",
+    "standard": "Bitcoin Cash mainnet",
+    "address": "qq959dhsjxku9hy3kj95u8pqu298dhze9vhyxqpk3x",
+    "assetId": "c145"
+  }
+]

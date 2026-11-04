@@ -2,6 +2,8 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { loadEnv } from 'vite';
 import { tools } from '../src/lib/catalog.ts';
+import { structuredData } from '../src/seo/schema.ts';
+const features = JSON.parse(await readFile('src/seo/features.json', 'utf8'));
 const brand = JSON.parse(await readFile('src/brand.json', 'utf8'));
 const identity = (value) => String(value).replaceAll('{brand}', brand.name);
 const env = { ...loadEnv('production', process.cwd(), ''), ...process.env },
@@ -15,13 +17,13 @@ const esc = (s) =>
   );
 const schema = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
 const nav =
-  '<nav aria-label="Main navigation"><a href="/">{brand}.</a><a href="/pdf-reader/">PDF reader</a><a href="/tools/">All tools</a><a href="/notebooks/">Free notebooks</a><a href="/about/">About</a><a href="/support/">Sponsor</a><a href="/contact/">Contact</a></nav>';
+  '<nav aria-label="Main navigation"><a href="/">{brand}.</a><a href="/pdf-reader/">PDF reader</a><a href="/tools/">All tools</a><a href="/notebooks/">Free notebooks</a><a href="/about/">About</a><a href="/support/">Support</a><a href="/contact/">Contact</a></nav>';
 const footer =
   '<footer><p>Free. Open source. Vibe coded. Made by <a href="https://github.com/ramt11n">Ramtin Neshatvar</a>.</p><a href="/privacy/">Privacy</a> · <a href="/source.zip">Application source</a> · <a href="mailto:ramtinneshat4@gmail.com">Contact & sponsorship</a></footer>';
 const routes = [];
 async function page(route, title, description, body, ld = {}, index = true) {
   const url = origin + route,
-    head = `<link rel="canonical" href="${esc(url)}"><meta name="robots" content="${index ? 'index,follow' : 'noindex,nofollow'}"><meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(url)}"><meta property="og:image" content="${origin}/og.png"><meta property="og:site_name" content="{brand}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${origin}/og.png"><script type="application/ld+json">${schema(ld)}</script>`;
+    head = `<link rel="canonical" href="${esc(url)}"><meta name="robots" content="${index ? 'index,follow' : 'noindex,nofollow'}"><meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(url)}"><meta property="og:image" content="${origin}/og.png"><meta property="og:site_name" content="{brand}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${origin}/og.png"><meta property="og:image:alt" content="Plivvi — free PDF tools and digital notebooks"><script id="plivvi-seo-data" type="application/ld+json">${schema(structuredData(origin, route, title, description, Object.entries(content).find(([, d]) => route === '/' + d.slug + '/')?.[0] ?? Object.values(features).find((d) => route === '/' + d.slug + '/')?.toolId))}</script>`;
   let html = base
     .replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`)
     .replace(
@@ -40,12 +42,19 @@ async function page(route, title, description, body, ld = {}, index = true) {
   if (index) routes.push(route);
   return html;
 }
-const links = tools
-  .map(
-    (t) =>
-      `<a class="seo-tool-link" href="/${content[t.id].slug}/"><strong>${esc(t.title)}</strong><span>${esc(t.description)}</span></a>`,
-  )
-  .join('');
+const links =
+  tools
+    .map(
+      (t) =>
+        `<a class="seo-tool-link" href="/${content[t.id].slug}/"><strong>${esc(t.title)}</strong><span>${esc(t.description)}</span></a>`,
+    )
+    .join('') +
+  Object.values(features)
+    .map(
+      (f) =>
+        `<a class="seo-tool-link" href="/${f.slug}/"><strong>${esc(f.title.split(' — ')[0])}</strong><span>${esc(f.description)}</span></a>`,
+    )
+    .join('');
 const appSchema = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
@@ -61,7 +70,7 @@ const appSchema = {
 };
 await page(
   '/',
-  '{brand} — Free, Open-Source PDF Tools',
+  '{brand} — Free PDF Tools, Editor & Digital Notebooks',
   'Free PDF reader, scanner, editor, converter, OCR, merge, split, and document tools. Open source and vibe coded by Ramtin Neshatvar.',
   `<span class="eyebrow">FREE. OPEN SOURCE. VIBE CODED.</span><h1>A little less paperwork.</h1><p>Read, annotate, scan, sign, merge, split, and convert documents on your device. Camera capture and sign-in are optional. Every document feature is free.</p><a href="/pdf-reader/">Open the PDF reader & editor</a><h2>A tool for every little task.</h2><div class="seo-tools">${links}</div><h2>Your files. Your choice.</h2><p>Documents are processed in your browser. Save outputs locally, download a copy, or choose an optional cloud connection. Loaded tools can be cached for offline use.</p>`,
   appSchema,
@@ -80,8 +89,14 @@ await page(
   '<h1>A fresh page. A world of possibility.</h1><p>Free digital notebooks for handwritten notes, study, sketches, and planning. Keep notebook pages and ink on your device, with optional account workspaces.</p><h2>Make paper work your way</h2><p>Choose ruled, dotted, graph, Cornell, or blank pages. Duplicate, reorder, or add pages as your ideas grow. Write with Apple Pencil or another digital pen using pressure and tilt where supported by your browser. Add photographs and multilingual text.</p><h2>Your notes, yours to keep</h2><p>Export PDF, PNG, or JPG, and back up through Files. Local notebook storage does not automatically sync across devices. Apple Pencil hardware features vary by iPad, Pencil model, and browser. Native squeeze and double-tap actions are not exposed by the web editor.</p><h2>What does Plivvi mean?</h2><p>Plivvi is an invented name, pronounced PLIV-ee. It is a little space for your next good idea.</p>',
   { ...appSchema, name: '{brand} Digital Notebooks' },
 );
-for (const tool of tools) {
-  const d = content[tool.id],
+for (const tool of [
+  ...tools,
+  ...Object.entries(features).map(([id, data]) => ({
+    ...tools.find((tool) => tool.id === data.toolId),
+    id,
+  })),
+]) {
+  const d = content[tool.id] ?? features[tool.id],
     route = '/' + d.slug + '/',
     steps = d.steps.map((s, i) => `<li><span>${i + 1}</span><p>${esc(s)}</p></li>`).join(''),
     faqs = d.faqs
@@ -134,9 +149,9 @@ const pages = {
     '<h1>Say hello to Ramtin.</h1><p>Contact <a href="mailto:ramtinneshat4@gmail.com">ramtinneshat4@gmail.com</a> for questions, sponsorship, bug reports, or custom workflow help.</p><h2>Help reproduce a bug</h2><p>Include the tool, browser, device, and reproduction steps. Use synthetic or anonymized samples and keep private documents, passwords, and identifiers out of public reports.</p><p><a href="https://github.com/ramt11n">GitHub</a> · <a href="https://linkedin.com/in/ramtin-neshatvar-185534263">LinkedIn</a></p>',
   ],
   support: [
-    'Sponsor {brand} — Keep Every Feature Free',
-    'Support an open-source PDF toolkit through direct sponsorship or custom workflow work, without feature paywalls.',
-    '<h1>A free workshop can still have a future.</h1><p>Support maintenance, testing, and better document workflows through direct sponsorship. Every reader, scanner, and PDF feature remains free.</p><h2>Support the project</h2><p>Discuss a community-support credit or ongoing sponsorship with Ramtin.</p><h2>Sponsor a useful tool</h2><p>Clearly labeled placements can appear on public guides, away from private document views. Audience numbers and paid impressions are not invented or guaranteed.</p><h2>Custom workflow help</h2><p>Contact Ramtin about separate paid setup, branding, or custom workflow work.</p><p><a href="mailto:ramtinneshat4@gmail.com?subject=Sponsor%20{brand}%20PDF%20Workshop">Discuss sponsorship</a>. Pricing and scope are agreed directly before publication.</p>',
+    'Support {brand} — Keep Every Feature Free',
+    'Support Plivvi with optional crypto donations: USDT on five networks, Bitcoin, Ethereum, and more. Keep every open-source document tool free.',
+    '<h1>A free workshop can still have a future.</h1><p>Support maintenance, testing, and better document workflows through direct sponsorship. Every reader, scanner, and PDF feature remains free.</p><h2>Donate crypto, directly to the maker</h2><p>Choose USDT on Ethereum (ERC-20), TRON (TRC-20), BNB Smart Chain (BEP-20), Polygon, or Avalanche C-Chain. Bitcoin, ETH, SOL, TWT, TRX, DOGE, POL, XRP, and BCH receiving options are also available. Select the exact asset and network before opening Trust Wallet or copying an address. Donations are optional; every feature stays free.</p><h2>Support the project</h2><p>Discuss a community-support credit or ongoing sponsorship with Ramtin.</p><h2>Sponsor a useful tool</h2><p>Clearly labeled placements can appear on public guides, away from private document views. Audience numbers and paid impressions are not invented or guaranteed.</p><h2>Custom workflow help</h2><p>Contact Ramtin about separate paid setup, branding, or custom workflow work.</p><p><a href="mailto:ramtinneshat4@gmail.com?subject=Sponsor%20{brand}%20PDF%20Workshop">Discuss sponsorship</a>. Pricing and scope are agreed directly before publication.</p>',
   ],
   templates: [
     'Document Templates & Copy Layouts — {brand}',

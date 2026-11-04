@@ -59,7 +59,7 @@ export const maker = {
   linkedin: 'https://linkedin.com/in/ramtin-neshatvar-185534263',
   cv: 'https://ramtin-neshatvar-cv.asa-adv-agency2.chatgpt.site',
 };
-export const repoUrl = import.meta.env.VITE_REPO_URL || 'https://github.com/ramt11n/pocket-pdf';
+export const repoUrl = import.meta.env.VITE_REPO_URL || 'https://github.com/ramt11n/plivvi';
 export const sourceUrl = '/source.zip';
 
 export const brand = brandDetails;

@@ -19,7 +19,7 @@ async function add(relative = '') {
 }
 await add();
 files['_redirects'] = strToU8(
-  `/source.zip https://github.com/ramt11n/pocket-pdf/archive/${ref}.zip 302\n`,
+  `/source.zip https://github.com/ramt11n/plivvi/archive/${ref}.zip 302\n`,
 );
 const archive = zipSync(files, { level: 6 });
 if (archive.length > 25 * 1024 * 1024)

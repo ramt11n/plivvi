@@ -38,3 +38,7 @@ Sora typeface — SIL Open Font License 1.1. License: /fonts/SORA-OFL.txt. Sourc
 Noto Sans script fonts (Arabic, Bengali, Devanagari, Gujarati, Gurmukhi, Hebrew, Kannada, Malayalam, Tamil, Telugu, Thai)
 Source: https://github.com/google/fonts
 License: SIL Open Font License 1.1; each font license is included in public/fonts. Script fonts load only when needed, from this application origin. CJK fallback is provided by MuPDF.
+
+node-qrcode — MIT
+Source: https://github.com/soldair/node-qrcode
+QR generation loads on demand for the optional donation panel.

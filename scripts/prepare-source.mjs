@@ -37,14 +37,14 @@ async function add(relative) {
     for (const child of await readdir(full)) await add(`${relative}/${child}`);
   } catch (error) {
     if (error.code !== 'ENOTDIR') throw error;
-    files[`pocket-pdf/${relative}`] = [
+    files[`plivvi/${relative}`] = [
       new Uint8Array(await readFile(full)),
       { mtime: new Date('2026-11-01T00:00:00Z') },
     ];
   }
 }
 for (const name of roots) await add(name);
-files['pocket-pdf/SOURCE-NOTICE.txt'] = strToU8(
+files['plivvi/SOURCE-NOTICE.txt'] = strToU8(
   JSON.parse(await readFile(path.join(root, 'src/brand.json'), 'utf8')).name +
     ' application source, AGPL-3.0-or-later. See README.md and public/THIRD-PARTY-NOTICES.txt for build instructions and corresponding dependency sources.\n',
 );

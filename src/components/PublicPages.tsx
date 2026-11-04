@@ -1,3 +1,6 @@
+import { lazy, Suspense } from 'react';
+import LoadingProgress from './LoadingProgress';
+const DonatePanel = lazy(() => import('../donations/DonatePanel'));
 import {
   ArrowRight,
   ArrowUpRight,
@@ -9,7 +12,14 @@ import {
   Users,
 } from 'lucide-react';
 import { brand, maker, repoUrl, sourceUrl } from '../integrations/config';
-import { navigateTo, relatedTools, toolContent, toolPath } from '../seo/routes';
+import {
+  navigateTo,
+  relatedTools,
+  toolContent,
+  toolPath,
+  featureContent,
+  type ToolContent,
+} from '../seo/routes';
 import type { Tool } from '../lib/catalog';
 import Icon from './Icon';
 import Brand from './Brand';
@@ -44,12 +54,12 @@ export function SponsorPlacement() {
       </span>
       <div>
         <strong>Every tool stays free. Help keep it that way.</strong>
-        <p>Sponsor a small, open-source workshop with a useful everyday mission.</p>
+        <p>If Plivvi saved you a little time, help keep it useful for everyone.</p>
       </div>
-      <a href={`mailto:${maker.email}?subject=${encodeURIComponent(`Sponsor ${brand.name}`)}`}>
-        Sponsor {brand.name} <ArrowUpRight size={15} />
-      </a>
-      <small>Direct sponsorship</small>
+      <InternalLink href="/support/">
+        Keep it free <Heart size={15} />
+      </InternalLink>
+      <small>Optional support</small>
     </aside>
   );
 }
@@ -76,7 +86,7 @@ export function SiteFooter() {
           <a href={repoUrl || sourceUrl} target={repoUrl ? '_blank' : undefined} rel="noreferrer">
             {repoUrl ? 'Contribute on GitHub' : 'Download source'}
           </a>
-          <InternalLink href="/support/">Sponsor the project</InternalLink>
+          <InternalLink href="/support/">Donate · keep Plivvi free</InternalLink>
           <InternalLink href="/contact/">Contact Ramtin</InternalLink>
         </div>
         <div>
@@ -104,8 +114,16 @@ export function SiteFooter() {
     </footer>
   );
 }
-export function ToolLanding({ tool, onStart }: { tool: Tool; onStart: () => void }) {
-  const data = toolContent[tool.id];
+export function ToolLanding({
+  tool,
+  onStart,
+  content,
+}: {
+  tool: Tool;
+  onStart: () => void;
+  content?: ToolContent;
+}) {
+  const data = content ?? toolContent[tool.id];
   if (!data) return null;
   return (
     <article className="tool-landing">
@@ -135,6 +153,17 @@ export function ToolLanding({ tool, onStart }: { tool: Tool; onStart: () => void
           </span>
         </div>
       </div>
+      {Object.values(featureContent).some((f) => f.toolId === tool.id) && (
+        <nav className="feature-quick-links" aria-label="Specific workflows">
+          {Object.values(featureContent)
+            .filter((f) => f.toolId === tool.id && f.slug !== data.slug)
+            .map((f) => (
+              <InternalLink key={f.slug} href={'/' + f.slug + '/'}>
+                {f.title.split(' — ')[0]} <ArrowRight size={13} />
+              </InternalLink>
+            ))}
+        </nav>
+      )}
       <section className="tool-guide">
         <div>
           <span className="eyebrow">A LITTLE GUIDANCE</span>
@@ -334,9 +363,13 @@ export function PublicPage({ view }: { view: string }) {
         <span className="eyebrow">SUPPORT THE WORK. KEEP THE TOOLS FREE.</span>
         <h1>A free workshop can still have a future.</h1>
         <p className="public-lead">
-          Help fund maintenance, testing, and better document workflows through direct sponsorship.
-          Every reader, scanner, and PDF feature stays available without a subscription.
+          Support the maker with a crypto donation or direct sponsorship. Your gift helps fund
+          maintenance and device testing. Every reader, scanner, and PDF feature stays available
+          without a subscription.
         </p>
+        <Suspense fallback={<LoadingProgress label="Opening donation options…" />}>
+          <DonatePanel />
+        </Suspense>
         <div className="support-cards">
           <section>
             <Heart />

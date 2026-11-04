@@ -1,4 +1,4 @@
-const CACHE = 'pocket-v3-6';
+const CACHE = 'pocket-v3-7';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {

@@ -23,7 +23,7 @@ jobs:
       - run: npm run build
         env:
           VITE_SITE_URL: ${{ vars.SITE_URL }}
-          VITE_REPO_URL: https://github.com/ramt11n/pocket-pdf
+          VITE_REPO_URL: https://github.com/ramt11n/plivvi
       - run: node scripts/verify-build.mjs
       - uses: actions/upload-artifact@v4
         with:

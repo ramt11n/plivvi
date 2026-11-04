@@ -32,6 +32,7 @@ import {
   X,
   ZoomIn,
   ZoomOut,
+  CircleHelp,
   SunMoon,
   ImagePlus,
   Copy,
@@ -41,7 +42,8 @@ import {
 import { download, downloadAll, inputs, rpc, type Input, type Output } from '../lib/client';
 import PDFPage from './PDFPage';
 import LoadingProgress from '../components/LoadingProgress';
-import { bindNavigation } from './navigation';
+import { bindNavigation, type NavigationPoint } from './navigation';
+import PenGuide from './PenGuide';
 import { captureZoomAnchor, restoreZoomAnchor, type ZoomAnchor } from './zoomAnchor';
 import PageThumbnail from './PageThumbnail';
 import { notebookPDF, type Paper } from '../notebooks/model';
@@ -334,14 +336,41 @@ export default function PDFReader({
         : Math.min(1.65, (viewport.width - (viewport.width < 600 ? 26 : 76)) / p.width);
   }
   const zoomAnchor = useRef<ZoomAnchor | null>(null);
-  const zoomHandler = useRef<(ratio: number, anchor: { x: number; y: number }) => void>(() => {});
+  const navigationSession = useRef<{
+    anchor: ZoomAnchor;
+    baseZoom: number;
+    origin: NavigationPoint;
+  } | null>(null);
+  const navigationHandlers = useRef({
+    start: (_origin: NavigationPoint) => {},
+    change: (_scale: number, _center: NavigationPoint) => {},
+    end: () => {},
+  });
+  const [penGuideOpen, setPenGuideOpen] = useState(false);
+  const penGuideSeen = useRef(false);
+  useEffect(() => {
+    if (loading || !info || tool !== 'pen' || penGuideSeen.current) return;
+    penGuideSeen.current = true;
+    try {
+      if (localStorage.getItem('plivvi-pen-guide-v1') === 'seen') return;
+    } catch {}
+    setPenGuideOpen(true);
+  }, [loading, info, tool]);
+  function dismissPenGuide() {
+    try {
+      localStorage.setItem('plivvi-pen-guide-v1', 'seen');
+    } catch {}
+    setPenGuideOpen(false);
+  }
   useEffect(() => {
     const surface = scroller.current;
     if (!surface || tool === 'select' || touchInk) return;
     return bindNavigation(surface, {
       penActive: () =>
         penActivity.current.pointer !== null || performance.now() < penActivity.current.until,
-      zoom: (ratio, anchor) => zoomHandler.current(ratio, anchor),
+      start: (origin) => navigationHandlers.current.start(origin),
+      change: (scale, center) => navigationHandlers.current.change(scale, center),
+      end: () => navigationHandlers.current.end(),
     });
   }, [info, loading, tool, touchInk]);
   useLayoutEffect(() => {
@@ -364,7 +393,38 @@ export default function PDFReader({
     setZoom(Math.max(35, Math.min(400, current * ratio)));
     setFit('manual');
   }
-  zoomHandler.current = changeZoom;
+  navigationHandlers.current = {
+    start(origin) {
+      const surface = scroller.current;
+      if (!surface || !info) return;
+      const anchor = captureZoomAnchor(surface, origin);
+      if (!anchor) return;
+      const index = Number(anchor.element.id.replace('reader-page-', ''));
+      const baseZoom = scaleFor(Number.isFinite(index) ? index : page) * 100;
+      navigationSession.current = { anchor, baseZoom, origin };
+    },
+    change(scale, center) {
+      const session = navigationSession.current,
+        surface = scroller.current;
+      if (!session || !surface) return;
+      const anchor = {
+        ...session.anchor,
+        clientX: session.anchor.clientX + center.x - session.origin.x,
+        clientY: session.anchor.clientY + center.y - session.origin.y,
+      };
+      const target = Math.max(35, Math.min(400, session.baseZoom * scale));
+      // Absolute zoom from gesture start avoids stale React renders accumulating
+      // or dropping scale deltas. Pure movement can update immediately.
+      const actual = info ? scaleFor(page) * 100 : zoom;
+      zoomAnchor.current = anchor;
+      if (Math.abs(target - actual) < 0.05) restoreZoomAnchor(surface, anchor);
+      setZoom(target);
+      setFit('manual');
+    },
+    end() {
+      navigationSession.current = null;
+    },
+  };
   async function exportCopy() {
     if (!raw.current) throw Error('Open a PDF first.');
     return rpc<Output>('reader-export', { input: raw.current, password, marks, flatten });
@@ -617,6 +677,13 @@ export default function PDFReader({
         </button>
         <button
           className="reader-icon"
+          aria-label="Pen and gesture guide"
+          onClick={() => setPenGuideOpen(true)}
+        >
+          <CircleHelp size={18} />
+        </button>
+        <button
+          className="reader-icon"
           aria-label="Reader appearance"
           aria-expanded={appearance}
           onClick={() => setAppearance((v) => !v)}
@@ -843,6 +910,7 @@ export default function PDFReader({
           </button>
         </div>
       )}
+      {penGuideOpen && <PenGuide onClose={dismissPenGuide} />}
       {loading ? (
         <div className="reader-welcome">
           <h2>Opening your document…</h2>

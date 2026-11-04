@@ -34,3 +34,21 @@ it('uses the nearest paper edge in gaps and ignores removed pages', () => {
   expect(surface.scrollTop).toBe(0);
   surface.remove();
 });
+
+it('restores a scaled point to the moving midpoint in a combined pan and pinch', () => {
+  const surface = document.createElement('div'),
+    page = document.createElement('div');
+  page.className = 'reader-page';
+  surface.append(page);
+  document.body.append(surface);
+  let rect = new DOMRect(100, -200, 600, 800);
+  page.getBoundingClientRect = () => rect;
+  surface.scrollLeft = 20;
+  surface.scrollTop = 400;
+  const anchor = captureZoomAnchor(surface, { x: 250, y: 100 })!;
+  rect = new DOMRect(40, -320, 900, 1200);
+  restoreZoomAnchor(surface, { ...anchor, clientX: 280, clientY: 140 });
+  expect(surface.scrollLeft).toBe(5);
+  expect(surface.scrollTop).toBe(390);
+  surface.remove();
+});

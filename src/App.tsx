@@ -41,7 +41,14 @@ import Brand from './components/Brand';
 import FeatureShowcase from './components/FeatureShowcase';
 import { brand } from './integrations/config';
 import { PublicPage, SiteFooter, SponsorPlacement, ToolLanding } from './components/PublicPages';
-import { currentRoute, navigateTo, pathForView, toolPath, updateSEO } from './seo/routes';
+import {
+  currentRoute,
+  navigateTo,
+  pathForView,
+  toolPath,
+  updateSEO,
+  featureContent,
+} from './seo/routes';
 import { sourceUrl } from './integrations/config';
 import { accountState, subscribeAccounts } from './integrations/auth';
 import {
@@ -485,7 +492,7 @@ export default function App() {
           </button>
           <a
             className="rail-source"
-            href="https://github.com/ramt11n/pocket-pdf"
+            href="https://github.com/ramt11n/plivvi"
             target="_blank"
             rel="noreferrer"
             aria-label="Open source on GitHub"
@@ -862,6 +869,26 @@ export default function App() {
                   <Command size={12} /> K
                 </span>
               </div>
+              <nav className="feature-quick-links" aria-label="Popular document workflows">
+                {Object.values(featureContent)
+                  .filter(
+                    (f) =>
+                      !query ||
+                      `${f.title} ${f.description}`.toLowerCase().includes(query.toLowerCase()),
+                  )
+                  .map((f) => (
+                    <a
+                      key={f.slug}
+                      href={'/' + f.slug + '/'}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        navigateTo('/' + f.slug + '/');
+                      }}
+                    >
+                      {f.title.split(' — ')[0]}
+                    </a>
+                  ))}
+              </nav>
               <div className="category-tabs">
                 {groups.map((g) => (
                   <button
@@ -1041,6 +1068,7 @@ export default function App() {
           {view === 'tool' && route.toolId && (
             <ToolLanding
               tool={tools.find((t) => t.id === route.toolId)!}
+              content={route.featureId ? featureContent[route.featureId] : undefined}
               onStart={() => openTool(tools.find((t) => t.id === route.toolId)!)}
             />
           )}
@@ -1162,6 +1190,11 @@ export default function App() {
             key={selected.id + initial.map((f) => f.name).join('|')}
             tool={selected}
             initialFiles={initial}
+            initialOptions={
+              route.featureId && featureContent[route.featureId].toolId === selected.id
+                ? featureContent[route.featureId].options
+                : undefined
+            }
             onClose={() => setSelected(null)}
             onSave={save}
             onRead={(out) => {

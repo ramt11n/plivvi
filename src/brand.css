@@ -1667,3 +1667,21 @@ html[data-theme='dark'] .topbar.studio-topbar {
   max-width: 400px;
   margin: 4px 0;
 }
+
+.feature-quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 26px 0;
+}
+.feature-quick-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--ink);
+  text-decoration: none;
+}

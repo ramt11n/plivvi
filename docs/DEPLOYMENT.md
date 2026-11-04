@@ -4,7 +4,7 @@ Plivvi builds to ordinary static files in `dist`. PDF work runs in the visitor�
 
 ## Current public links
 
-The production address configured for this release is [plivvi.pages.dev](https://plivvi.pages.dev), in the owner’s Cloudflare account. The older release used `pocket-pdf-ramtin.pages.dev`; workspaces are local to each origin, so export saved files before moving. The [GitHub project page](https://ramt11n.github.io/pocket-pdf/) is the contribution and launch page. GitHub Actions tests the app and publishes the project page. Automatic app deployment remains unconfigured; the included Actions workflow needs a scoped Cloudflare token and account variables before it can be enabled.
+The production address configured for this release is [plivvi.pages.dev](https://plivvi.pages.dev), in the owner’s Cloudflare account. The older release used `pocket-pdf-ramtin.pages.dev`; workspaces are local to each origin, so export saved files before moving. The [GitHub project page](https://ramt11n.github.io/plivvi/) is the contribution and launch page. GitHub Actions tests the app and publishes the project page. Automatic app deployment remains unconfigured; the included Actions workflow needs a scoped Cloudflare token and account variables before it can be enabled.
 
 ## Alternative public host: Cloudflare Pages
 

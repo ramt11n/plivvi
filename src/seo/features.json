@@ -1,0 +1,250 @@
+{
+  "jpg-to-pdf": {
+    "slug": "jpg-to-pdf",
+    "toolId": "image-pdf",
+    "title": "JPG to PDF — Free Photo Converter",
+    "description": "Combine JPG images into a PDF on your device. Reorder photos, choose A4 or original size, and export without a required account.",
+    "heading": "A JPG photo, a shareable document.",
+    "steps": [
+      "Choose one or more JPG photos from Files.",
+      "Put images in the order you want the PDF pages to appear.",
+      "Choose the page layout and margins, then create a PDF.",
+      "Review and download the PDF, or save it to your local workspace."
+    ],
+    "faqs": [
+      {
+        "q": "Can I combine several photos?",
+        "a": "Yes. Arrange the imported images before creating the PDF. Each photo becomes a page according to your chosen layout."
+      },
+      {
+        "q": "Does this recognize words in the images?",
+        "a": "This converter preserves the photos. To recognize printed words, open the separate OCR tool after conversion."
+      }
+    ],
+    "options": {}
+  },
+  "pdf-to-jpg": {
+    "slug": "pdf-to-jpg",
+    "toolId": "pdf-image",
+    "title": "PDF to JPG — Free Page Image Export",
+    "description": "Export PDF pages as JPG images locally. Choose the output resolution, then download your images without uploading the PDF.",
+    "heading": "Take the pages you need as JPG images.",
+    "steps": [
+      "Choose a PDF from your device.",
+      "For only a few pages, use Extract pages first and open the extracted PDF here.",
+      "JPG is selected for you; adjust the image resolution.",
+      "Convert and download the page images."
+    ],
+    "faqs": [
+      {
+        "q": "Can I choose only selected pages?",
+        "a": "This converter exports every page of the supplied PDF. Use the separate Extract pages tool first to prepare a PDF containing only the pages you need."
+      },
+      {
+        "q": "Will the exported image contain selectable PDF text?",
+        "a": "No. An exported page image is a raster picture; keep the original PDF for selectable text and vector content."
+      }
+    ],
+    "options": {
+      "format": "jpg"
+    }
+  },
+  "png-to-pdf": {
+    "slug": "png-to-pdf",
+    "toolId": "image-pdf",
+    "title": "PNG to PDF — Free Photo Converter",
+    "description": "Combine PNG images into a PDF on your device. Reorder photos, choose A4 or original size, and export without a required account.",
+    "heading": "A PNG photo, a shareable document.",
+    "steps": [
+      "Choose one or more PNG photos from Files.",
+      "Put images in the order you want the PDF pages to appear.",
+      "Choose the page layout and margins, then create a PDF.",
+      "Review and download the PDF, or save it to your local workspace."
+    ],
+    "faqs": [
+      {
+        "q": "Can I combine several photos?",
+        "a": "Yes. Arrange the imported images before creating the PDF. Each photo becomes a page according to your chosen layout."
+      },
+      {
+        "q": "Does this recognize words in the images?",
+        "a": "This converter preserves the photos. To recognize printed words, open the separate OCR tool after conversion."
+      }
+    ],
+    "options": {}
+  },
+  "pdf-to-png": {
+    "slug": "pdf-to-png",
+    "toolId": "pdf-image",
+    "title": "PDF to PNG — Free Page Image Export",
+    "description": "Export PDF pages as PNG images locally. Choose the output resolution, then download your images without uploading the PDF.",
+    "heading": "Take the pages you need as PNG images.",
+    "steps": [
+      "Choose a PDF from your device.",
+      "For only a few pages, use Extract pages first and open the extracted PDF here.",
+      "PNG is selected for you; adjust the image resolution.",
+      "Convert and download the page images."
+    ],
+    "faqs": [
+      {
+        "q": "Can I choose only selected pages?",
+        "a": "This converter exports every page of the supplied PDF. Use the separate Extract pages tool first to prepare a PDF containing only the pages you need."
+      },
+      {
+        "q": "Will the exported image contain selectable PDF text?",
+        "a": "No. An exported page image is a raster picture; keep the original PDF for selectable text and vector content."
+      }
+    ],
+    "options": {
+      "format": "png"
+    }
+  },
+  "word-to-pdf": {
+    "slug": "word-to-pdf",
+    "toolId": "office-pdf",
+    "title": "Word to PDF — Free DOCX Reading Copy",
+    "description": "Make a basic PDF reading copy of a DOCX document in your browser. Local conversion preserves readable text; complex Office formatting is limited.",
+    "heading": "A readable PDF copy of your DOCX document.",
+    "steps": [
+      "Choose a DOCX file from your device.",
+      "Create the PDF reading copy using the Office-to-PDF tool.",
+      "Review the output, especially tables, charts, and multilingual text.",
+      "Download the PDF and retain the original Office file."
+    ],
+    "faqs": [
+      {
+        "q": "Will this exactly match Microsoft Office?",
+        "a": "No. This tool makes a basic reading copy. Complex layouts, charts, and some table formatting are not reproduced."
+      },
+      {
+        "q": "Does the original file change?",
+        "a": "The converter creates a separate PDF output. Your source Office file remains unchanged."
+      }
+    ],
+    "options": {}
+  },
+  "excel-to-pdf": {
+    "slug": "excel-to-pdf",
+    "toolId": "office-pdf",
+    "title": "Excel to PDF — Free XLSX Reading Copy",
+    "description": "Make a basic PDF reading copy of a XLSX document in your browser. Local conversion preserves readable text; complex Office formatting is limited.",
+    "heading": "A readable PDF copy of your XLSX document.",
+    "steps": [
+      "Choose a XLSX file from your device.",
+      "Create the PDF reading copy using the Office-to-PDF tool.",
+      "Review the output, especially tables, charts, and multilingual text.",
+      "Download the PDF and retain the original Office file."
+    ],
+    "faqs": [
+      {
+        "q": "Will this exactly match Microsoft Office?",
+        "a": "No. This tool makes a basic reading copy. Complex layouts, charts, and some table formatting are not reproduced."
+      },
+      {
+        "q": "Does the original file change?",
+        "a": "The converter creates a separate PDF output. Your source Office file remains unchanged."
+      }
+    ],
+    "options": {}
+  },
+  "powerpoint-to-pdf": {
+    "slug": "powerpoint-to-pdf",
+    "toolId": "office-pdf",
+    "title": "PowerPoint to PDF — Free PPTX Reading Copy",
+    "description": "Make a basic PDF reading copy of a PPTX document in your browser. Local conversion preserves readable text; complex Office formatting is limited.",
+    "heading": "A readable PDF copy of your PPTX document.",
+    "steps": [
+      "Choose a PPTX file from your device.",
+      "Create the PDF reading copy using the Office-to-PDF tool.",
+      "Review the output, especially tables, charts, and multilingual text.",
+      "Download the PDF and retain the original Office file."
+    ],
+    "faqs": [
+      {
+        "q": "Will this exactly match Microsoft Office?",
+        "a": "No. This tool makes a basic reading copy. Complex layouts, charts, and some table formatting are not reproduced."
+      },
+      {
+        "q": "Does the original file change?",
+        "a": "The converter creates a separate PDF output. Your source Office file remains unchanged."
+      }
+    ],
+    "options": {}
+  },
+  "persian-ocr": {
+    "slug": "persian-ocr",
+    "toolId": "ocr",
+    "title": "Persian OCR — Extract Text from PDFs & Photos",
+    "description": "Recognize printed Persian text in scans and photographs. OCR runs locally with a dedicated language model and exports text or a searchable PDF.",
+    "heading": "Bring printed Persian / فارسی text into your workflow.",
+    "steps": [
+      "Upload a clear scanned PDF or document photo.",
+      "The Persian recognition model is selected; choose text or searchable PDF output.",
+      "Start recognition and allow the language model to load on first use.",
+      "Review the recognized words, punctuation, and reading order before sharing."
+    ],
+    "faqs": [
+      {
+        "q": "Does this recognize handwriting?",
+        "a": "The bundled OCR models focus on printed documents. Handwriting, decorative fonts, blur, and mixed reading order can reduce accuracy."
+      },
+      {
+        "q": "Is the language model uploaded with my document?",
+        "a": "No. The model downloads to your browser; recognition runs on your device. Carefully review RTL punctuation and extracted reading order."
+      }
+    ],
+    "options": {
+      "language": "fas"
+    }
+  },
+  "arabic-ocr": {
+    "slug": "arabic-ocr",
+    "toolId": "ocr",
+    "title": "Arabic OCR — Extract Text from PDFs & Photos",
+    "description": "Recognize printed Arabic text in scans and photographs. OCR runs locally with a dedicated language model and exports text or a searchable PDF.",
+    "heading": "Bring printed Arabic / العربية text into your workflow.",
+    "steps": [
+      "Upload a clear scanned PDF or document photo.",
+      "The Arabic recognition model is selected; choose text or searchable PDF output.",
+      "Start recognition and allow the language model to load on first use.",
+      "Review the recognized words, punctuation, and reading order before sharing."
+    ],
+    "faqs": [
+      {
+        "q": "Does this recognize handwriting?",
+        "a": "The bundled OCR models focus on printed documents. Handwriting, decorative fonts, blur, and mixed reading order can reduce accuracy."
+      },
+      {
+        "q": "Is the language model uploaded with my document?",
+        "a": "No. The model downloads to your browser; recognition runs on your device. Carefully review RTL punctuation and extracted reading order."
+      }
+    ],
+    "options": {
+      "language": "ara"
+    }
+  },
+  "apple-pencil-pdf": {
+    "slug": "apple-pencil-pdf",
+    "toolId": "reader",
+    "title": "Apple Pencil PDF Annotation — Free Browser Editor",
+    "description": "Write on PDFs with Apple Pencil or a digital stylus. Add editable handwriting, highlights, typed text, and export annotated PDFs on supported browsers.",
+    "heading": "Your handwriting, right beside the idea.",
+    "steps": [
+      "Open a PDF in the reader and choose Pen.",
+      "Keep Draw with finger off when using a stylus.",
+      "Use two fingers to move and pinch the page; use the ? button for the gesture guide.",
+      "Save a PDF copy or keep editable ink in a local notebook."
+    ],
+    "faqs": [
+      {
+        "q": "Which Apple Pencil features work?",
+        "a": "Pressure and tilt are used when the browser provides them. Native squeeze, double-tap, and haptics are not implemented in this web editor."
+      },
+      {
+        "q": "Can I use a different stylus?",
+        "a": "Pen pointer events also support compatible digital pens on other devices. Hardware and browser behavior vary."
+      }
+    ],
+    "options": {}
+  }
+}

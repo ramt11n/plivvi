@@ -23,7 +23,7 @@ jobs:
       - run: npm run build
         env:
           VITE_SITE_URL: ${{ vars.SITE_URL }}
-          VITE_REPO_URL: https://github.com/ramt11n/pocket-pdf
+          VITE_REPO_URL: https://github.com/ramt11n/plivvi
           VITE_FIREBASE_CONFIG: ${{ vars.FIREBASE_CONFIG }}
           VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           VITE_GOOGLE_API_KEY: ${{ vars.GOOGLE_API_KEY }}

@@ -1,4 +1,5 @@
 import LoadingProgress from './LoadingProgress';
+import { SponsorPlacement } from './PublicPages';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   X,
@@ -32,6 +33,7 @@ type Page = { id: string; source: number; index: number; url: string; rotation: 
 export default function ToolPanel({
   tool,
   initialFiles = [],
+  initialOptions = {},
   onClose,
   onSave,
   onRead,
@@ -39,6 +41,7 @@ export default function ToolPanel({
 }: {
   tool: Tool;
   initialFiles?: File[];
+  initialOptions?: Record<string, string>;
   onClose: () => void;
   onSave: (o: Output[]) => Promise<void>;
   onRead?: (o: Output) => void;
@@ -65,6 +68,7 @@ export default function ToolPanel({
       language: 'eng',
       ocrOutput: 'text',
       fields: {},
+      ...initialOptions,
     }),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(false),
@@ -1099,6 +1103,7 @@ export default function ToolPanel({
             {error}
           </div>
         )}
+        {results.length > 0 && <SponsorPlacement />}
         {!results.length && (
           <footer className="panel-footer">
             <div className="small muted">
