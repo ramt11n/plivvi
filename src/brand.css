@@ -1649,3 +1649,21 @@ html[data-theme='dark'] .topbar.studio-topbar {
     animation: none;
   }
 }
+.loading-card {
+  box-sizing: border-box;
+  width: min(490px, calc(100vw - 32px));
+}
+.loading-card .loading-progress {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.panel-footer > .small {
+  flex: 1;
+  min-width: 0;
+}
+.panel-footer .loading-progress {
+  width: 100%;
+  max-width: 400px;
+  margin: 4px 0;
+}
