@@ -53,7 +53,7 @@ export default function DonatePanel() {
           <em>tools free.</em>
         </h2>
         <p>
-          Help Ramtin maintain Plivvi, test more devices, and make everyday document work a little
+          Help improve Plivvi, fix bugs, test more devices, and make everyday document work a little
           easier.
         </p>
         <span className="donate-promise">
@@ -69,7 +69,7 @@ export default function DonatePanel() {
               select('');
             }}
           >
-            USDT · 5 networks
+            USDT · {donationRoutes.filter((route) => route.asset === 'USDT').length} networks
           </button>
           <button
             aria-pressed={tab === 'all'}
@@ -93,7 +93,8 @@ export default function DonatePanel() {
             placeholder="Find a token or network…"
           />
         </label>
-        <p className="donate-step">1. Choose the network used by your sending wallet.</p>
+        <p className="donate-step">1. Choose your asset and its exact sending network.</p>
+        <p className="donate-list-hint">{filtered.length} receiving options · all shown below</p>
         <div className="donate-networks">
           {filtered.map((route) => (
             <button
@@ -102,7 +103,13 @@ export default function DonatePanel() {
               onClick={() => select(route.id)}
             >
               <span className="donate-token">
-                {route.asset === 'USDT' ? '₮' : route.asset.slice(0, 2)}
+                <img
+                  src={'/logos/crypto/' + route.asset.toLowerCase() + '.png'}
+                  alt=""
+                  width="29"
+                  height="29"
+                  loading="lazy"
+                />
               </span>
               <span>
                 <strong>

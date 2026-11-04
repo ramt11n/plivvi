@@ -382,9 +382,7 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
                       disabled={busy || !googleReady}
                       onClick={() => submit(true)}
                     >
-                      <span className="google-g" aria-hidden="true">
-                        G
-                      </span>
+                      <span className="google-g" aria-hidden="true"><img src="/logos/google-g.png" width="20" height="20" alt=""/></span>
                       {busy
                         ? googleProgress || 'Connecting securely…'
                         : !googleReady

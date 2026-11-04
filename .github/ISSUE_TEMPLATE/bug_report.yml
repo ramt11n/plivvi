@@ -1,27 +1,29 @@
-name: Something needs a little fixing
-description: Report a reproducible problem using non-private sample files.
+name: Report a bug
+description: Help improve a Plivvi tool without uploading private documents.
+title: "Bug: "
 labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: Please keep private documents, passwords, account tokens, and identity information out of public issues. Use a synthetic or anonymized sample.
-  - type: input
-    id: environment
-    attributes:
-      label: Device and browser
-      placeholder: iPad, Safari, version…
-    validations:
-      required: true
+      value: "This report is public. Never include passwords, recovery phrases, or private documents. For a private report, use Report a bug on https://plivvi.pages.dev/."
   - type: input
     id: tool
     attributes:
-      label: Which tool or page?
+      label: Tool or page
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: Steps to reproduce
-      description: Include what you expected and what happened instead.
+      label: What happened?
+      description: Steps to reproduce, expected result, and actual result.
     validations:
       required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser version
+  - type: input
+    id: version
+    attributes:
+      label: Plivvi version (Settings → App version)

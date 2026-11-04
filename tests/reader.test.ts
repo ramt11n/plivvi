@@ -181,3 +181,71 @@ describe('PDF reader and portable annotations', () => {
     expect((await extractText(asInput(out)))[0]).toContain('Welcome');
   });
 });
+
+it('exports a freehand highlighter as one translucent ink path and flattens it', async () => {
+  const mark: Mark = {
+    id: 'highlighter',
+    kind: 'highlight-ink',
+    page: 0,
+    color: '#ffe566',
+    size: 18,
+    opacity: 0.32,
+    rect: { x: 0.1, y: 0.3, w: 0.6, h: 0.03 },
+    points: [
+      { x: 0.1, y: 0.3, pressure: 0.2 },
+      { x: 0.3, y: 0.305, pressure: 1 },
+      { x: 0.7, y: 0.3, pressure: 0.4 },
+    ],
+  };
+  const result = await exportAnnotations(input, '', [mark]);
+  const doc = await open(asInput(result)),
+    page = doc.loadPage(0),
+    annotations = page.getAnnotations();
+  try {
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0].getType()).toBe('Ink');
+    expect(annotations[0].getOpacity()).toBeCloseTo(0.32);
+    expect(annotations[0].getInkList()).toHaveLength(1);
+    const info = await readerOpen(asInput(result));
+    writeFileSync(
+      'test-output/highlighter-native.png',
+      (await readerRender(info.session, 0, 850)).data,
+    );
+    readerClose(info.session);
+  } finally {
+    annotations.forEach((a) => a.destroy());
+    page.destroy();
+    doc.destroy();
+  }
+  const flat = await exportAnnotations(input, '', [mark], true);
+  const flatDoc = await open(asInput(flat)),
+    flatPage = flatDoc.loadPage(0);
+  try {
+    expect(flatPage.getAnnotations()).toHaveLength(0);
+  } finally {
+    flatPage.destroy();
+    flatDoc.destroy();
+  }
+});
+
+it('indexes a thousand-page PDF with bounded progress and renders a distant page', async () => {
+  const pdf = await PDFDocument.create();
+  for (let i = 0; i < 1000; i++)
+    pdf.addPage([595, 842]).drawText('Large document page ' + (i + 1), { x: 40, y: 780 });
+  const data = new Uint8Array(await pdf.save());
+  writeFileSync('test-output/thousand-pages.pdf', data);
+  const updates: number[] = [];
+  const info = await readerOpen(
+    { name: 'thousand-pages.pdf', type: 'application/pdf', data: data.buffer },
+    '',
+    (done, total) => {
+      expect(total).toBe(1000);
+      updates.push(done);
+    },
+  );
+  expect(info.count).toBe(1000);
+  expect(updates.length).toBe(40);
+  expect(readerText(info.session, 999).text).toContain('1000');
+  expect((await readerRender(info.session, 999, 600)).data[0]).toBe(137);
+  readerClose(info.session);
+});

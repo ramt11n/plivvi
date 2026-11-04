@@ -54,7 +54,7 @@ export function integrationConfig(): Promise<IntegrationConfig> {
 }
 export const maker = {
   name: 'Ramtin Neshatvar',
-  email: 'ramtinneshat4@gmail.com',
+  email: 'plivvi.pages@gmail.com',
   github: 'https://github.com/ramt11n',
   linkedin: 'https://linkedin.com/in/ramtin-neshatvar-185534263',
   cv: 'https://ramtin-neshatvar-cv.asa-adv-agency2.chatgpt.site',

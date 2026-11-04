@@ -82,7 +82,7 @@ AGPL-3.0-or-later. MuPDF uses its AGPL licensing option. About/source links prov
 
 [Third-party notices](public/THIRD-PARTY-NOTICES.txt) · [Feature research](FEATURE-RESEARCH.md)
 
-Made by **[Ramtin Neshatvar](https://github.com/ramt11n)** · [LinkedIn](https://linkedin.com/in/ramtin-neshatvar-185534263) · [CV](https://ramtin-neshatvar-cv.asa-adv-agency2.chatgpt.site) · [ramtinneshat4@gmail.com](mailto:ramtinneshat4@gmail.com)
+Made by **[Ramtin Neshatvar](https://github.com/ramt11n)** · [LinkedIn](https://linkedin.com/in/ramtin-neshatvar-185534263) · [CV](https://ramtin-neshatvar-cv.asa-adv-agency2.chatgpt.site) · [plivvi.pages@gmail.com](mailto:plivvi.pages@gmail.com)
 
 ## Accounts, workspaces, and deployment readiness
 

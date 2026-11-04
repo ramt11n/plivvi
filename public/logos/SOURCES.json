@@ -1,0 +1,52 @@
+[
+  {
+    "asset": "usdt",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png",
+    "bytes": 21909
+  },
+  {
+    "asset": "btc",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png",
+    "bytes": 4918
+  },
+  {
+    "asset": "eth",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png",
+    "bytes": 2984
+  },
+  {
+    "asset": "sol",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png",
+    "bytes": 54309
+  },
+  {
+    "asset": "twt",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/smartchain/assets/0x4B0F1812e5Df2A09796481Ff14017e6005508003/logo.png",
+    "bytes": 10976
+  },
+  {
+    "asset": "trx",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/tron/info/logo.png",
+    "bytes": 25773
+  },
+  {
+    "asset": "doge",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/doge/info/logo.png",
+    "bytes": 2243
+  },
+  {
+    "asset": "pol",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/info/logo.png",
+    "bytes": 10248
+  },
+  {
+    "asset": "xrp",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ripple/info/logo.png",
+    "bytes": 7004
+  },
+  {
+    "asset": "bch",
+    "source": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoincash/info/logo.png",
+    "bytes": 7908
+  }
+]

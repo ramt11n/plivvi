@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { rpc } from '../lib/client';
 import InkStroke from './InkStroke';
+import { renderPage } from './renderQueue';
 import {
   pressureWidth,
+  isStroke,
   strokePressure,
   type PenStyle,
   type Mark,
@@ -44,6 +46,8 @@ export default function PDFPage(p: Props) {
     [draft, setDraft] = useState<Mark | null>(null),
     [moved, setMoved] = useState<Mark | null>(null),
     [renderWidth, setRenderWidth] = useState(p.displayWidth),
+    bitmap = useRef(''),
+    renderGeneration = useRef(0),
     active = useRef<{
       pointer: number;
       type: string;
@@ -87,7 +91,7 @@ export default function PDFPage(p: Props) {
   function paintInk() {
     const stroke = active.current,
       canvas = inkCanvas.current;
-    if (!stroke || !canvas || stroke.mark.kind !== 'ink') return;
+    if (!stroke || !canvas || !isStroke(stroke.mark)) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const m = stroke.mark;
@@ -95,7 +99,7 @@ export default function PDFPage(p: Props) {
     ctx.scale(canvas.width / p.width, canvas.height / p.height);
     ctx.strokeStyle = m.color;
     ctx.fillStyle = m.color;
-    ctx.globalAlpha = m.opacity;
+    ctx.globalAlpha = 1;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     if (!stroke.painted) {
@@ -104,7 +108,7 @@ export default function PDFPage(p: Props) {
       ctx.arc(
         q.x * p.width,
         q.y * p.height,
-        pressureWidth(m.size, q.pressure, m.penStyle) / 2,
+        (m.kind === 'highlight-ink' ? m.size : pressureWidth(m.size, q.pressure, m.penStyle)) / 2,
         0,
         Math.PI * 2,
       );
@@ -114,7 +118,10 @@ export default function PDFPage(p: Props) {
     for (let i = stroke.painted; i < m.points.length; i++) {
       const a = m.points[i - 1],
         b = m.points[i];
-      ctx.lineWidth = pressureWidth(m.size, strokePressure(a, b, m.penStyle), m.penStyle);
+      ctx.lineWidth =
+        m.kind === 'highlight-ink'
+          ? m.size
+          : pressureWidth(m.size, strokePressure(a, b, m.penStyle), m.penStyle);
       ctx.beginPath();
       ctx.moveTo(a.x * p.width, a.y * p.height);
       ctx.lineTo(b.x * p.width, b.y * p.height);
@@ -155,30 +162,53 @@ export default function PDFPage(p: Props) {
     };
   }, [p.session, p.index]);
   useEffect(() => {
-    const t = setTimeout(() => setRenderWidth(p.displayWidth), 180);
+    const t = setTimeout(() => setRenderWidth(Math.ceil(p.displayWidth / 96) * 96), 220);
     return () => clearTimeout(t);
   }, [p.displayWidth]);
+  useEffect(
+    () => () => {
+      if (bitmap.current) URL.revokeObjectURL(bitmap.current);
+    },
+    [],
+  );
   useEffect(() => {
-    if (!near) return;
-    let alive = true,
-      objectURL = '';
-    setError('');
-    rpc<{ data: Uint8Array }>('reader-render', {
-      session: p.session,
-      index: p.index,
-      width: Math.min(2400, Math.round(renderWidth * Math.min(2, devicePixelRatio || 1))),
-    })
-      .then((r) => {
-        if (!alive) return;
-        objectURL = URL.createObjectURL(new Blob([r.data as BlobPart], { type: 'image/png' }));
-        setUrl(objectURL);
-      })
-      .catch((e) => alive && setError(e.message));
-    return () => {
-      alive = false;
-      if (objectURL) URL.revokeObjectURL(objectURL);
+    if (!near) {
+      if (bitmap.current) URL.revokeObjectURL(bitmap.current);
+      bitmap.current = '';
       setUrl('');
-    };
+      return;
+    }
+    const controller = new AbortController(),
+      gen = ++renderGeneration.current;
+    setError('');
+    const width = Math.min(
+      2400,
+      Math.round(renderWidth * Math.min(2, devicePixelRatio || 1)),
+      Math.floor(Math.sqrt((5000000 * p.width) / p.height)),
+    );
+    renderPage(p.session, p.index, width, controller.signal)
+      .then(async (r) => {
+        if (controller.signal.aborted || gen !== renderGeneration.current) return;
+        const next = URL.createObjectURL(new Blob([r.data as BlobPart], { type: 'image/png' }));
+        try {
+          const image = new Image();
+          image.src = next;
+          await image.decode();
+        } catch {}
+        if (controller.signal.aborted || gen !== renderGeneration.current) {
+          URL.revokeObjectURL(next);
+          return;
+        }
+        const old = bitmap.current;
+        bitmap.current = next;
+        setUrl(next);
+        // Keep the current bitmap visible until its replacement has decoded.
+        if (old) requestAnimationFrame(() => URL.revokeObjectURL(old));
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted) setError(e.message);
+      });
+    return () => controller.abort();
   }, [p.session, p.index, near, renderWidth]);
   useEffect(() => {
     if (!near || p.tool !== 'select') {
@@ -220,17 +250,15 @@ export default function PDFPage(p: Props) {
   }
   function erase(q: InkPoint) {
     for (const m of [...p.marks].reverse()) {
-      const hit =
-        m.kind === 'ink'
-          ? m.points.some(
-              (z) =>
-                Math.hypot((z.x - q.x) * p.width, (z.y - q.y) * p.height) <
-                Math.max(12, m.size * 2),
-            )
-          : q.x >= m.rect.x &&
-            q.x <= m.rect.x + m.rect.w &&
-            q.y >= m.rect.y &&
-            q.y <= m.rect.y + m.rect.h;
+      const hit = isStroke(m)
+        ? m.points.some(
+            (z) =>
+              Math.hypot((z.x - q.x) * p.width, (z.y - q.y) * p.height) < Math.max(12, m.size * 2),
+          )
+        : q.x >= m.rect.x &&
+          q.x <= m.rect.x + m.rect.w &&
+          q.y >= m.rect.y &&
+          q.y <= m.rect.y + m.rect.h;
       if (hit) {
         p.onErase(m.id);
         break;
@@ -250,7 +278,7 @@ export default function PDFPage(p: Props) {
     if (active.current) {
       if (e.pointerType !== 'pen') return;
       // Recover from a missing pointerup/lost capture before accepting the next pen stroke.
-      if (active.current.type === 'pen' && active.current.mark.kind === 'ink')
+      if (active.current.type === 'pen' && isStroke(active.current.mark))
         p.onMark(active.current.mark);
       active.current = null;
       clearPreview();
@@ -278,7 +306,7 @@ export default function PDFPage(p: Props) {
       p.tool === 'pen'
         ? 'ink'
         : p.tool === 'highlighter'
-          ? 'highlight'
+          ? 'highlight-ink'
           : (p.tool as 'text' | 'rectangle' | 'note');
     const mark: Mark = {
       id: crypto.randomUUID(),
@@ -286,7 +314,8 @@ export default function PDFPage(p: Props) {
       kind,
       color: p.color,
       size: p.size,
-      opacity: kind === 'highlight' ? 0.3 : kind === 'ink' && p.penStyle === 'pencil' ? 0.72 : 1,
+      opacity:
+        kind === 'highlight-ink' ? 0.32 : kind === 'ink' && p.penStyle === 'pencil' ? 0.72 : 1,
       penStyle: p.penStyle,
       points: [q],
       rect: {
@@ -303,7 +332,7 @@ export default function PDFPage(p: Props) {
       return;
     }
     active.current = { pointer: e.pointerId, type: e.pointerType, mark, bounds, painted: 0 };
-    if (kind === 'ink') {
+    if (isStroke(mark)) {
       const canvas = inkCanvas.current!;
       const ratio = Math.min(
         2,
@@ -312,6 +341,8 @@ export default function PDFPage(p: Props) {
       );
       canvas.width = Math.max(1, Math.round(bounds.width * ratio));
       canvas.height = Math.max(1, Math.round(bounds.height * ratio));
+      canvas.style.opacity = String(mark.opacity);
+      canvas.style.mixBlendMode = mark.kind === 'highlight-ink' ? 'multiply' : 'normal';
       paintInk();
     } else setDraft(mark);
     p.onSelect(null);
@@ -322,8 +353,8 @@ export default function PDFPage(p: Props) {
       e.preventDefault();
       const q = point(e),
         m = drag.original,
-        xs = m.kind === 'ink' ? m.points.map((z) => z.x) : [m.rect.x, m.rect.x + m.rect.w],
-        ys = m.kind === 'ink' ? m.points.map((z) => z.y) : [m.rect.y, m.rect.y + m.rect.h],
+        xs = isStroke(m) ? m.points.map((z) => z.x) : [m.rect.x, m.rect.x + m.rect.w],
+        ys = isStroke(m) ? m.points.map((z) => z.y) : [m.rect.y, m.rect.y + m.rect.h],
         dx = Math.max(-Math.min(...xs), Math.min(1 - Math.max(...xs), q.x - drag.start.x)),
         dy = Math.max(-Math.min(...ys), Math.min(1 - Math.max(...ys), q.y - drag.start.y));
       setMoved({
@@ -342,7 +373,7 @@ export default function PDFPage(p: Props) {
       erase(point(e));
       return;
     }
-    if (current.mark.kind === 'ink') {
+    if (isStroke(current.mark)) {
       const batch = e.nativeEvent.getCoalescedEvents?.(),
         events = batch?.length ? batch : [e.nativeEvent];
       for (const event of events) {
@@ -390,7 +421,7 @@ export default function PDFPage(p: Props) {
     }
     const current = active.current;
     if (current?.pointer !== e.pointerId) return;
-    if (!cancel && current.mark.kind === 'ink') {
+    if (!cancel && isStroke(current.mark)) {
       const q = point(e, current.bounds),
         last = current.mark.points.at(-1)!;
       if (Math.hypot((q.x - last.x) * p.width, (q.y - last.y) * p.height) > 0.25)
@@ -400,7 +431,7 @@ export default function PDFPage(p: Props) {
     clearPreview();
     if (
       current.mark.id !== 'eraser' &&
-      (current.mark.kind === 'ink' ||
+      (isStroke(current.mark) ||
         (!cancel && current.mark.rect.w > 0.003 && current.mark.rect.h > 0.003))
     )
       p.onMark(current.mark);
@@ -413,6 +444,13 @@ export default function PDFPage(p: Props) {
       <g
         key={m.id}
         opacity={m.opacity}
+        style={{
+          mixBlendMode:
+            m.kind === 'highlight-ink' || m.kind === 'highlight' ? 'multiply' : 'normal',
+          pointerEvents: p.tool === 'select' ? 'visiblePainted' : 'none',
+          cursor: p.tool === 'select' ? 'move' : 'inherit',
+          touchAction: 'none',
+        }}
         className={selected ? 'mark-selected' : ''}
         onPointerDown={(e) => {
           if (p.tool !== 'select') return;
@@ -428,13 +466,8 @@ export default function PDFPage(p: Props) {
             p.onSelect(m.id);
           }
         }}
-        style={{
-          pointerEvents: p.tool === 'select' ? 'visiblePainted' : 'none',
-          cursor: p.tool === 'select' ? 'move' : 'inherit',
-          touchAction: 'none',
-        }}
       >
-        {m.kind === 'ink' ? (
+        {isStroke(m) ? (
           <InkStroke mark={m} width={p.width} height={p.height} />
         ) : m.kind === 'image' ? (
           <image
@@ -548,6 +581,14 @@ export default function PDFPage(p: Props) {
         {plainText}
       </div>
       <svg
+        viewBox={`0 0 ${p.width} ${p.height}`}
+        className="reader-highlight-layer"
+        aria-hidden="true"
+      >
+        {near &&
+          p.marks.filter((m) => m.kind === 'highlight-ink' || m.kind === 'highlight').map(draw)}
+      </svg>
+      <svg
         ref={svg}
         viewBox={`0 0 ${p.width} ${p.height}`}
         className="reader-annotation-layer"
@@ -582,7 +623,8 @@ export default function PDFPage(p: Props) {
             />
           );
         })}
-        {near && p.marks.map(draw)}
+        {near &&
+          p.marks.filter((m) => m.kind !== 'highlight-ink' && m.kind !== 'highlight').map(draw)}
         {draft && draw(draft)}
       </svg>
       <canvas

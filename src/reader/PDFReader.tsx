@@ -64,6 +64,7 @@ type Props = {
     onDraft: (marks: Mark[], data: ArrayBuffer) => Promise<void>;
   };
 };
+const highlightPalette = ['#ffe566', '#7df0a1', '#80d8ff', '#ffa5cf', '#cfb0ff', '#ffc27c'];
 const palette = ['#28344b', '#6965d8', '#267ba8', '#b94c62', '#278466', '#e8bc32'];
 const tools: { id: ReaderTool; name: string; icon: typeof PenLine }[] = [
   { id: 'select', name: 'Select text', icon: MousePointer2 },
@@ -88,6 +89,7 @@ export default function PDFReader({
     [attempt, setAttempt] = useState(0),
     [loading, setLoading] = useState(false),
     [loadingStage, setLoadingStage] = useState('Reading your file…'),
+    [loadingPercent, setLoadingPercent] = useState<number | undefined>(0),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(''),
     [page, setPage] = useState(0),
@@ -164,6 +166,7 @@ export default function PDFReader({
     let alive = true;
     setLoading(true);
     setLoadingStage('Reading your file…');
+    setLoadingPercent(0);
     setError('');
     setInfo(undefined);
     setDraftReady(false);
@@ -175,18 +178,33 @@ export default function PDFReader({
     setHits([]);
     setSelected(null);
     (async () => {
-      if (file.size > 100 * 1048576) throw Error('Choose a PDF smaller than 100 MB.');
-      const data = (await inputs([file]))[0];
+      if (file.size > 256 * 1048576)
+        throw Error(
+          'Choose a PDF smaller than 256 MB. Large files also need enough memory on your device.',
+        );
+      const data = (await inputs([file], (p) => alive && setLoadingPercent(p * 0.15)))[0];
       raw.current = data;
       if (alive) setLoadingStage('Starting the PDF engine and preparing pages…');
-      const r = await rpc<ReaderInfo>('reader-open', { input: data, password });
+      const r = await rpc<ReaderInfo>(
+        'reader-open',
+        { input: data, password },
+        (label, percent) => {
+          if (alive) {
+            setLoadingStage(label);
+            if (percent !== undefined) setLoadingPercent(15 + percent * 0.8);
+          }
+        },
+      );
       if (!alive || gen !== generation.current) {
         rpc('reader-close', { session: r.session });
         return;
       }
       session.current = r.session;
       setInfo(r);
-      if (alive) setLoadingStage('Restoring saved handwriting and bookmarks…');
+      if (alive) {
+        setLoadingStage('Restoring saved handwriting and bookmarks…');
+        setLoadingPercent(95);
+      }
       const key = await readerDraftKey(workspace, data.data);
       setDraftKey(key);
       try {
@@ -203,6 +221,7 @@ export default function PDFReader({
       } catch {
         setBookmarks([]);
       }
+      setLoadingPercent(100);
       setDraftReady(true);
     })()
       .catch((e) => {
@@ -560,7 +579,11 @@ export default function PDFReader({
   async function newDocument(template: string) {
     setBusy('new');
     try {
-      const out = await rpc<Output[]>('template', { template });
+      setLoadingPercent(0);
+      const out = await rpc<Output[]>('template', { template }, (label, percent) => {
+        setLoadingStage(label);
+        setLoadingPercent(percent);
+      });
       setPassword('');
       setFile(
         new File([out[0].data as BlobPart], `Untitled-${Date.now()}.pdf`, {
@@ -573,6 +596,18 @@ export default function PDFReader({
       setBusy('');
     }
   }
+  useEffect(() => {
+    function saveBeforeUpdate(event: Event) {
+      const snapshot = draftSnapshot.current;
+      if (!snapshot.key || !raw.current) return;
+      const save = notebookRef.current
+        ? notebookRef.current.onDraft(snapshot.marks, raw.current.data)
+        : import('../lib/storage').then(({ set }) => set(snapshot.key, snapshot.marks));
+      (event as CustomEvent<{ waitUntil: (p: Promise<unknown>) => void }>).detail.waitUntil(save);
+    }
+    window.addEventListener('plivvi:before-update', saveBeforeUpdate);
+    return () => window.removeEventListener('plivvi:before-update', saveBeforeUpdate);
+  }, []);
   const chosen = selectedMark ?? { color, size };
   return (
     <section
@@ -676,6 +711,13 @@ export default function PDFReader({
           <FilePlus2 size={19} />
         </button>
         <button
+          className="icon-button"
+          aria-label="Guide to every reader control"
+          onClick={() => window.dispatchEvent(new Event('plivvi:guide'))}
+        >
+          ?
+        </button>
+        <button
           className="reader-icon"
           aria-label="Pen and gesture guide"
           onClick={() => setPenGuideOpen(true)}
@@ -758,9 +800,14 @@ export default function PDFReader({
                   aria-pressed={tool === t.id}
                   onClick={() => {
                     setTool(t.id);
+                    if (t.id === 'highlighter') {
+                      setColor('#ffe566');
+                      setSize(16);
+                    } else if (t.id === 'pen') {
+                      setColor('#28344b');
+                      setSize(2.5);
+                    }
                     if (t.id === 'text') setSize(18);
-                    else if (t.id === 'highlighter') setColor('#e8bc32');
-                    else if (t.id === 'pen') setSize(2.5);
                   }}
                 >
                   <t.icon size={18} />
@@ -843,7 +890,10 @@ export default function PDFReader({
                 </label>
               )}
               <div className="ink-colors" aria-label="Ink colors">
-                {palette.map((c) => (
+                {(tool === 'highlighter' || selectedMark?.kind === 'highlight-ink'
+                  ? highlightPalette
+                  : palette
+                ).map((c) => (
                   <button
                     key={c}
                     aria-label={`Use ${c} ink`}
@@ -859,13 +909,34 @@ export default function PDFReader({
                   />
                 ))}
               </div>
+              <label className="reader-custom-color">
+                Custom color
+                <input
+                  type="color"
+                  aria-label="Custom annotation color"
+                  value={chosen.color}
+                  onChange={(e) => {
+                    setColor(e.target.value);
+                    if (selectedMark)
+                      commit((old) =>
+                        old.map((m) => (m.id === selected ? { ...m, color: e.target.value } : m)),
+                      );
+                  }}
+                />
+              </label>
               <label className="reader-weight">
                 {tool === 'text' || selectedMark?.kind === 'text' ? 'Text size' : 'Stroke'}
                 <input
                   aria-label="Annotation size"
                   type="range"
                   min="1"
-                  max={tool === 'text' || selectedMark?.kind === 'text' ? 48 : 12}
+                  max={
+                    tool === 'text' || selectedMark?.kind === 'text'
+                      ? 48
+                      : tool === 'highlighter' || selectedMark?.kind === 'highlight-ink'
+                        ? 40
+                        : 12
+                  }
                   step=".5"
                   value={chosen.size}
                   onChange={(e) => {
@@ -910,11 +981,17 @@ export default function PDFReader({
           </button>
         </div>
       )}
+      {busy === 'new' && (
+        <div className="reader-task-progress">
+          <LoadingProgress label={loadingStage} value={loadingPercent} />
+        </div>
+      )}
       {penGuideOpen && <PenGuide onClose={dismissPenGuide} />}
       {loading ? (
         <div className="reader-welcome">
           <h2>Opening your document…</h2>
           <LoadingProgress
+            value={loadingPercent}
             label={loadingStage}
             detail="The PDF engine can take longer on the first visit."
           />

@@ -12,6 +12,26 @@ export default memo(function InkStroke({
   width: number;
   height: number;
 }) {
+  if (m.kind === 'highlight-ink') {
+    const d = m.points.map((q, i) => `${i ? 'L' : 'M'}${q.x * width} ${q.y * height}`).join(' ');
+    return m.points.length === 1 ? (
+      <circle
+        cx={m.points[0].x * width}
+        cy={m.points[0].y * height}
+        r={m.size / 2}
+        fill={m.color}
+      />
+    ) : (
+      <path
+        d={d}
+        fill="none"
+        stroke={m.color}
+        strokeWidth={m.size}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    );
+  }
   if (m.points.length === 1)
     return (
       <circle

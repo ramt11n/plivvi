@@ -7,6 +7,7 @@ describe('offline shell', () => {
     const entries = new Map<string, Response>(),
       handlers: Record<string, Function> = {},
       added: string[] = [];
+    let skipped = false;
     let online = true,
       claimed = false;
     const cache = {
@@ -20,7 +21,7 @@ describe('offline shell', () => {
     const self = {
       location: { origin: 'https://pocket.test' },
       addEventListener: (name: string, fn: Function) => (handlers[name] = fn),
-      skipWaiting: async () => {},
+      skipWaiting: async () => { skipped = true; },
       clients: {
         claim: async () => {
           claimed = true;
@@ -54,6 +55,9 @@ describe('offline shell', () => {
     let pending: Promise<any> = Promise.resolve();
     handlers.install({ waitUntil: (p: Promise<any>) => (pending = p) });
     await pending;
+    expect(skipped).toBe(false);
+    handlers.message({data:{type:'APPLY_UPDATE'}});
+    expect(skipped).toBe(true);
     expect(added).toEqual(
       expect.arrayContaining([
         '/icon.svg',
@@ -80,11 +84,15 @@ describe('offline shell', () => {
       '/redirect?code=synthetic',
       '/pocket-config.json',
       '/auth/callback/',
+      '/version.json?check=1',
+
     ])
       handlers.fetch({
         request: { method: 'GET', url: 'https://pocket.test' + path, mode: 'navigate' },
         respondWith: () => (intercepted = true),
       });
+    handlers.fetch({request:{method:'POST',url:'https://pocket.test/customer-document.pdf'},respondWith:()=>intercepted=true});
+    handlers.fetch({request:{method:'GET',url:'https://pocket.test/customer-document.pdf',mode:'cors'},respondWith:()=>intercepted=true});
     expect(intercepted).toBe(false);
   });
 });

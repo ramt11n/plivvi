@@ -27,6 +27,6 @@ jobs:
       - run: node scripts/verify-build.mjs
       - uses: actions/upload-artifact@v4
         with:
-          name: pocket-static-site
+          name: plivvi-static-site
           path: dist
           retention-days: 7

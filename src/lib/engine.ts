@@ -7,7 +7,7 @@ let muPromise: Promise<typeof import('mupdf')>;
 export async function mu() {
   return (muPromise ??= import('mupdf'));
 }
-export async function open(input: Input, password = '') {
+export async function open(input: Input, password = '', maxPages = 300) {
   const m = await mu(),
     doc = new m.PDFDocument(input.data);
   if (doc.needsPassword() && !doc.authenticatePassword(password)) {
@@ -15,9 +15,9 @@ export async function open(input: Input, password = '') {
     throw Error('This PDF needs its current password. Enter it and try again.');
   }
   doc.disableJS();
-  if (doc.countPages() > 300) {
+  if (doc.countPages() > maxPages) {
     doc.destroy();
-    throw Error('Please use a document with 300 pages or fewer in this browser workshop.');
+    throw Error(`Please use a document with ${maxPages.toLocaleString('en-US')} pages or fewer for this operation.`);
   }
   return doc;
 }

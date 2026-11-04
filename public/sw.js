@@ -1,38 +1,33 @@
-const CACHE = 'pocket-v3-8';
+const CACHE = 'pocket-v4-2';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE),
-        response = await fetch('/'),
-        html = await response.clone().text();
+        response = await fetch('/', { cache: 'reload' });
       if (!response.ok) throw Error('App shell unavailable');
-      await cache.put('/', response);
+      const html = await response.clone().text();
       const assets = [...html.matchAll(/(?:src|href)="([^"#]+\.(?:js|css|svg|png|webmanifest))"/g)]
         .map((m) => m[1])
         .filter((p) => p.startsWith('/'));
-      await cache.addAll([
-        ...new Set([
-          '/icon.svg',
-          '/icon-192.png',
-          '/icon-512.png',
-          '/manifest.webmanifest',
-          ...assets,
-        ]),
-      ]);
-      await self.skipWaiting();
+      await cache.addAll([...new Set(['/icon.svg', '/manifest.webmanifest', ...assets])]);
+      await cache.put('/', response);
+      // Updated workers wait until the visitor explicitly applies the update.
     })(),
   );
 });
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'APPLY_UPDATE') self.skipWaiting();
+});
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys.filter((k) => k.startsWith('pocket-') && k !== CACHE).map((k) => caches.delete(k)),
-        ),
-      )
-      .then(() => self.clients.claim()),
+    (async () => {
+      const keys = (await caches.keys()).filter((k) => k.startsWith('pocket-'));
+      const previous = keys.filter((k) => k !== CACHE).at(-1);
+      await Promise.all(
+        keys.filter((k) => k !== CACHE && k !== previous).map((k) => caches.delete(k)),
+      );
+      await self.clients.claim();
+    })(),
   );
 });
 self.addEventListener('fetch', (event) => {
@@ -41,33 +36,31 @@ self.addEventListener('fetch', (event) => {
   if (
     request.method !== 'GET' ||
     url.origin !== self.location.origin ||
-    url.pathname.includes('/cdn-cgi/') ||
-    url.pathname.startsWith('/api/') ||
-    url.pathname.startsWith('/auth/') ||
-    /^\/redirect(?:\.html)?\/?$/.test(url.pathname) ||
-    ['/pocket-config.json', '/source.zip'].includes(url.pathname)
+    /^\/(?:api|cdn-cgi)\//.test(url.pathname) ||
+    /^\/(?:redirect(?:\.html)?|auth\/callback)\/?$/.test(url.pathname) ||
+    url.searchParams.has('code') ||
+    url.searchParams.has('access_token') ||
+    ['/version.json', '/pocket-config.json', '/source.zip', '/redirect.html', '/redirect'].includes(
+      url.pathname,
+    )
   )
     return;
   if (request.mode === 'navigate') {
     event.respondWith(
       (async () => {
         const controller = new AbortController(),
-          timer = setTimeout(() => controller.abort(), 3500);
+          timer = setTimeout(() => controller.abort(), 8000);
         try {
           const response = await fetch(request, { signal: controller.signal });
-          if (
-            response.ok &&
-            response.type === 'basic' &&
-            response.headers.get('content-type')?.includes('text/html')
-          ) {
+          if (response.ok && response.headers.get('content-type')?.includes('text/html')) {
             const cache = await caches.open(CACHE);
             await cache.put(url.pathname === '/' ? '/' : request, response.clone());
           }
           return response;
         } catch {
-          const cached = (await caches.match(request)) || (await caches.match('/'));
           return (
-            cached ||
+            (await caches.match(request)) ||
+            (await caches.match('/')) ||
             new Response('Open Plivvi online once to prepare offline use.', {
               status: 503,
               headers: { 'Content-Type': 'text/plain' },
@@ -80,17 +73,20 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+  const cacheable =
+    /^\/(?:assets|fonts|ocr|visuals|logos)\//.test(url.pathname) ||
+    /^\/(?:icon.*\.(?:svg|png)|manifest.webmanifest)$/.test(url.pathname);
+  if (!cacheable) return;
   event.respondWith(
-    caches.match(request).then(
-      (cached) =>
-        cached ||
-        fetch(request).then((response) => {
-          if (response.ok && response.type === 'basic') {
-            const copy = response.clone();
-            caches.open(CACHE).then((c) => c.put(request, copy));
-          }
-          return response;
-        }),
-    ),
+    (async () => {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response.ok && response.type === 'basic') {
+        const cache = await caches.open(CACHE);
+        await cache.put(request, response.clone());
+      }
+      return response;
+    })(),
   );
 });

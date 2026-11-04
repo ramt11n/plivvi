@@ -1,7 +1,7 @@
 export type PenStyle = 'fountain' | 'ballpoint' | 'pencil';
 export type PenActivity = { pointer: number | null; until: number };
 export type InkPoint = { x: number; y: number; pressure: number; tiltX?: number; tiltY?: number };
-export type MarkKind = 'ink' | 'highlight' | 'text' | 'rectangle' | 'note' | 'image';
+export type MarkKind = 'ink' | 'highlight-ink' | 'highlight' | 'text' | 'rectangle' | 'note' | 'image';
 export type Mark = {
   id: string;
   page: number;
@@ -50,3 +50,5 @@ export function hexColor(hex: string): [number, number, number] {
   if (!/^#[0-9a-f]{6}$/i.test(hex)) return [0.16, 0.19, 0.28];
   return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255) as [number, number, number];
 }
+
+export const isStroke = (mark: Mark) => mark.kind === 'ink' || mark.kind === 'highlight-ink';

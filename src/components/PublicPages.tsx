@@ -54,10 +54,10 @@ export function SponsorPlacement() {
       </span>
       <div>
         <strong>Every tool stays free. Help keep it that way.</strong>
-        <p>If Plivvi saved you a little time, help keep it useful for everyone.</p>
+        <p>Help improve Plivvi, fix bugs, and keep useful tools free for everyone.</p>
       </div>
       <InternalLink href="/support/">
-        Keep it free <Heart size={15} />
+        Support improvements <Heart size={15} />
       </InternalLink>
       <small>Optional support</small>
     </aside>
@@ -86,7 +86,7 @@ export function SiteFooter() {
           <a href={repoUrl || sourceUrl} target={repoUrl ? '_blank' : undefined} rel="noreferrer">
             {repoUrl ? 'Contribute on GitHub' : 'Download source'}
           </a>
-          <InternalLink href="/support/">Donate · keep Plivvi free</InternalLink>
+          <InternalLink href="/support/">Donate · improve Plivvi</InternalLink>
           <InternalLink href="/contact/">Contact Ramtin</InternalLink>
         </div>
         <div>
@@ -97,6 +97,19 @@ export function SiteFooter() {
             Open-source license
           </a>
         </div>
+      </div>
+      <div className="footer-story">
+        <strong>A little imagination. A lot of possibility.</strong>
+        <p>
+          Plivvi (PLIV-ee): <b>P</b>ages, <b>L</b>ines, <b>I</b>deas, <b>V</b>ision, <b>V</b>
+          ersatility, <b>I</b>magination. An invented name for the way we make documents our own.
+        </p>
+        <button
+          className="text-button"
+          onClick={() => window.dispatchEvent(new Event('plivvi:report'))}
+        >
+          Report a bug · help us improve
+        </button>
       </div>
       <div className="footer-bottom">
         <span>
@@ -346,6 +359,10 @@ export function PublicPage({ view }: { view: string }) {
             normal website request information such as IP address and browser details. External
             links and mail apps have their own privacy practices.
           </p>
+        </section>
+        <section>
+          <h2>Private bug reports</h2>
+          <p>The optional report form loads Google Forms only when you choose to open it. Text you submit is stored in the project’s Google account and not published as a public response summary. No document is attached, and email is optional. Google receives normal form request information; its privacy policy applies. You can also choose email or a public GitHub issue.</p>
         </section>
         <section>
           <h2>Contact</h2>

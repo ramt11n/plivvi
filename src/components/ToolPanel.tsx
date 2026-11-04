@@ -72,6 +72,7 @@ export default function ToolPanel({
     }),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(false),
+    [progressValue,setProgressValue]=useState<number|undefined>(0),
     [status, setStatus] = useState(''),
     [error, setError] = useState(''),
     [results, setResults] = useState<Output[]>([]),
@@ -153,7 +154,7 @@ export default function ToolPanel({
       return;
     }
     let currentUrls: string[] = [];
-    setLoading(true);
+    setLoading(true);setProgressValue(0);
     setPageCount(undefined);
     setError('');
     (async () => {
@@ -165,9 +166,9 @@ export default function ToolPanel({
         if (/\.pdf$/i.test(file.name)) {
           try {
             const result = await rpc<Preview>('preview', {
-              input: (await inputs([file]))[0],
+              input: (await inputs([file],p=>gen===generation.current&&setProgressValue(p*0.15)))[0],
               password: options.currentPassword,
-            });
+            },(label,percent)=>{if(gen===generation.current){setStatus(label);if(percent!==undefined)setProgressValue(15+percent*0.8);}});
             if (gen !== generation.current) return;
             count += result.count;
             if (source === 0) {
@@ -233,7 +234,7 @@ export default function ToolPanel({
     })();
   }, [placement, options.page, preview, files, options.currentPassword]);
   async function process() {
-    setBusy(true);
+    setBusy(true);setProgressValue(0);
     setError('');
     setStatus('Preparing your document…');
     setSaved(false);
@@ -273,14 +274,14 @@ export default function ToolPanel({
             'operate',
             {
               tool: tool.id,
-              files: await inputs(fs),
+              files: await inputs(fs,setProgressValue),
               options: {
                 ...options,
                 order: pages.map((p) => p.index),
                 rotations: pages.map((p) => p.rotation),
               },
             },
-            setStatus,
+            (label,percent)=>{setStatus(label);if(percent!==undefined)setProgressValue(10+percent*0.9);},
           );
       }
       setResults(out);
@@ -733,7 +734,7 @@ export default function ToolPanel({
                       )}
                     </>
                   )}
-                  {loading && <LoadingProgress label="Preparing page previews…" />}
+                  {loading && <LoadingProgress label={status || "Preparing page previews…"} value={progressValue} />}
                   <button
                     className="text-button small"
                     onClick={() => {
@@ -1108,7 +1109,7 @@ export default function ToolPanel({
           <footer className="panel-footer">
             <div className="small muted">
               {busy ? (
-                <LoadingProgress label={status || 'Processing your document…'} />
+                <LoadingProgress label={status || 'Processing your document…'} value={progressValue} />
               ) : (
                 <>
                   <ShieldCheck size={15} />

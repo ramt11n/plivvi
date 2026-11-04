@@ -1,3 +1,9 @@
+import ToolSpotlight from './components/ToolSpotlight';
+import { useAppStatus } from './lib/appStatus';
+import UpdateStatus from './components/UpdateStatus';
+import Guide from './help/Guide';
+import BugReport from './components/BugReport';
+import SupportPrompt from './components/SupportPrompt';
 import LoadingProgress from './components/LoadingProgress';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
@@ -70,6 +76,11 @@ const Notebooks = lazy(() => import('./notebooks/Notebooks'));
 const ToolPanel = lazy(() => import('./components/ToolPanel')),
   CameraView = lazy(() => import('./components/Camera'));
 export default function App() {
+  const appStatus = useAppStatus();
+  const [taskProgress, setTaskProgress] = useState<{ label: string; value?: number }>({
+    label: 'Preparing your workspace…',
+    value: 0,
+  });
   const [route, setRoute] = useState(currentRoute),
     [view, setView] = useState(() => currentRoute().view),
     [group, setGroup] = useState('All tools'),
@@ -122,6 +133,7 @@ export default function App() {
     setFolderFilter('all');
     setSelected(null);
     setReaderOpen(false);
+    setReaderFile(undefined);
     setCloudOpen(false);
     setCloudOutput(undefined);
     setFileEdit(null);
@@ -213,7 +225,7 @@ export default function App() {
     } catch {}
   }, [favorites]);
   function openReader(file?: File) {
-    setReaderFile(file);
+    if (file) setReaderFile(file);
     setReaderOpen(true);
   }
   function openTool(tool: Tool, files: File[] = []) {
@@ -293,8 +305,11 @@ export default function App() {
       return;
     }
     setBusy(true);
+    setTaskProgress({ label: 'Preparing your template…', value: 0 });
     try {
-      const out = await rpc<Output[]>('template', { template: id });
+      const out = await rpc<Output[]>('template', { template: id }, (label, value) =>
+        setTaskProgress({ label, value }),
+      );
       await save(out);
       openReader(new File([out[0].data as BlobPart], out[0].name, { type: out[0].type }));
     } catch (e) {
@@ -305,7 +320,7 @@ export default function App() {
   }
   function nav(v: string) {
     if (v === 'reader') {
-      openTool(tools.find((t) => t.id === 'reader')!);
+      navigateTo(toolPath('reader'));
       setMobileNav(false);
       return;
     }
@@ -445,9 +460,11 @@ export default function App() {
           ].map((n) => (
             <button
               key={n.id}
-              className={`rail-item ${view === n.id ? 'active' : ''}`}
+              className={`rail-item ${(n.id === 'reader' ? route.toolId === 'reader' : view === n.id) ? 'active' : ''}`}
               aria-label={n.name}
-              aria-current={view === n.id ? 'page' : undefined}
+              aria-current={
+                (n.id === 'reader' ? route.toolId === 'reader' : view === n.id) ? 'page' : undefined
+              }
               onClick={() => nav(n.id)}
             >
               <n.icon size={22} />
@@ -553,7 +570,15 @@ export default function App() {
             </button>
             <span className={`connection-pill ${online ? '' : 'offline'}`}>
               {online ? <span className="online-dot" /> : <WifiOff size={13} />}
-              <span className="connection-text">{online ? 'On your device' : 'Offline'}</span>
+              <span className="connection-text">
+                {appStatus.status.state === 'reachable'
+                  ? 'Connected'
+                  : appStatus.status.state === 'checking'
+                    ? 'Checking…'
+                    : online
+                      ? 'Limited connection'
+                      : 'Offline'}
+              </span>
             </span>
             <button
               className="icon-button header-settings"
@@ -758,6 +783,7 @@ export default function App() {
                 onNotebook={() => nav('notebooks')}
                 onAction={(id) => openTool(tools.find((t) => t.id === id)!)}
               />
+              <ToolSpotlight onAction={(id) => openTool(tools.find((t) => t.id === id)!)} />
               <section className="section">
                 <div className="section-heading">
                   <div>
@@ -1065,6 +1091,11 @@ export default function App() {
               </div>
             </>
           )}
+          {view === 'templates' && busy && (
+            <div className="template-loading">
+              <LoadingProgress label={taskProgress.label} value={taskProgress.value} />
+            </div>
+          )}
           {view === 'tool' && route.toolId && (
             <ToolLanding
               tool={tools.find((t) => t.id === route.toolId)!}
@@ -1097,7 +1128,9 @@ export default function App() {
         ].map((n) => (
           <button
             key={n.id}
-            className={view === n.id ? 'active' : ''}
+            className={
+              (n.id === 'reader' ? route.toolId === 'reader' : view === n.id) ? 'active' : ''
+            }
             onClick={() => (n.id === 'scan' ? (openTool(tools[0]), setCamera(true)) : nav(n.id))}
           >
             <n.icon size={20} />
@@ -1153,6 +1186,9 @@ export default function App() {
           />
         </Suspense>
       )}
+      <Guide />
+      <BugReport />
+      <SupportPrompt />
       {readerOpen && (
         <Suspense
           fallback={
@@ -1339,6 +1375,7 @@ export default function App() {
                     </span>
                   </div>
                 </div>
+                <UpdateStatus app={appStatus} />
                 <div className="setting-row">
                   <div>
                     <strong>Local workspace</strong>
@@ -1348,17 +1385,10 @@ export default function App() {
                   </div>
                   <span className="pill">{libraryReady ? 'Ready' : 'Loading'}</span>
                 </div>
-                <div className="setting-row">
-                  <div>
-                    <strong>Connection</strong>
-                    <span>
-                      {online
-                        ? 'Connected · processing stays local'
-                        : 'Offline · cached tools only'}
-                    </span>
-                  </div>
-                  <span className="online-dot" />
-                </div>
+                <button className="button secondary full" onClick={() => window.dispatchEvent(new Event('plivvi:report'))}>
+                  Report a bug · suggest an improvement
+                </button>
+                <a className="text-button" href="/support/" target="_blank" rel="noreferrer">Help improve Plivvi · optional donation</a>
                 <button
                   className="button secondary full"
                   onClick={() => downloadAll(documents)}

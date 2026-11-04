@@ -42,3 +42,7 @@ License: SIL Open Font License 1.1; each font license is included in public/font
 node-qrcode — MIT
 Source: https://github.com/soldair/node-qrcode
 QR generation loads on demand for the optional donation panel.
+
+Google G identity mark: official asset from https://developers.google.com/static/identity/images/g-logo.png, used for the Google sign-in action under https://developers.google.com/identity/branding-guidelines . Google trademarks remain Google's property.
+
+Crypto asset logos: Trust Wallet Assets registry, https://github.com/trustwallet/assets . MIT license: /logos/TRUST-WALLET-LICENSE.txt . Individual source URLs are listed in /logos/SOURCES.json . These marks identify the selected asset; their owners do not endorse Plivvi.

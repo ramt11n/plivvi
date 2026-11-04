@@ -91,7 +91,7 @@ async function mount(
       ),
     ),
   );
-  return { svg: host.querySelector('svg')!, onMark, onRender };
+  return { svg: host.querySelector<SVGSVGElement>('.reader-annotation-layer')!, onMark, onRender };
 }
 function pointer(svg: SVGSVGElement, type: string, id: number, x: number, y: number, kind = 'pen') {
   svg.dispatchEvent(
@@ -202,3 +202,23 @@ it('blocks native touch scrolling in writing mode and restores it for selection'
   svg.dispatchEvent(selectMove);
   expect(selectMove.defaultPrevented).toBe(false);
 });
+
+it.each(['pen', 'mouse'])(
+  'creates a continuous freehand highlighter with %s input',
+  async (kind) => {
+    const { svg, onMark } = await mount(false, { pointer: null, until: 0 }, 'highlighter');
+    await act(async () => {
+      pointer(svg, 'pointerdown', 8, 80, 200, kind);
+      pointer(svg, 'pointermove', 8, 140, 198, kind);
+      pointer(svg, 'pointermove', 8, 220, 205, kind);
+      pointer(svg, 'pointerup', 8, 260, 200, kind);
+    });
+    expect(onMark).toHaveBeenCalledTimes(1);
+    const mark = onMark.mock.calls[0][0] as Mark;
+    expect(mark.kind).toBe('highlight-ink');
+    expect(mark.points.length).toBeGreaterThanOrEqual(4);
+    expect(mark.points[0].x).toBeCloseTo(80 / 600);
+    expect(mark.points.at(-1)!.x).toBeCloseTo(260 / 600);
+    expect(mark.opacity).toBeCloseTo(0.32);
+  },
+);

@@ -18,16 +18,24 @@ function get(id: string) {
   if (!doc) throw Error('The reader session has closed. Open your PDF again.');
   return doc;
 }
-export async function readerOpen(input: Input, password = ''): Promise<ReaderInfo> {
+export async function readerOpen(
+  input: Input,
+  password = '',
+  progress?: (done: number, total: number) => void,
+): Promise<ReaderInfo> {
   for (const [id, doc] of sessions) {
     doc.destroy();
     sessions.delete(id);
   }
-  const doc = await open(input, password),
+  const doc = await open(input, password, 5000),
     session = crypto.randomUUID(),
     pages = [];
   sessions.set(session, doc);
   for (let i = 0; i < doc.countPages(); i++) {
+    if (i % 25 === 0) {
+      progress?.(i, doc.countPages());
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
     const p = doc.loadPage(i);
     try {
       const b = p.getBounds();
@@ -223,7 +231,7 @@ export async function exportAnnotations(
 ): Promise<Output> {
   if (marks.length > 2000) throw Error('Export this document before adding more marks.');
   const m = await mu(),
-    doc = await open(input, password);
+    doc = await open(input, password, 5000);
   try {
     for (const mark of marks) {
       if (mark.page < 0 || mark.page >= doc.countPages())
@@ -236,7 +244,26 @@ export async function exportAnnotations(
           color = hexColor(mark.color),
           size = Math.max(0.2, Math.min(60, mark.size)),
           r = mark.rect;
-        if (mark.kind === 'ink') {
+        if (mark.kind === 'highlight-ink') {
+          const a = p.createAnnotation('Ink');
+          try {
+            a.setName(`Plivvi-${mark.id}`);
+            a.setAuthor(brand.name);
+            a.setColor(color);
+            a.setOpacity(mark.opacity);
+            a.setBorderWidth(size);
+            const points = mark.points.map(
+              (q) => [b[0] + q.x * w, b[1] + q.y * h] as [number, number],
+            );
+            if (points.length === 1) points.push([points[0][0] + 0.01, points[0][1]]);
+            a.setInkList([points]);
+            a.setContents('Freehand highlight');
+            a.setFlags(a.getFlags() | m.PDFAnnotation.IS_PRINT);
+            a.update();
+          } finally {
+            a.destroy();
+          }
+        } else if (mark.kind === 'ink') {
           const buckets = new Map<number, number[][][]>();
           if (mark.points.length === 1)
             mark.points = [mark.points[0], { ...mark.points[0], x: mark.points[0].x + 0.0001 }];

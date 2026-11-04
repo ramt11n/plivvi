@@ -1,9 +1,10 @@
-import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { readFile, readdir, writeFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { zipSync, strToU8 } from 'fflate';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
   files = {};
+await writeFile(path.join(root,'src/lib/engine-info.json'), JSON.stringify({wasmBytes:(await stat(path.join(root,'node_modules/mupdf/dist/mupdf-wasm.wasm'))).size})+'\n');
 const roots = [
   'src',
   'public',

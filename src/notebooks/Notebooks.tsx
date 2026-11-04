@@ -20,6 +20,7 @@ import {
   type Paper,
 } from './model';
 import LoadingProgress from '../components/LoadingProgress';
+import { readFile } from '../lib/readFile';
 import { download, type Output } from '../lib/client';
 import type { Mark } from '../reader/types';
 const PDFReader = lazy(() => import('../reader/PDFReader'));
@@ -86,7 +87,7 @@ export default function Notebooks({
     return next;
   }
   async function create() {
-    setCreationProgress({ label: 'Preparing the notebook editor…' });
+    setCreationProgress({ label: 'Preparing the notebook editor…', value: 0 });
     setBusy(true);
     setError('');
     try {
@@ -108,7 +109,7 @@ export default function Notebooks({
         const data = await notebookPDF(paper, count, (done, total) =>
             setCreationProgress({
               label: `Creating pages · ${done} of ${total}`,
-              value: (done / total) * 100,
+              value: 5 + (done / total) * 85,
             }),
           ),
           now = new Date().toISOString(),
@@ -122,7 +123,7 @@ export default function Notebooks({
             updated: now,
             created: now,
           };
-        setCreationProgress({ label: 'Saving your notebook on this device…' });
+        setCreationProgress({ label: 'Saving your notebook on this device…', value: 95 });
         await mutate((b) => [book, ...b]);
         setActive(book);
       }
@@ -150,6 +151,7 @@ export default function Notebooks({
   }
   async function importPDF(file?: File) {
     if (!file) return;
+    setCreationProgress({ label: 'Reading your PDF…', value: 0 });
     setBusy(true);
     setError('');
     try {
@@ -161,10 +163,15 @@ export default function Notebooks({
           color: covers[0],
           paper: 'blank',
           marks: [],
-          data: new Uint8Array(await file.arrayBuffer()),
+          data: new Uint8Array(
+            await readFile(file, (percent) =>
+              setCreationProgress({ label: 'Reading your PDF…', value: percent * 0.9 }),
+            ),
+          ),
           created: now,
           updated: now,
         };
+      setCreationProgress({ label: 'Saving your notebook on this device…', value: 95 });
       await mutate((b) => [book, ...b]);
       setActive(book);
     } catch (e) {
@@ -260,6 +267,9 @@ export default function Notebooks({
         <p role="alert" className="error-banner">
           {error}
         </p>
+      )}
+      {busy && !creating && !editing && (
+        <LoadingProgress label={creationProgress.label} value={creationProgress.value} />
       )}
       {!ready ? (
         <LoadingProgress

@@ -1,6 +1,6 @@
 # Keep every document feature free
 
-The release supports optional direct crypto donations, direct sponsorship and paid custom workflow help through `ramtinneshat4@gmail.com`. Sponsor invitations appear on public pages, with no feature locks, invented visitor counts, or fake paying sponsors. A visitor can use the workshop without an account.
+The release supports optional direct crypto donations, direct sponsorship and paid custom workflow help through `plivvi.pages@gmail.com`. Sponsor invitations appear on public pages, with no feature locks, invented visitor counts, or fake paying sponsors. A visitor can use the workshop without an account.
 
 ## Practical income options
 
@@ -49,3 +49,13 @@ Homepage WebSite data identifies Plivvi and its alternate descriptive name. Sour
 Optional donations use the owner's supplied receiving details. See [configuration and design research](DONATIONS.md). Account/document paths are noindex, and search metadata contains no private file names or content. No extra analytics or third-party ad scripts were added for SEO.
 
 Primary references: [Google JavaScript SEO](https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics), [site names](https://developers.google.com/search/docs/appearance/site-names), [sitemaps](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap), and [GitHub repository renaming](https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository). Renamed repository links redirect; GitHub Pages project URLs are an exception and use the new repository name.
+
+## 3.3 support, privacy and updates
+
+Support invitations fund improvements, testing and maintenance as well as free access. They never gate an export. An export invitation appears once per session and dismissal suppresses it for seven days. Receiving networks remain an explicit owner-supplied allowlist; adding an arbitrary token search does not create a safe receiving route. Crypto logos are locally hosted, attributed identification assets.
+
+Private bug reports are submitted through the optional Google Forms embed. It loads only after a visitor chooses it; no document is attached and response summaries are not public. The owner receives response notifications at the business inbox. Public GitHub and email routes remain available.
+
+A same-origin, uncached version endpoint checks actual Plivvi reachability. A device reporting “online” does not prove the host is reachable. Checking for updates does not reload work; applying one is explicit and flushes pending reader drafts first. It cannot bypass filtering, repair a VPN, or promise availability in every network. Static files are hosted on Cloudflare Pages; customer documents stay in browser memory/storage or transfer directly to a cloud provider only when chosen. Hosting plans and quotas can change: [Cloudflare Pages limits](https://developers.cloudflare.com/pages/platform/limits/).
+
+Continue reviewing Search Console crawl and sitemap results; successful live fetches are not proof of indexing or rankings. Google says indexing can take time: [missing pages](https://support.google.com/webmasters/answer/7474347), [sitemap report](https://support.google.com/webmasters/answer/7451001). Promotional copy should describe demonstrated behavior and known conversion limits. Prefer original examples, relevant open-source contributions and user-approved community posts over mass promotion.

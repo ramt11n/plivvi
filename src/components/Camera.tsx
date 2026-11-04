@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Camera as CameraIcon } from 'lucide-react';
+import { X, Camera as CameraIcon, RefreshCw } from 'lucide-react';
 export default function Camera({
   onCapture,
   onClose,
@@ -10,38 +10,59 @@ export default function Camera({
   const video = useRef<HTMLVideoElement>(null),
     stream = useRef<MediaStream | null>(null),
     [error, setError] = useState(''),
-    [ready, setReady] = useState(false);
+    [ready, setReady] = useState(false),
+    [devices, setDevices] = useState<MediaDeviceInfo[]>([]),
+    [selected, setSelected] = useState('rear'),
+    [retry, setRetry] = useState(0);
   useEffect(() => {
-    let cancelled = false;
+    let alive = true;
+    setReady(false);
+    setError('');
+    stream.current?.getTracks().forEach((t) => t.stop());
+    stream.current = null;
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('This browser cannot open a camera. Upload a photo through Files instead.');
+      return;
+    }
+    const refresh = async () => {
+      try {
+        const all = await navigator.mediaDevices.enumerateDevices();
+        if (alive) setDevices(all.filter((d) => d.kind === 'videoinput'));
+      } catch {}
+    };
     navigator.mediaDevices
-      ?.getUserMedia({
+      .getUserMedia({
+        audio: false,
         video: {
-          facingMode: { ideal: 'environment' },
+          ...(selected === 'rear' || selected === 'front'
+            ? { facingMode: { ideal: selected === 'rear' ? 'environment' : 'user' } }
+            : { deviceId: { exact: selected } }),
           width: { ideal: 1920 },
           height: { ideal: 1440 },
         },
-        audio: false,
       })
-      .then((s) => {
-        if (cancelled) {
+      .then(async (s) => {
+        if (!alive) {
           s.getTracks().forEach((t) => t.stop());
           return;
         }
         stream.current = s;
-        video.current!.srcObject = s;
+        if (video.current) video.current.srcObject = s;
+        await refresh();
       })
-      .catch(() =>
-        setError(
-          'Camera access is unavailable. You can still upload photos or documents from your device.',
-        ),
-      );
-    if (!navigator.mediaDevices)
-      setError('This browser cannot open a camera. Use Upload files instead.');
+      .catch(() => {
+        if (alive)
+          setError(
+            'This camera could not open. Try another camera, allow camera access, or upload a photo.',
+          );
+      });
+    navigator.mediaDevices.addEventListener?.('devicechange', refresh);
     return () => {
-      cancelled = true;
+      alive = false;
+      navigator.mediaDevices?.removeEventListener?.('devicechange', refresh);
       stream.current?.getTracks().forEach((t) => t.stop());
     };
-  }, []);
+  }, [selected, retry]);
   return (
     <div className="modal-shade camera-shade">
       <section
@@ -52,17 +73,49 @@ export default function Camera({
       >
         <div className="camera-top">
           <span>
-            <CameraIcon size={20} /> Scan a page
+            <CameraIcon size={20} />
+            Scan a page
           </span>
           <button className="icon-button" aria-label="Close camera" onClick={onClose}>
             <X />
           </button>
         </div>
+        <label className="camera-selector">
+          Camera input
+          <select
+            aria-label="Camera input"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+          >
+            <option value="rear">Back camera · automatic</option>
+            <option value="front">Front camera</option>
+            {devices.map((d, i) => (
+              <option value={d.deviceId} key={d.deviceId}>
+                {d.label || `Camera ${i + 1}`}
+              </option>
+            ))}
+          </select>
+        </label>
         {error ? (
-          <p className="camera-error">{error}</p>
+          <div className="camera-error">
+            <p role="alert">{error}</p>
+            <button className="button secondary" onClick={() => setRetry((n) => n + 1)}>
+              <RefreshCw size={16} />
+              Try camera again
+            </button>
+          </div>
         ) : (
           <div className="camera-view">
-            <video ref={video} autoPlay playsInline muted onLoadedMetadata={() => setReady(true)} />
+            <video
+              ref={(node) => {
+                video.current = node;
+                if (node && stream.current) node.srcObject = stream.current;
+              }}
+              autoPlay
+              playsInline
+              muted
+              onLoadedMetadata={() => setReady(true)}
+            />
             <div className="camera-guides" />
             <p>Place your document on a contrasting surface</p>
           </div>

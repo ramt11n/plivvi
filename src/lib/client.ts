@@ -1,3 +1,4 @@
+import { readFile } from './readFile';
 export type Input = { name: string; data: ArrayBuffer; type: string };
 export type Output = { name: string; data: Uint8Array; type: string };
 export type Preview = {
@@ -10,12 +11,16 @@ let worker: Worker;
 let seq = 0;
 const pending = new Map<
   number,
-  { resolve: (v: any) => void; reject: (e: Error) => void; progress?: (s: string) => void }
+  {
+    resolve: (v: any) => void;
+    reject: (e: Error) => void;
+    progress?: (s: string, percent?: number) => void;
+  }
 >();
 export function rpc<T = any>(
   op: string,
   payload: any,
-  onProgress?: (s: string) => void,
+  onProgress?: (s: string, percent?: number) => void,
 ): Promise<T> {
   if (!worker) {
     worker = new Worker(new URL('./pdf.worker.ts', import.meta.url), { type: 'module' });
@@ -23,7 +28,7 @@ export function rpc<T = any>(
       const p = pending.get(r.id);
       if (!p) return;
       if (r.progress) {
-        p.progress?.(r.progress);
+        p.progress?.(r.progress, r.percent);
         return;
       }
       pending.delete(r.id);
@@ -43,11 +48,23 @@ export function rpc<T = any>(
     worker.postMessage({ id, op, payload });
   });
 }
-export async function inputs(files: File[]): Promise<Input[]> {
-  return Promise.all(
-    files.map(async (f) => ({ name: f.name, type: f.type, data: await f.arrayBuffer() })),
-  );
+export async function inputs(
+  files: File[],
+  onProgress?: (percent: number) => void,
+): Promise<Input[]> {
+  const total = files.reduce((n, f) => n + f.size, 0) || 1;
+  let completed = 0;
+  const result: Input[] = [];
+  for (const f of files) {
+    const data = await readFile(f, (p) =>
+      onProgress?.(((completed + (f.size * p) / 100) / total) * 100),
+    );
+    completed += f.size;
+    result.push({ name: f.name, type: f.type, data });
+  }
+  return result;
 }
+
 export function download(out: Output) {
   const blob = new Blob([out.data as BlobPart], { type: out.type }),
     url = URL.createObjectURL(blob),
@@ -57,6 +74,7 @@ export function download(out: Output) {
   a.style.display = 'none';
   document.body.append(a);
   a.click();
+  window.dispatchEvent(new CustomEvent('plivvi:export', { detail: { count: 1 } }));
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
