@@ -19,6 +19,7 @@ import {
   type Notebook,
   type Paper,
 } from './model';
+import LoadingProgress from '../components/LoadingProgress';
 import { download, type Output } from '../lib/client';
 import type { Mark } from '../reader/types';
 const PDFReader = lazy(() => import('../reader/PDFReader'));
@@ -50,6 +51,9 @@ export default function Notebooks({
     [color, setColor] = useState(covers[0]),
     [count, setCount] = useState(3),
     [busy, setBusy] = useState(false),
+    [creationProgress, setCreationProgress] = useState<{ label: string; value?: number }>({
+      label: 'Preparing the notebook editor…',
+    }),
     [error, setError] = useState(''),
     [remove, setRemove] = useState<Notebook>();
   const current = useRef(workspace),
@@ -82,6 +86,7 @@ export default function Notebooks({
     return next;
   }
   async function create() {
+    setCreationProgress({ label: 'Preparing the notebook editor…' });
     setBusy(true);
     setError('');
     try {
@@ -100,7 +105,12 @@ export default function Notebooks({
         );
         setEditing(undefined);
       } else {
-        const data = await notebookPDF(paper, count),
+        const data = await notebookPDF(paper, count, (done, total) =>
+            setCreationProgress({
+              label: `Creating pages · ${done} of ${total}`,
+              value: (done / total) * 100,
+            }),
+          ),
           now = new Date().toISOString(),
           book: Notebook = {
             id: crypto.randomUUID(),
@@ -112,6 +122,7 @@ export default function Notebooks({
             updated: now,
             created: now,
           };
+        setCreationProgress({ label: 'Saving your notebook on this device…' });
         await mutate((b) => [book, ...b]);
         setActive(book);
       }
@@ -245,13 +256,16 @@ export default function Notebooks({
           />
         </label>
       </div>
-      {error && (
+      {error && !creating && !editing && (
         <p role="alert" className="error-banner">
           {error}
         </p>
       )}
       {!ready ? (
-        <p>Opening your shelf…</p>
+        <LoadingProgress
+          label="Opening your notebooks…"
+          detail="Reading saved notebooks from this device."
+        />
       ) : (
         <div className="notebook-shelf">
           {visible.map((book) => (
@@ -411,9 +425,17 @@ export default function Notebooks({
               </>
             )}
             <button className="button primary" disabled={busy}>
-              {busy ? 'Getting your pages ready…' : editing ? 'Save changes' : 'Create notebook'}
+              {busy ? 'Preparing your notebook…' : editing ? 'Save changes' : 'Create notebook'}
               <ArrowRight size={17} />
             </button>
+            {error && (
+              <p role="alert" className="error-banner">
+                {error}
+              </p>
+            )}
+            {busy && (
+              <LoadingProgress label={creationProgress.label} value={creationProgress.value} />
+            )}
           </form>
         </div>
       )}
@@ -447,7 +469,7 @@ export default function Notebooks({
         </div>
       )}
       {active && (
-        <Suspense fallback={<p>Opening your notebook…</p>}>
+        <Suspense fallback={<LoadingProgress label="Loading the notebook editor…" />}>
           <PDFReader
             workspace={workspace}
             initialFile={

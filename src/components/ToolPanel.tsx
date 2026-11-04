@@ -1,3 +1,4 @@
+import LoadingProgress from './LoadingProgress';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   X,
@@ -728,12 +729,7 @@ export default function ToolPanel({
                       )}
                     </>
                   )}
-                  {loading && (
-                    <p className="processing-line">
-                      <span className="spinner" />
-                      Preparing page previews…
-                    </p>
-                  )}
+                  {loading && <LoadingProgress label="Preparing page previews…" />}
                   <button
                     className="text-button small"
                     onClick={() => {
@@ -1105,19 +1101,16 @@ export default function ToolPanel({
         )}
         {!results.length && (
           <footer className="panel-footer">
-            <span className="small muted">
+            <div className="small muted">
               {busy ? (
-                <span className="processing-line">
-                  <span className="spinner" />
-                  {status}
-                </span>
+                <LoadingProgress label={status || 'Processing your document…'} />
               ) : (
                 <>
                   <ShieldCheck size={15} />
                   Private by design
                 </>
               )}
-            </span>
+            </div>
             <button
               className="button primary"
               disabled={

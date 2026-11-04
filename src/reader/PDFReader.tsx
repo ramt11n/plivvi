@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -40,6 +40,9 @@ import {
 } from 'lucide-react';
 import { download, downloadAll, inputs, rpc, type Input, type Output } from '../lib/client';
 import PDFPage from './PDFPage';
+import LoadingProgress from '../components/LoadingProgress';
+import { bindNavigation } from './navigation';
+import { captureZoomAnchor, restoreZoomAnchor, type ZoomAnchor } from './zoomAnchor';
 import PageThumbnail from './PageThumbnail';
 import { notebookPDF, type Paper } from '../notebooks/model';
 import { readerDraftKey } from '../lib/workspace';
@@ -82,6 +85,7 @@ export default function PDFReader({
     [password, setPassword] = useState(''),
     [attempt, setAttempt] = useState(0),
     [loading, setLoading] = useState(false),
+    [loadingStage, setLoadingStage] = useState('Reading your file…'),
     [error, setError] = useState(''),
     [busy, setBusy] = useState(''),
     [page, setPage] = useState(0),
@@ -157,6 +161,7 @@ export default function PDFReader({
     const gen = ++generation.current;
     let alive = true;
     setLoading(true);
+    setLoadingStage('Reading your file…');
     setError('');
     setInfo(undefined);
     setDraftReady(false);
@@ -171,6 +176,7 @@ export default function PDFReader({
       if (file.size > 100 * 1048576) throw Error('Choose a PDF smaller than 100 MB.');
       const data = (await inputs([file]))[0];
       raw.current = data;
+      if (alive) setLoadingStage('Starting the PDF engine and preparing pages…');
       const r = await rpc<ReaderInfo>('reader-open', { input: data, password });
       if (!alive || gen !== generation.current) {
         rpc('reader-close', { session: r.session });
@@ -178,6 +184,7 @@ export default function PDFReader({
       }
       session.current = r.session;
       setInfo(r);
+      if (alive) setLoadingStage('Restoring saved handwriting and bookmarks…');
       const key = await readerDraftKey(workspace, data.data);
       setDraftKey(key);
       try {
@@ -326,11 +333,38 @@ export default function PDFReader({
         ? Math.min((viewport.width - 56) / p.width, (viewport.height - 55) / p.height)
         : Math.min(1.65, (viewport.width - (viewport.width < 600 ? 26 : 76)) / p.width);
   }
-  function changeZoom(ratio: number) {
+  const zoomAnchor = useRef<ZoomAnchor | null>(null);
+  const zoomHandler = useRef<(ratio: number, anchor: { x: number; y: number }) => void>(() => {});
+  useEffect(() => {
+    const surface = scroller.current;
+    if (!surface || tool === 'select' || touchInk) return;
+    return bindNavigation(surface, {
+      penActive: () =>
+        penActivity.current.pointer !== null || performance.now() < penActivity.current.until,
+      zoom: (ratio, anchor) => zoomHandler.current(ratio, anchor),
+    });
+  }, [info, loading, tool, touchInk]);
+  useLayoutEffect(() => {
+    const anchor = zoomAnchor.current,
+      surface = scroller.current;
+    zoomAnchor.current = null;
+    if (surface) restoreZoomAnchor(surface, anchor);
+  }, [zoom, fit]);
+  function changeZoom(ratio: number, anchor?: { x: number; y: number }) {
     const current = info ? scaleFor(page) * 100 : zoom;
-    setZoom(Math.max(35, Math.min(400, Math.round(current * ratio))));
+    const surface = scroller.current;
+    if (surface) {
+      const viewport = surface.getBoundingClientRect();
+      const point = anchor ?? {
+        x: viewport.left + viewport.width / 2,
+        y: viewport.top + viewport.height / 2,
+      };
+      zoomAnchor.current = captureZoomAnchor(surface, point);
+    }
+    setZoom(Math.max(35, Math.min(400, current * ratio)));
     setFit('manual');
   }
+  zoomHandler.current = changeZoom;
   async function exportCopy() {
     if (!raw.current) throw Error('Open a PDF first.');
     return rpc<Output>('reader-export', { input: raw.current, password, marks, flatten });
@@ -811,9 +845,11 @@ export default function PDFReader({
       )}
       {loading ? (
         <div className="reader-welcome">
-          <span className="spinner" />
           <h2>Opening your document…</h2>
-          <p>Preparing crisp pages and selectable text.</p>
+          <LoadingProgress
+            label={loadingStage}
+            detail="The PDF engine can take longer on the first visit."
+          />
         </div>
       ) : !info ? (
         <div className="reader-welcome">
@@ -1090,7 +1126,6 @@ export default function PDFReader({
                     commit((old) => old.map((m) => (m.id === mark.id ? mark : m)))
                   }
                   onVisible={continuous ? visible : () => {}}
-                  onZoom={changeZoom}
                   searchQuads={hits.find((h) => h.page === i)?.quads}
                 />
               ))}

@@ -87,7 +87,6 @@ async function mount(
           onErase: () => {},
           onUpdate: () => {},
           onVisible: () => {},
-          onZoom: () => {},
         }),
       ),
     ),
@@ -202,17 +201,4 @@ it('blocks native touch scrolling in writing mode and restores it for selection'
   const selectMove = new Event('touchmove', { bubbles: true, cancelable: true });
   svg.dispatchEvent(selectMove);
   expect(selectMove.defaultPrevented).toBe(false);
-});
-it('requires two deliberate fingers to navigate while writing, rather than a single palm contact', async () => {
-  const { svg } = await mount();
-  await act(async () => {
-    pointer(svg, 'pointerdown', 1, 50, 50, 'touch');
-    pointer(svg, 'pointermove', 1, 50, 80, 'touch');
-  });
-  expect(scroll).not.toHaveBeenCalled();
-  await act(async () => {
-    pointer(svg, 'pointerdown', 2, 150, 50, 'touch');
-    pointer(svg, 'pointermove', 1, 50, 110, 'touch');
-  });
-  expect(scroll).toHaveBeenCalled();
 });

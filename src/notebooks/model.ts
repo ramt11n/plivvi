@@ -86,7 +86,11 @@ export function changeNotebook(
     .catch(() => {});
   return pending;
 }
-export async function notebookPDF(paper: Paper, count = 1): Promise<Uint8Array> {
+export async function notebookPDF(
+  paper: Paper,
+  count = 1,
+  onProgress?: (completed: number, total: number) => void,
+): Promise<Uint8Array> {
   if (!Number.isInteger(count) || count < 1 || count > 300)
     throw Error('Choose between 1 and 300 pages.');
   const { PDFDocument, rgb } = await deadline(
@@ -95,6 +99,7 @@ export async function notebookPDF(paper: Paper, count = 1): Promise<Uint8Array> 
       'The notebook editor could not load. Check your connection, reload, and try again.',
     ),
     pdf = await PDFDocument.create();
+  onProgress?.(0, count);
   for (let i = 0; i < count; i++) {
     const p = pdf.addPage([595.28, 841.89]),
       ink = rgb(0.8, 0.84, 0.9);
@@ -114,6 +119,9 @@ export async function notebookPDF(paper: Paper, count = 1): Promise<Uint8Array> 
     if (paper === 'dots')
       for (let x = 48; x < 555; x += 20)
         for (let y = 56; y < 797; y += 20) p.drawCircle({ x, y, size: 0.7, color: ink });
+    onProgress?.(i + 1, count);
+    if (onProgress && (i % 5 === 0 || i === count - 1))
+      await new Promise((resolve) => setTimeout(resolve, 0));
   }
   return pdf.save();
 }

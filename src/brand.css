@@ -1581,3 +1581,71 @@ html[data-theme='dark'] .topbar.studio-topbar {
   border-bottom: 2px solid white;
   transform: rotate(-45deg);
 }
+
+.loading-progress {
+  width: min(100%, 400px);
+  margin: 16px 0;
+  text-align: start;
+  color: var(--ink);
+}
+.loading-progress-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.loading-progress progress {
+  display: block;
+  width: 100%;
+  height: 7px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  overflow: hidden;
+  accent-color: var(--purple);
+  background: var(--line);
+}
+.loading-progress progress::-webkit-progress-bar {
+  background: var(--line);
+  border-radius: 8px;
+}
+.loading-progress progress::-webkit-progress-value {
+  background: var(--purple);
+  border-radius: 8px;
+}
+.loading-progress progress::-moz-progress-bar {
+  background: var(--purple);
+  border-radius: 8px;
+}
+.loading-progress progress:indeterminate {
+  background: linear-gradient(90deg, var(--line) 0 30%, var(--purple) 50%, var(--line) 70%);
+  background-size: 220% 100%;
+  animation: loading-progress-slide 1.5s linear infinite;
+}
+.loading-progress progress:indeterminate::-webkit-progress-bar {
+  background: transparent;
+}
+.loading-progress small {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.reader-welcome .loading-progress {
+  margin-inline: auto;
+}
+@keyframes loading-progress-slide {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-progress progress:indeterminate {
+    animation: none;
+  }
+}

@@ -30,7 +30,6 @@ type Props = {
   onErase: (id: string) => void;
   onUpdate: (mark: Mark) => void;
   onVisible: (page: number) => void;
-  onZoom: (ratio: number) => void;
   searchQuads?: number[][];
 };
 export default function PDFPage(p: Props) {
@@ -53,9 +52,7 @@ export default function PDFPage(p: Props) {
       painted: number;
     } | null>(null),
     moveStart = useRef<{ pointer: number; start: InkPoint; original: Mark } | null>(null),
-    localPen = useRef<PenActivity>({ pointer: null, until: 0 }),
-    touches = useRef(new Map<number, { x: number; y: number }>()),
-    pinch = useRef(0);
+    localPen = useRef<PenActivity>({ pointer: null, until: 0 });
   const penActivity = p.penActivity ?? localPen.current;
   useEffect(() => {
     const surface = root.current;
@@ -243,17 +240,8 @@ export default function PDFPage(p: Props) {
   function down(e: ReactPointerEvent<SVGSVGElement>) {
     if (p.tool === 'select') return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    if (e.pointerType === 'touch' && !p.touchInk) {
-      if (penActivity.pointer !== null || performance.now() < penActivity.until) return;
-      e.preventDefault();
-      touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      e.currentTarget.setPointerCapture(e.pointerId);
-      if (touches.current.size === 2) {
-        const [a, b] = [...touches.current.values()];
-        pinch.current = Math.hypot(a.x - b.x, a.y - b.y);
-      }
-      return;
-    }
+    // Finger navigation belongs to the viewport controller.
+    if (e.pointerType === 'touch' && !p.touchInk) return;
     if (
       e.pointerType === 'touch' &&
       (penActivity.pointer !== null || performance.now() < penActivity.until)
@@ -272,11 +260,6 @@ export default function PDFPage(p: Props) {
     if (e.pointerType === 'pen') {
       penActivity.pointer = e.pointerId;
       penActivity.until = performance.now() + 600;
-      for (const id of touches.current.keys()) {
-        if (e.currentTarget.hasPointerCapture(id)) e.currentTarget.releasePointerCapture(id);
-      }
-      touches.current.clear();
-      pinch.current = 0;
     }
     const bounds = svg.current!.getBoundingClientRect(),
       q = point(e, bounds);
@@ -351,26 +334,6 @@ export default function PDFPage(p: Props) {
       return;
     }
 
-    const touch = touches.current.get(e.pointerId);
-    if (touch) {
-      if (penActivity.pointer !== null || performance.now() < penActivity.until) {
-        touches.current.delete(e.pointerId);
-        pinch.current = 0;
-        return;
-      }
-      e.preventDefault();
-      const old = { ...touch };
-      touches.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      if (touches.current.size === 2) {
-        const [a, b] = [...touches.current.values()],
-          distance = Math.hypot(a.x - b.x, a.y - b.y);
-        if (pinch.current) p.onZoom(distance / pinch.current);
-        pinch.current = distance;
-        const scroller = root.current?.closest('.reader-scroll');
-        scroller?.scrollBy((old.x - e.clientX) / 2, (old.y - e.clientY) / 2);
-      }
-      return;
-    }
     const current = active.current;
     if (!current || current.pointer !== e.pointerId) return;
     e.preventDefault();
@@ -418,7 +381,6 @@ export default function PDFPage(p: Props) {
     if (penActivity.pointer === e.pointerId) {
       penActivity.pointer = null;
       penActivity.until = performance.now() + 350;
-      touches.current.clear();
     }
     if (moveStart.current?.pointer === e.pointerId) {
       if (!cancel && moved) p.onUpdate(moved);
@@ -426,8 +388,6 @@ export default function PDFPage(p: Props) {
       setMoved(null);
       return;
     }
-    touches.current.delete(e.pointerId);
-    pinch.current = 0;
     const current = active.current;
     if (current?.pointer !== e.pointerId) return;
     if (!cancel && current.mark.kind === 'ink') {

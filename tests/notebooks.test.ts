@@ -53,3 +53,17 @@ it('restores notebook pages and ink independently, isolates accounts, and clears
   expect(await readNotebooks('account-a')).toEqual([]);
   expect([...memory.keys()].some((k) => k.includes(':ink:') || k.includes(':pages:'))).toBe(false);
 });
+
+it('reports generated page counts without treating PDF preparation as timed progress', async () => {
+  const { notebookPDF } = await import('../src/notebooks/model');
+  const progress = vi.fn();
+  const data = await notebookPDF('ruled', 3, progress);
+  expect(progress.mock.calls).toEqual([
+    [0, 3],
+    [1, 3],
+    [2, 3],
+    [3, 3],
+  ]);
+  const { PDFDocument } = await import('pdf-lib');
+  expect((await PDFDocument.load(data)).getPageCount()).toBe(3);
+});

@@ -1,3 +1,4 @@
+import LoadingProgress from './components/LoadingProgress';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
@@ -785,10 +786,10 @@ export default function App() {
                   </button>
                 </div>
                 {!libraryReady ? (
-                  <p className="library-loading" role="status">
-                    <span className="spinner" />
-                    Opening your workspace…
-                  </p>
+                  <LoadingProgress
+                    label="Opening your workspace…"
+                    detail="Reading files saved on this device."
+                  />
                 ) : storageError ? (
                   <div role="alert" className="error-banner">
                     <p>{storageError}</p>
@@ -901,10 +902,10 @@ export default function App() {
           {view === 'documents' && (
             <>
               {!libraryReady ? (
-                <p className="library-loading" role="status">
-                  <span className="spinner" />
-                  Opening your workspace…
-                </p>
+                <LoadingProgress
+                  label="Opening your workspace…"
+                  detail="Reading files saved on this device."
+                />
               ) : storageError ? (
                 <div role="alert" className="error-banner">
                   <p>{storageError}</p>
@@ -986,7 +987,7 @@ export default function App() {
             </>
           )}
           {view === 'notebooks' && (
-            <Suspense fallback={<p>Opening your shelf…</p>}>
+            <Suspense fallback={<LoadingProgress label="Opening your notebooks…" />}>
               <Notebooks
                 key={workspace}
                 workspace={workspace}
@@ -1097,8 +1098,7 @@ export default function App() {
           fallback={
             <div className="modal-shade">
               <div className="loading-card">
-                <span className="spinner" />
-                Opening account…
+                <LoadingProgress label="Opening account…" />
               </div>
             </div>
           }
@@ -1111,8 +1111,7 @@ export default function App() {
           fallback={
             <div className="modal-shade">
               <div className="loading-card">
-                <span className="spinner" />
-                Opening connections…
+                <LoadingProgress label="Opening connections…" />
               </div>
             </div>
           }
@@ -1131,8 +1130,7 @@ export default function App() {
           fallback={
             <div className="modal-shade">
               <div className="loading-card">
-                <span className="spinner" />
-                Opening your reading nook…
+                <LoadingProgress label="Opening your reading nook…" />
               </div>
             </div>
           }
@@ -1155,8 +1153,7 @@ export default function App() {
           fallback={
             <div className="modal-shade">
               <div className="loading-card">
-                <span className="spinner" />
-                Opening your workshop…
+                <LoadingProgress label="Opening your workshop…" />
               </div>
             </div>
           }

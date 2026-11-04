@@ -1,3 +1,4 @@
+import LoadingProgress from './LoadingProgress';
 import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
@@ -214,10 +215,10 @@ export default function AccountDialog({ onClose }: { onClose: () => void }) {
             : 'Free tools, a personal document workspace, and no feature paywalls.'}
         </p>
         {!state.ready ? (
-          <p className="processing-line">
-            <span className="spinner" />
-            Restoring your accounts…
-          </p>
+          <LoadingProgress
+            label="Restoring your accounts…"
+            detail="Your local document tools remain available."
+          />
         ) : (
           <>
             {(mode === 'manage' || !state.configured) && (
