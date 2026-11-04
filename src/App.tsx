@@ -74,6 +74,8 @@ export default function App() {
     [documentData, setDocuments] = useState<StoredDocument[]>([]),
     [ready, setReady] = useState(false),
     [loadedWorkspace, setLoadedWorkspace] = useState<string>(),
+    [storageError, setStorageError] = useState(''),
+    [libraryAttempt, setLibraryAttempt] = useState(0),
     [toast, setToast] = useState(''),
     [busy, setBusy] = useState(false),
     [online, setOnline] = useState(navigator.onLine),
@@ -120,6 +122,7 @@ export default function App() {
   useEffect(() => {
     let alive = true;
     setReady(false);
+    setStorageError('');
     setLoadedWorkspace(undefined);
     setDocuments([]);
     if (!authState.ready) return;
@@ -131,8 +134,11 @@ export default function App() {
           setReady(true);
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (alive) {
+          setStorageError(
+            error.message || 'Browser storage is unavailable. Saved files have not been cleared.',
+          );
           setReady(true);
           setLoadedWorkspace(workspace);
           setToast('Local storage is unavailable. You can still process and download files.');
@@ -141,7 +147,7 @@ export default function App() {
     return () => {
       alive = false;
     };
-  }, [workspace, authState.ready]);
+  }, [workspace, authState.ready, libraryAttempt]);
   useEffect(() => {
     const sync = () => {
       const r = currentRoute();
@@ -783,6 +789,16 @@ export default function App() {
                     <span className="spinner" />
                     Opening your workspace…
                   </p>
+                ) : storageError ? (
+                  <div role="alert" className="error-banner">
+                    <p>{storageError}</p>
+                    <button
+                      className="button secondary"
+                      onClick={() => setLibraryAttempt((n) => n + 1)}
+                    >
+                      Retry opening files
+                    </button>
+                  </div>
                 ) : documents.length ? (
                   <DocumentList />
                 ) : (
@@ -889,6 +905,16 @@ export default function App() {
                   <span className="spinner" />
                   Opening your workspace…
                 </p>
+              ) : storageError ? (
+                <div role="alert" className="error-banner">
+                  <p>{storageError}</p>
+                  <button
+                    className="button secondary"
+                    onClick={() => setLibraryAttempt((n) => n + 1)}
+                  >
+                    Retry opening files
+                  </button>
+                </div>
               ) : documents.length ? (
                 <>
                   <div className="library-toolbar">

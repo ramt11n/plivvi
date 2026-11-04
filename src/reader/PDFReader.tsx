@@ -181,7 +181,7 @@ export default function PDFReader({
       const key = await readerDraftKey(workspace, data.data);
       setDraftKey(key);
       try {
-        const { get } = await import('idb-keyval'),
+        const { get } = await import('../lib/storage'),
           saved = carry.current ?? notebookRef.current?.marks ?? (await get<Mark[]>(key));
         carry.current = null;
         if (alive && saved?.length) {
@@ -206,7 +206,7 @@ export default function PDFReader({
       if (draft.key && raw.current)
         notebookRef.current?.onDraft(draft.marks, raw.current.data).catch(() => {});
       if (draft.key && !notebookRef.current)
-        import('idb-keyval').then(({ set }) => set(draft.key, draft.marks)).catch(() => {});
+        import('../lib/storage').then(({ set }) => set(draft.key, draft.marks)).catch(() => {});
       if (session.current) {
         rpc('reader-close', { session: session.current }).catch(() => {});
         session.current = '';
@@ -228,7 +228,7 @@ export default function PDFReader({
     saveTimer.current = setTimeout(() => {
       (notebookRef.current && raw.current
         ? notebookRef.current.onDraft(marks, raw.current.data)
-        : import('idb-keyval').then(({ set }) => set(draftKey, marks))
+        : import('../lib/storage').then(({ set }) => set(draftKey, marks))
       )
         .then(() =>
           setNotice(
@@ -787,7 +787,7 @@ export default function PDFReader({
               </label>
               <span className="stylus-hint">
                 <PenLine size={13} />
-                Pencil & stylus ready
+                Pen to write · two fingers to move
               </span>
               <label className="reader-flatten">
                 <input
@@ -1062,7 +1062,10 @@ export default function PDFReader({
               )}
             </aside>
           )}
-          <div className="reader-scroll" ref={scroller}>
+          <div
+            className={`reader-scroll ${tool !== 'select' ? 'reader-writing' : ''}`}
+            ref={scroller}
+          >
             <div className="reader-page-stack">
               {(continuous ? info.pages.map((_, i) => i) : [page]).map((i) => (
                 <PDFPage

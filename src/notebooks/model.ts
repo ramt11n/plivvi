@@ -1,4 +1,5 @@
-import { get, set, del } from 'idb-keyval';
+import { get, set, del } from '../lib/storage';
+import { deadline } from '../lib/deadline';
 import type { Mark } from '../reader/types';
 export type Paper = 'blank' | 'ruled' | 'grid' | 'dots' | 'cornell';
 export type Notebook = {
@@ -88,7 +89,11 @@ export function changeNotebook(
 export async function notebookPDF(paper: Paper, count = 1): Promise<Uint8Array> {
   if (!Number.isInteger(count) || count < 1 || count > 300)
     throw Error('Choose between 1 and 300 pages.');
-  const { PDFDocument, rgb } = await import('pdf-lib'),
+  const { PDFDocument, rgb } = await deadline(
+      import('pdf-lib'),
+      20000,
+      'The notebook editor could not load. Check your connection, reload, and try again.',
+    ),
     pdf = await PDFDocument.create();
   for (let i = 0; i < count; i++) {
     const p = pdf.addPage([595.28, 841.89]),

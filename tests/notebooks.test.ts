@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 const memory = vi.hoisted(() => new Map<string, unknown>());
-vi.mock('idb-keyval', () => ({
+vi.mock('../src/lib/storage', () => ({
   get: vi.fn(async (key: string) => memory.get(key)),
   set: vi.fn(async (key: string, value: unknown) => {
     memory.set(key, structuredClone(value));

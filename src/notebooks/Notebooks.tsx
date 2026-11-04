@@ -65,7 +65,12 @@ export default function Notebooks({
           setReady(true);
         }
       })
-      .catch(() => setError('Notebook storage is unavailable. Export a backup before closing.'));
+      .catch((e) => {
+        if (alive) {
+          setReady(true);
+          setError(e.message);
+        }
+      });
     return () => {
       alive = false;
     };

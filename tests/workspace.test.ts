@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 const store = vi.hoisted(() => new Map<string, unknown>());
-vi.mock('idb-keyval', () => ({
+vi.mock('../src/lib/storage', () => ({
   get: async (key: string) => structuredClone(store.get(key)),
   set: async (key: string, value: unknown) => {
     await Promise.resolve();

@@ -1,4 +1,4 @@
-import { get, set, del } from 'idb-keyval';
+import { get, set, del } from './storage';
 import type { Output } from './client';
 export type StoredDocument = {
   id: string;

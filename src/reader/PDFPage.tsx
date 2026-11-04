@@ -57,6 +57,18 @@ export default function PDFPage(p: Props) {
     touches = useRef(new Map<number, { x: number; y: number }>()),
     pinch = useRef(0);
   const penActivity = p.penActivity ?? localPen.current;
+  useEffect(() => {
+    const surface = root.current;
+    if (!surface || p.tool === 'select') return;
+    const stopNativeScroll = (event: TouchEvent) => {
+      if (event.cancelable) event.preventDefault();
+    };
+    // React's delegated touch listeners can be passive. Safari needs a native,
+    // non-passive listener on an HTML surface as well as touch-action.
+    surface.addEventListener('touchmove', stopNativeScroll, { passive: false });
+    return () => surface.removeEventListener('touchmove', stopNativeScroll);
+  }, [p.tool]);
+
   const draftFrame = useRef<number | null>(null),
     nextDraft = useRef<Mark | null>(null);
   function scheduleDraft(mark: Mark) {
@@ -354,9 +366,8 @@ export default function PDFPage(p: Props) {
           distance = Math.hypot(a.x - b.x, a.y - b.y);
         if (pinch.current) p.onZoom(distance / pinch.current);
         pinch.current = distance;
-      } else {
         const scroller = root.current?.closest('.reader-scroll');
-        scroller?.scrollBy(old.x - e.clientX, old.y - e.clientY);
+        scroller?.scrollBy((old.x - e.clientX) / 2, (old.y - e.clientY) / 2);
       }
       return;
     }

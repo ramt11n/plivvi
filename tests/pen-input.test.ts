@@ -192,3 +192,27 @@ describe('pen and palm interaction regressions', () => {
     expect(onMark.mock.calls[0][0].points.length).toBeGreaterThan(900);
   });
 });
+
+it('blocks native touch scrolling in writing mode and restores it for selection', async () => {
+  let { svg } = await mount();
+  const move = new Event('touchmove', { bubbles: true, cancelable: true });
+  svg.dispatchEvent(move);
+  expect(move.defaultPrevented).toBe(true);
+  ({ svg } = await mount(false, { pointer: null, until: 0 }, 'select'));
+  const selectMove = new Event('touchmove', { bubbles: true, cancelable: true });
+  svg.dispatchEvent(selectMove);
+  expect(selectMove.defaultPrevented).toBe(false);
+});
+it('requires two deliberate fingers to navigate while writing, rather than a single palm contact', async () => {
+  const { svg } = await mount();
+  await act(async () => {
+    pointer(svg, 'pointerdown', 1, 50, 50, 'touch');
+    pointer(svg, 'pointermove', 1, 50, 80, 'touch');
+  });
+  expect(scroll).not.toHaveBeenCalled();
+  await act(async () => {
+    pointer(svg, 'pointerdown', 2, 150, 50, 'touch');
+    pointer(svg, 'pointermove', 1, 50, 110, 'touch');
+  });
+  expect(scroll).toHaveBeenCalled();
+});

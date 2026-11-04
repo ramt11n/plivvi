@@ -1088,3 +1088,12 @@
     min-height: 40px;
   }
 }
+
+/* Declare this before contact, on HTML ancestors rather than only SVG. */
+.reader-writing,
+.reader-writing .reader-page-stack,
+.reader-writing .reader-page {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

@@ -73,34 +73,38 @@ export function subscribeAccounts(listener: (state: AccountState) => void) {
 export async function authClient(id = activeId || 'primary') {
   if (!/^[a-zA-Z0-9-]{1,80}$/.test(id)) throw Error('Invalid account session.');
   if (!clients.has(id)) {
-    const promise = (async () => {
-      const config = await integrationConfig();
-      if (
-        !config.firebase?.apiKey ||
-        !config.firebase.authDomain ||
-        !config.firebase.projectId ||
-        !config.firebase.appId
-      )
-        throw Error(
-          'Online accounts are not connected on this deployment yet. Your guest workspace is available.',
-        );
-      const { initializeApp, getApps } = await import('firebase/app');
-      const { initializeAuth, getAuth, browserSessionPersistence } = await import('firebase/auth');
-      const name = id === 'primary' ? 'pocket' : `pocket-session-${id}`;
-      const app = getApps().find((a) => a.name === name) ?? initializeApp(config.firebase, name);
-      let auth: Auth;
-      try {
-        // Google authorization uses its direct SDK, so no cross-origin Firebase popup iframe is needed.
-        auth = initializeAuth(app, {
-          persistence: browserSessionPersistence,
-        });
-      } catch (error) {
-        if ((error as { code?: string }).code !== 'auth/already-initialized') throw error;
-        auth = getAuth(app);
-      }
-      await authDeadline(auth.authStateReady(), 15000);
-      return auth;
-    })().catch((error) => {
+    const promise = authDeadline(
+      (async () => {
+        const config = await integrationConfig();
+        if (
+          !config.firebase?.apiKey ||
+          !config.firebase.authDomain ||
+          !config.firebase.projectId ||
+          !config.firebase.appId
+        )
+          throw Error(
+            'Online accounts are not connected on this deployment yet. Your guest workspace is available.',
+          );
+        const { initializeApp, getApps } = await import('firebase/app');
+        const { initializeAuth, getAuth, browserSessionPersistence } =
+          await import('firebase/auth');
+        const name = id === 'primary' ? 'pocket' : `pocket-session-${id}`;
+        const app = getApps().find((a) => a.name === name) ?? initializeApp(config.firebase, name);
+        let auth: Auth;
+        try {
+          // Google authorization uses its direct SDK, so no cross-origin Firebase popup iframe is needed.
+          auth = initializeAuth(app, {
+            persistence: browserSessionPersistence,
+          });
+        } catch (error) {
+          if ((error as { code?: string }).code !== 'auth/already-initialized') throw error;
+          auth = getAuth(app);
+        }
+        await authDeadline(auth.authStateReady(), 15000);
+        return auth;
+      })(),
+      20000,
+    ).catch((error) => {
       clients.delete(id);
       throw error;
     });
@@ -141,7 +145,7 @@ export function initializeAccounts() {
       );
       state = { ...state, configured };
       if (configured) {
-        await Promise.all(slots.map(observe));
+        await authDeadline(Promise.all(slots.map(observe)), 15000);
         // Restore the previous single-account session during the upgrade.
         if (
           legacySelection &&
