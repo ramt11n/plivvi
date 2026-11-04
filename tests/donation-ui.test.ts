@@ -33,6 +33,20 @@ it('requires a network choice and never displays a previous network QR after swi
     expect(new URL(tron.link).searchParams.get('address')).toBe(
       'TJKzMLL251B3rn7fSfMEabjCQEASTHs2Yf',
     );
+    await act(async () => {
+      const input = host.querySelector<HTMLInputElement>('.donate-search input')!;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
+        input,
+        'Bitcoin',
+      );
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(host.querySelector('img')).toBeNull();
+    await act(async () => {
+      const input = host.querySelector<HTMLInputElement>('.donate-search input')!;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
     await click('All crypto');
     expect(host.querySelector('img')).toBeNull();
     expect(host.querySelectorAll('.donate-networks button')).toHaveLength(14);

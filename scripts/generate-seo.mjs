@@ -27,7 +27,7 @@ async function page(route, title, description, body, ld = {}, index = true) {
   let html = base
     .replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`)
     .replace(
-      /<meta name="description"[^>]*>/,
+      /<meta\s+name="description"[^>]*>/,
       `<meta name="description" content="${esc(description)}">`,
     )
     .replace('</head>', head + '</head>')

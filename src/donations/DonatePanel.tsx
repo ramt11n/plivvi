@@ -86,7 +86,10 @@ export default function DonatePanel() {
           <input
             aria-label="Find a donation asset or network"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              select('');
+            }}
             placeholder="Find a token or network…"
           />
         </label>

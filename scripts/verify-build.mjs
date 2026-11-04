@@ -18,6 +18,14 @@ for (const [id, tool] of Object.entries(content)) {
     `${id}: missing description`,
   );
   assert(html.includes(`/${tool.slug}/`), `${id}: missing canonical path`);
+  const expectedDescription = tool.description.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+  );
+  assert(
+    html.includes(`<meta name="description" content="${expectedDescription}">`),
+    `${id}: wrong head description`,
+  );
   const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)[1];
   assert.equal(canonical, `https://plivvi.pages.dev/${tool.slug}/`);
   const ld = JSON.parse(
