@@ -46,6 +46,19 @@ Import requests delegated `Files.Read`; export requests `Files.ReadWrite`. An or
 
 The Files option uses the operating system’s file picker/share sheet. It can access providers installed and enabled by the user on that device. This does not claim that Plivvi implements a separate Dropbox or iCloud OAuth service. Availability depends on the OS and browser.
 
+The interface presents one **Open with Files** action for iCloud Drive, OneDrive, Dropbox, Box, and other installed providers. It does not show a second OneDrive action that performs exactly the same operation. Direct Google Drive remains a separate, real Picker connection.
+
+Other providers do expose APIs, but each direct browser connection needs an owner app registration and an actual end-to-end import/export test before it can be shown as available:
+
+| Provider     | Official route                                                                                                                                                                      | Current Plivvi route                                |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| OneDrive     | [Microsoft Graph and OneDrive Picker](https://learn.microsoft.com/en-us/onedrive/developer/controls/file-pickers/) with an Entra app ID                                             | Files picker until an app registration is available |
+| Dropbox      | [Dropbox Chooser](https://www.dropbox.com/developers/chooser) with an app key                                                                                                       | Files picker                                        |
+| Box          | [Box UI Elements and API](https://developer.box.com/guides) with a Box app and authorization                                                                                        | Files picker                                        |
+| iCloud Drive | Apple’s [system document picker](https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/DocumentPickerProgrammingGuide/Introduction/Introduction.html) | Files picker                                        |
+
+The current Microsoft account reaches Entra, but its registration screen says applications cannot be created outside a directory. This owner account has no such directory, so the direct OneDrive client ID cannot be generated in the current setup. Microsoft suggests joining its developer program or obtaining an Azure directory. Plivvi does not claim that a paid Microsoft account is required or that direct OneDrive is active.
+
 ## Verification boundary
 
 Type checking, build checks, and local UI checks do not prove live OAuth correctness. A configured owner-owned project and real test-provider account are required to verify each sign-in/import/export flow. Direct OneDrive is not configured on the current deployment; its Files route is available. Google Drive has public configuration, but a successful live import/export is still required before calling it verified.

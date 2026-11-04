@@ -362,103 +362,119 @@ export default function CloudDialog({
               </span>
               {output ? <Download size={20} /> : <Upload size={20} />}
             </button>
-            <div className="cloud-section-label">YOUR CLOUD ACCOUNTS</div>
-            <div className="cloud-connection-grid">
-              {(['google', 'microsoft'] as const).map((provider) => {
-                const connected = connections[provider],
-                  title = provider === 'google' ? 'Google Drive' : 'OneDrive';
-                return (
-                  <article
-                    className={`cloud-connection-card ${connected ? 'connected' : ''}`}
-                    key={provider}
-                  >
-                    <div className="cloud-connection-top">
-                      <span
-                        className={`provider-mark ${provider === 'google' ? 'drive' : 'onedrive'}`}
-                      >
-                        {provider === 'google' ? <DriveMark /> : <Cloud size={28} />}
-                      </span>
-                      <span className="cloud-status">
-                        {!config
-                          ? 'Checking'
-                          : !enabled[provider]
-                            ? 'Via your device'
-                            : connected
-                              ? 'Connected'
-                              : 'Ready to connect'}
-                      </span>
-                    </div>
-                    <h3>{title}</h3>
-                    <p>
-                      {connected
-                        ? connected.email
-                        : config && !enabled[provider]
-                          ? `Choose ${title} in your device’s file picker. Install its app and enable it in Files on iPhone or iPad.`
-                          : provider === 'google'
-                            ? 'Choose files in Google Picker. Save new copies to Drive.'
-                            : 'Browse folders, select files, and save new copies to OneDrive.'}
-                    </p>
-                    <button
-                      className="button primary full"
-                      disabled={!config || (enabled[provider] && !ready[provider]) || !!busy}
-                      onClick={() =>
-                        !enabled[provider]
-                          ? deviceFiles()
-                          : connected
-                            ? run(provider)
-                            : connect(provider)
-                      }
+            <div className="cloud-device-providers">
+              <strong>In Files, choose the provider you already use</strong>
+              <span>iCloud Drive</span>
+              <span>OneDrive</span>
+              <span>Dropbox</span>
+              <span>Box</span>
+              <small>
+                Available providers depend on your device and installed apps. Plivvi reads the file
+                you choose and keeps its processing local.
+              </small>
+            </div>
+            <div className="cloud-section-label">DIRECT CONNECTIONS</div>
+            <div className={`cloud-connection-grid ${enabled.microsoft ? '' : 'single-provider'}`}>
+              {(['google', 'microsoft'] as const)
+                .filter((provider) => provider === 'google' || enabled.microsoft)
+                .map((provider) => {
+                  const connected = connections[provider],
+                    title = provider === 'google' ? 'Google Drive' : 'OneDrive';
+                  return (
+                    <article
+                      className={`cloud-connection-card ${connected ? 'connected' : ''}`}
+                      key={provider}
                     >
-                      {config && !enabled[provider]
-                        ? output
-                          ? 'Save through your device'
-                          : 'Open via Files'
-                        : connected
-                          ? output
-                            ? 'Save a new copy'
-                            : 'Browse files'
-                          : 'Connect account'}
-                      <ArrowUpRight size={15} />
-                    </button>
-                    {connected && (
-                      <div className="cloud-account-controls">
-                        <button
-                          className="text-button"
-                          disabled={!!busy}
-                          onClick={() => connect(provider)}
+                      <div className="cloud-connection-top">
+                        <span
+                          className={`provider-mark ${provider === 'google' ? 'drive' : 'onedrive'}`}
                         >
-                          <RefreshCw size={12} />
-                          Switch account
-                        </button>
-                        <button
-                          className="text-button"
-                          disabled={!!busy}
-                          onClick={async () => {
-                            setBusy('disconnect');
-                            try {
-                              await disconnectCloud(workspace, provider);
-                              setConnections(await cloudConnections(workspace));
-                            } catch (e) {
-                              setError((e as Error).message);
-                            } finally {
-                              setBusy('');
-                            }
-                          }}
-                        >
-                          <Unplug size={12} />
-                          Disconnect
-                        </button>
+                          {provider === 'google' ? <DriveMark /> : <Cloud size={28} />}
+                        </span>
+                        <span className="cloud-status">
+                          {!config
+                            ? 'Checking'
+                            : !enabled[provider]
+                              ? 'Via your device'
+                              : connected
+                                ? 'Connected'
+                                : 'Ready to connect'}
+                        </span>
                       </div>
-                    )}
-                  </article>
-                );
-              })}
+                      <h3>{title}</h3>
+                      <p>
+                        {connected
+                          ? connected.email
+                          : config && !enabled[provider]
+                            ? `Choose ${title} in your device’s file picker. Install its app and enable it in Files on iPhone or iPad.`
+                            : provider === 'google'
+                              ? 'Choose files in Google Picker. Save new copies to Drive.'
+                              : 'Browse folders, select files, and save new copies to OneDrive.'}
+                      </p>
+                      <button
+                        className="button primary full"
+                        disabled={!config || (enabled[provider] && !ready[provider]) || !!busy}
+                        onClick={() =>
+                          !enabled[provider]
+                            ? deviceFiles()
+                            : connected
+                              ? run(provider)
+                              : connect(provider)
+                        }
+                      >
+                        {config && !enabled[provider]
+                          ? output
+                            ? 'Save through your device'
+                            : 'Open via Files'
+                          : connected
+                            ? output
+                              ? 'Save a new copy'
+                              : 'Browse files'
+                            : 'Connect account'}
+                        <ArrowUpRight size={15} />
+                      </button>
+                      {connected && (
+                        <div className="cloud-account-controls">
+                          <button
+                            className="text-button"
+                            disabled={!!busy}
+                            onClick={() => connect(provider)}
+                          >
+                            <RefreshCw size={12} />
+                            Switch account
+                          </button>
+                          <button
+                            className="text-button"
+                            disabled={!!busy}
+                            onClick={async () => {
+                              setBusy('disconnect');
+                              try {
+                                await disconnectCloud(workspace, provider);
+                                setConnections(await cloudConnections(workspace));
+                              } catch (e) {
+                                setError((e as Error).message);
+                              } finally {
+                                setBusy('');
+                              }
+                            }}
+                          >
+                            <Unplug size={12} />
+                            Disconnect
+                          </button>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
             </div>
             {config && (!enabled.google || !enabled.microsoft) && (
               <p className="cloud-setup-note">
-                {!enabled.microsoft ? 'Direct OneDrive sign-in is not available yet. ' : ''}
-                Files opens the providers available on your device. On a computer, download your
-                cloud file first, then select it here.
+                {enabled.microsoft
+                  ? ''
+                  : 'Direct OneDrive connection needs a Microsoft app registration and is being prepared. '}
+                Use the single Files action above for iCloud Drive, OneDrive, Dropbox, and Box where
+                your device exposes them. On a computer, you can also download a cloud file and
+                import it here.
               </p>
             )}
           </>

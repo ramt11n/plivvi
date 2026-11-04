@@ -87,10 +87,17 @@ export function SiteFooter() {
             {repoUrl ? 'Contribute on GitHub' : 'Download source'}
           </a>
           <InternalLink href="/support/">Donate · improve Plivvi</InternalLink>
-          <InternalLink href="/contact/">Contact Ramtin</InternalLink>
+          <button
+            className="footer-report-link"
+            onClick={() => window.dispatchEvent(new Event('plivvi:report'))}
+          >
+            Send a private bug report
+          </button>
+          <a href={`mailto:${maker.email}`}>Email the Plivvi team</a>
         </div>
         <div>
           <h3>Good to know</h3>
+          <InternalLink href="/contact/">Contact &amp; collaboration</InternalLink>
           <InternalLink href="/about/">About & vibe coding</InternalLink>
           <InternalLink href="/privacy/">Privacy</InternalLink>
           <a href="/LICENSE.txt" target="_blank" rel="noreferrer">
@@ -362,7 +369,13 @@ export function PublicPage({ view }: { view: string }) {
         </section>
         <section>
           <h2>Private bug reports</h2>
-          <p>The optional report form loads Google Forms only when you choose to open it. Text you submit is stored in the project’s Google account and not published as a public response summary. No document is attached, and email is optional. Google receives normal form request information; its privacy policy applies. You can also choose email or a public GitHub issue.</p>
+          <p>
+            The optional report form loads Google Forms only when you choose to open it. Text you
+            submit is stored in the project’s Google account and not published as a public response
+            summary. No document is attached, and email is optional. Google receives normal form
+            request information; its privacy policy applies. You can also choose email or a public
+            GitHub issue.
+          </p>
         </section>
         <section>
           <h2>Contact</h2>

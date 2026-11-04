@@ -1,79 +1,98 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import {
   ArrowRight,
   Check,
   ChevronLeft,
   ChevronRight,
-  FileText,
-  Highlighter,
-  Layers3,
-  MousePointer2,
-  PenLine,
   ScanLine,
-  Type,
+  Layers3,
+  Images,
+  BookOpen,
 } from 'lucide-react';
 
-const slides = [
+export const showcaseSlides = [
   {
     key: 'ink',
-    label: 'Your handwriting',
-    eyebrow: 'PDF READER + DIGITAL INK',
-    title: (
-      <>
-        Think it.
-        <br />
-        <em>Ink it.</em>
-      </>
-    ),
+    label: 'Read',
+    icon: BookOpen,
+    eyebrow: 'THE READER, REIMAGINED',
+    title: 'Open it.',
+    accent: 'Get lost in it.',
     description:
-      'Write with Apple Pencil or a digital pen. Highlight a line, leave a note, or type right onto the page.',
-    features: [
-      'Pressure-aware pen strokes',
-      'Selectable text + highlights',
-      'Editable annotations',
-    ],
+      'Bring a PDF or a graphic story into focus. Turn pages, zoom in, and pick up right where you left off.',
+    features: ['Comfortable page reading', 'Zoom + page navigation', 'Bookmarks and notes'],
     action: 'Open the PDF reader',
     tool: 'reader',
+    asset: 'reader',
+    device: 'book-style foldable phone',
+    note: 'A reading space that adapts to phones, foldables, tablets, and larger screens.',
   },
   {
     key: 'scan',
-    label: 'Paper to pixels',
-    eyebrow: 'SCAN + ENHANCE',
-    title: (
-      <>
-        A fresh start
-        <br />
-        <em>for every scan.</em>
-      </>
-    ),
+    label: 'Scan',
+    icon: ScanLine,
+    eyebrow: 'PAPER, WITH A FRESH START',
+    title: 'Less shadow.',
+    accent: 'More clarity.',
     description:
-      'Straighten the page, lift uneven shadows, and choose a cleaner look. Start with your camera or an existing photo.',
-    features: ['Perspective correction', 'Shadow reduction + filters', 'Camera or photo import'],
-    action: 'Clean up a scan',
+      'Turn a page on your desk into a document you can use. Straighten the edges and give your scan a cleaner finish.',
+    features: ['Camera or photo import', 'Perspective correction', 'Filters + shadow reduction'],
+    action: 'Make a cleaner scan',
     tool: 'scan',
+    asset: 'scan',
+    device: 'camera phone',
+    note: 'Choose a camera, or start with a photo already on your device.',
   },
   {
     key: 'flow',
-    label: 'Get it together',
-    eyebrow: 'ORGANIZE + CONVERT',
-    title: (
-      <>
-        A little order.
-        <br />
-        <em>A lot less effort.</em>
-      </>
-    ),
+    label: 'Organize',
+    icon: Layers3,
+    eyebrow: 'A LITTLE ORDER GOES A LONG WAY',
+    title: 'Every page.',
+    accent: 'In its place.',
     description:
-      'Bring files together, pull pages apart, or make a new format. Keep the useful bits and get on with your day.',
-    features: [
-      'Merge, split + reorder',
-      'PDF, images + Office exports',
-      'Download or save a new copy',
-    ],
+      'Reorder, rotate, or remove pages until the document feels right. Make a new copy and keep your original.',
+    features: ['Reorder + rotate', 'Duplicate or remove pages', 'Local processing'],
     action: 'Arrange your pages',
     tool: 'organize',
+    asset: 'organize',
+    device: 'silver laptop',
+    note: 'Free to use. No upload to a document-processing server.',
   },
-];
+  {
+    key: 'convert',
+    label: 'Convert',
+    icon: Images,
+    eyebrow: 'THE FORMAT THAT FITS YOUR DAY',
+    title: 'New format.',
+    accent: 'Same possibilities.',
+    description:
+      'Bring photos together in a PDF, or take PDF pages out as JPG or PNG. Make the copy you need, right here.',
+    features: ['Images to PDF', 'PDF to JPG or PNG', 'No feature subscription'],
+    action: 'Make a PDF from images',
+    tool: 'image-pdf',
+    asset: 'convert',
+    device: 'all-in-one desktop',
+    note: 'More conversion tools live on your tool shelf.',
+  },
+  {
+    key: 'notebook',
+    label: 'Notebooks',
+    icon: BookOpen,
+    eyebrow: 'DIGITAL INK + FRESH PAGES',
+    title: 'Think it.',
+    accent: 'Ink it.',
+    description:
+      'Make a notebook that feels like yours. Write with Apple Pencil or a compatible digital pen, sketch, type, and add more pages.',
+    features: ['Pressure-aware ink', 'Five paper styles', 'PDF or image export'],
+    action: 'Start a free notebook',
+    tool: 'notebooks',
+    asset: 'notebooks',
+    device: 'stylus tablet',
+    note: 'Apple Pencil requires a compatible iPad. Finger and mouse drawing work too.',
+  },
+] as const;
+
 export default function FeatureShowcase({
   onAction,
   onNotebook,
@@ -84,227 +103,135 @@ export default function FeatureShowcase({
   compact?: boolean;
 }) {
   const [index, setIndex] = useState(0),
-    start = useRef<{ x: number; y: number } | undefined>(undefined),
-    item = slides[index];
-  const change = (next: number) => setIndex((next + slides.length) % slides.length);
+    id = useId(),
+    start = useRef<{ x: number; y: number } | null>(null);
+  const item = showcaseSlides[index];
+  function change(next: number) {
+    setIndex((next + showcaseSlides.length) % showcaseSlides.length);
+  }
   return (
     <section
-      className={`feature-showcase ${item.key} ${compact ? 'compact' : ''}`}
-      aria-label="Discover document features"
+      className={`feature-showcase curated-showcase ${item.key} ${compact ? 'compact' : ''}`}
+      aria-label="Discover five free document workflows"
       aria-roledescription="carousel"
     >
       <div className="feature-tabs" role="tablist" aria-label="Featured workflows">
-        {slides.map((slide, i) => (
+        {showcaseSlides.map((slide, i) => (
           <button
             key={slide.key}
-            id={`feature-tab-${compact ? 'tools' : 'home'}-${i}`}
+            id={`${id}-tab-${i}`}
             role="tab"
             aria-selected={index === i}
-            aria-controls={`feature-panel-${compact ? 'tools' : 'home'}`}
+            aria-controls={`${id}-panel`}
             tabIndex={index === i ? 0 : -1}
             onClick={() => change(i)}
             onKeyDown={(e) => {
-              if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-                e.preventDefault();
-                const next =
-                  (i + (e.key === 'ArrowRight' ? 1 : -1) + slides.length) % slides.length;
-                change(next);
-                (e.currentTarget.parentElement?.children[next] as HTMLElement)?.focus();
-              }
+              let next: number;
+              if (e.key === 'ArrowRight') next = (i + 1) % showcaseSlides.length;
+              else if (e.key === 'ArrowLeft')
+                next = (i - 1 + showcaseSlides.length) % showcaseSlides.length;
+              else if (e.key === 'Home') next = 0;
+              else if (e.key === 'End') next = showcaseSlides.length - 1;
+              else return;
+              e.preventDefault();
+              change(next);
+              (e.currentTarget.parentElement?.children[next] as HTMLElement)?.focus();
             }}
           >
-            {i === 0 ? (
-              <PenLine size={15} />
-            ) : i === 1 ? (
-              <ScanLine size={15} />
-            ) : (
-              <Layers3 size={15} />
-            )}
+            <slide.icon size={18} />
             <span>{slide.label}</span>
           </button>
         ))}
       </div>
       <div
         className="feature-panel"
-        id={`feature-panel-${compact ? 'tools' : 'home'}`}
+        id={`${id}-panel`}
         role="tabpanel"
-        aria-labelledby={`feature-tab-${compact ? 'tools' : 'home'}-${index}`}
+        aria-labelledby={`${id}-tab-${index}`}
         onPointerDown={(e) => {
-          if (e.pointerType === 'touch') start.current = { x: e.clientX, y: e.clientY };
+          if (e.pointerType === 'touch' && !(e.target as HTMLElement).closest('button,a'))
+            start.current = { x: e.clientX, y: e.clientY };
         }}
         onPointerUp={(e) => {
-          if (start.current) {
-            const dx = e.clientX - start.current.x,
-              dy = e.clientY - start.current.y;
-            if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.5)
-              change(index + (dx < 0 ? 1 : -1));
-            start.current = undefined;
-          }
+          if (!start.current) return;
+          const dx = e.clientX - start.current.x,
+            dy = e.clientY - start.current.y;
+          if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.5)
+            change(index + (dx < 0 ? 1 : -1));
+          start.current = null;
         }}
         onPointerCancel={() => {
-          start.current = undefined;
+          start.current = null;
         }}
       >
-        <div className="feature-copy" key={item.key}>
+        <div className="feature-copy">
           <span className="feature-eyebrow">{item.eyebrow}</span>
-          <h2>{item.title}</h2>
+          <h2>
+            {item.title}
+            <br />
+            <em>{item.accent}</em>
+          </h2>
           <p>{item.description}</p>
           <ul>
-            {item.features.map((f) => (
-              <li key={f}>
-                <Check size={13} />
-                {f}
+            {item.features.map((feature) => (
+              <li key={feature}>
+                <Check size={16} />
+                {feature}
               </li>
             ))}
           </ul>
           <div className="feature-actions">
-            <button className="feature-cta" onClick={() => onAction(item.tool)}>
+            <button
+              className="feature-cta"
+              onClick={() =>
+                item.tool === 'notebooks' && onNotebook ? onNotebook() : onAction(item.tool)
+              }
+            >
               {item.action}
-              <ArrowRight size={17} />
+              <ArrowRight size={19} />
             </button>
-            {item.key === 'ink' && onNotebook && (
-              <button className="feature-notebook-link" onClick={onNotebook}>
-                Start a free notebook <ArrowRight size={16} />
+            {item.key === 'notebook' && (
+              <button className="feature-notebook-link" onClick={() => onAction('reader')}>
+                Open the PDF reader
+                <ArrowRight size={19} />
               </button>
             )}
           </div>
-          {item.key === 'ink' && (
-            <small className="feature-device-note">
-              Apple Pencil requires a compatible iPad. Finger drawing is available too.
-            </small>
-          )}
+          <small className="feature-device-note">{item.note}</small>
         </div>
-        <div className={`feature-art ${item.key}`} aria-hidden="true">
-          {item.key === 'ink' ? (
-            <>
-              <div className="ink-orbit" />
-              <div className="feature-tablet">
-                <div className="tablet-camera" />
-                <div className="tablet-screen">
-                  <div className="tablet-toolbar">
-                    <span>
-                      <FileText size={11} />
-                      Field notes.pdf
-                    </span>
-                    <PenLine size={13} />
-                    <Highlighter size={13} />
-                    <Type size={13} />
-                    <MousePointer2 size={13} />
-                  </div>
-                  <div className="tablet-page">
-                    <span className="note-date">MONDAY / A FRESH PAGE</span>
-                    <strong>
-                      Make room
-                      <br />
-                      for a good idea.
-                    </strong>
-                    <p>
-                      Read a little. Mark what matters.
-                      <br />
-                      Leave your thoughts in the margins.
-                    </p>
-                    <span className="note-highlight" />
-                    <svg className="note-ink" viewBox="0 0 240 95">
-                      <path
-                        d="M18 68C48 9 52 14 46 51S81 13 75 54s38-46 37-6c0 20 16 11 30-6s-2 37 26 9 25-4 43 4M18 85q100-17 190-7"
-                        fill="none"
-                        stroke="#3659e3"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span className="note-margin">worth remembering ↗</span>
-                  </div>
-                </div>
-              </div>
-              <img
-                className="feature-stylus"
-                src="/visuals/stylus.png"
-                width="1280"
-                height="1280"
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
-              <span className="ink-caption">
-                <span />
-                Your handwriting. On your PDF.
-              </span>
-            </>
-          ) : item.key === 'scan' ? (
-            <>
-              <div className="scan-orbit" />
-              <div className="scan-photo">
-                <div className="scan-photo-paper">
-                  <span>FIELD NOTES</span>
-                  <strong>
-                    A cleaner
-                    <br />
-                    point of view.
-                  </strong>
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <div className="scan-paper-stamp">
-                    <Check size={24} />
-                  </div>
-                </div>
-                <span className="scan-corner top-left" />
-                <span className="scan-corner top-right" />
-                <span className="scan-corner bottom-left" />
-                <span className="scan-corner bottom-right" />
-                <span className="scan-beam" />
-              </div>
-              <span className="scan-art-chip">
-                <ScanLine size={16} />
-                Find the edges. Keep the page.
-              </span>
-            </>
-          ) : (
-            <>
-              <div className="flow-orbit" />
-              <div className="flow-file file-left">
-                <span>01</span>
-                <FileText size={33} />
-                <strong>Notes.pdf</strong>
-                <i />
-                <i />
-              </div>
-              <div className="flow-file file-middle">
-                <span>02</span>
-                <FileText size={33} />
-                <strong>Ideas.pdf</strong>
-                <i />
-                <i />
-              </div>
-              <div className="flow-file file-right">
-                <span>03</span>
-                <FileText size={33} />
-                <strong>Plans.pdf</strong>
-                <i />
-                <i />
-              </div>
-              <div className="flow-complete">
-                <Check size={18} />
-                <span>
-                  Everything, in order.<small>One tidy document.</small>
-                </span>
-              </div>
-            </>
-          )}
-        </div>
+        <figure className={`showcase-product ${item.asset}`}>
+          <img
+            key={item.asset}
+            src={`/visuals/showcase/${item.asset}.webp`}
+            srcSet={`/visuals/showcase/${item.asset}-640.webp 640w, /visuals/showcase/${item.asset}.webp 1280w`}
+            sizes="(max-width: 600px) calc(100vw - 60px), (max-width: 1100px) 42vw, 560px"
+            width="1280"
+            height="960"
+            loading="lazy"
+            decoding="async"
+            alt={`${item.device} showing ${item.label.toLowerCase()} in a document workspace — product illustration`}
+          />
+        </figure>
       </div>
-      <div className="feature-pagination">
-        <span>
-          <b>{String(index + 1).padStart(2, '0')}</b> / {String(slides.length).padStart(2, '0')}
-        </span>
-        <div>
-          <button aria-label="Previous feature" onClick={() => change(index - 1)}>
-            <ChevronLeft size={17} />
+      <div className="showcase-bottom">
+        <span className="showcase-free">Free to create. Yours to keep.</span>
+        <div className="showcase-controls">
+          <span aria-live="polite" aria-atomic="true">
+            <b>{String(index + 1).padStart(2, '0')}</b> / 05
+          </span>
+          <button
+            className="icon-button"
+            aria-label="Previous feature"
+            onClick={() => change(index - 1)}
+          >
+            <ChevronLeft size={21} />
           </button>
-          <button aria-label="Next feature" onClick={() => change(index + 1)}>
-            <ChevronRight size={17} />
+          <button
+            className="icon-button"
+            aria-label="Next feature"
+            onClick={() => change(index + 1)}
+          >
+            <ChevronRight size={21} />
           </button>
         </div>
       </div>

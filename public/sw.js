@@ -1,4 +1,4 @@
-const CACHE = 'pocket-v4-2';
+const CACHE = 'plivvi-v4-3';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {

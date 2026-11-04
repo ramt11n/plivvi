@@ -226,7 +226,7 @@ export default function Notebooks({
             <span>
               MAKE
               <br />
-              SOMETHING
+              IT
               <br />
               <em>yours.</em>
             </span>

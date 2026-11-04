@@ -1,4 +1,6 @@
-Pocket PDF Workshop - third-party notices
+Plivvi - third-party notices
+
+The five unbranded device illustrations in the featured workflow carousel were generated with OpenAI image generation for this project. They depict example interfaces, not official device marketing or an endorsement by a device maker.
 
 This application is AGPL-3.0-or-later. Application source is provided at /source.zip.
 

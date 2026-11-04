@@ -22,7 +22,27 @@ def icon(size):
     for x in (21,29):d.rounded_rectangle(box((x,23,x+3,27)),radius=1.5*s,fill='#263b69')
     d.arc(box((23,28,30,33)),start=15,end=165,fill='#263b69',width=round(1.7*s))
     return im.resize((size,size),Image.Resampling.LANCZOS)
-for size in (192,512):icon(size).convert('RGB').save(ROOT/f'public/icon-{size}.png',optimize=True)
+def app_icon(size):
+    # One app badge combines the smiling page and the actual Plivvi wordmark.
+    large=1024
+    result=Image.new('RGB',(large,large),'#1b2540')
+    d=ImageDraw.Draw(result)
+    d.ellipse((190,70,850,750),fill='#253a72')
+    mark=icon(390).convert('RGB')
+    mask=Image.new('L',(390,390))
+    ImageDraw.Draw(mask).rounded_rectangle((0,0,389,389),radius=100,fill=255)
+    result.paste(mark,(317,104),mask)
+    word=ImageFont.truetype(str(ROOT/'public/fonts/Sora.ttf'),140)
+    word.set_variation_by_axes([800])
+    parts=[('pli','#f3f6ff'),('vv','#a9baff'),('i','#f3f6ff'),('.','#55c998')]
+    total=sum(d.textlength(piece,font=word) for piece,_ in parts)
+    x=(large-total)/2
+    for piece,color in parts:
+        d.text((x,610),piece,font=word,fill=color,stroke_width=1)
+        x+=d.textlength(piece,font=word)
+    d.rounded_rectangle((287,820,737,831),radius=5,fill='#a9baff')
+    return result.resize((size,size),Image.Resampling.LANCZOS)
+for size in (192,512):app_icon(size).save(ROOT/f'public/icon-{size}.png',optimize=True)
 # A native, reproducible social card. Typography and drawings are generated from source.
 im=Image.new('RGB',(1200,630),'#f5f7fc');d=ImageDraw.Draw(im)
 def font(size):

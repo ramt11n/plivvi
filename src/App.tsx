@@ -1,10 +1,10 @@
-import ToolSpotlight from './components/ToolSpotlight';
 import { useAppStatus } from './lib/appStatus';
 import UpdateStatus from './components/UpdateStatus';
 import Guide from './help/Guide';
 import BugReport from './components/BugReport';
 import SupportPrompt from './components/SupportPrompt';
 import LoadingProgress from './components/LoadingProgress';
+import InstallGuide from './components/InstallGuide';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   BookOpen,
@@ -477,6 +477,14 @@ export default function App() {
         </nav>
         <div className="rail-bottom">
           <button
+            className="rail-item rail-support"
+            aria-label="Donate to improve Plivvi"
+            onClick={() => nav('support')}
+          >
+            <Heart size={21} fill="currentColor" />
+            <span>Support</span>
+          </button>
+          <button
             className="rail-item"
             aria-label="Import files"
             onClick={() => upload.current?.click()}
@@ -563,6 +571,15 @@ export default function App() {
             </span>
           </div>
           <div className="topbar-actions">
+            <button
+              className="header-support"
+              aria-label="Donate to improve Plivvi"
+              title="Donate to improve Plivvi"
+              onClick={() => nav('support')}
+            >
+              <Heart size={17} fill="currentColor" />
+              <span>Help improve Plivvi</span>
+            </button>
             <button className="header-search" aria-label="Find a tool" onClick={() => nav('tools')}>
               <Search size={17} />
               <span>Find a tool</span>
@@ -783,7 +800,6 @@ export default function App() {
                 onNotebook={() => nav('notebooks')}
                 onAction={(id) => openTool(tools.find((t) => t.id === id)!)}
               />
-              <ToolSpotlight onAction={(id) => openTool(tools.find((t) => t.id === id)!)} />
               <section className="section">
                 <div className="section-heading">
                   <div>
@@ -1301,38 +1317,13 @@ export default function App() {
             </h2>
             {dialog === 'install' && (
               <>
-                <p>Add {brand.name} to your Home Screen for a focused, app-like workspace.</p>
-                {installEvent && (
-                  <button
-                    className="button primary full"
-                    onClick={async () => {
-                      await installEvent.prompt();
-                      setInstallEvent(null);
-                    }}
-                  >
-                    <Download size={17} />
-                    Install {brand.name}
-                  </button>
-                )}
-                <ol className="help-list">
-                  <li>
-                    <strong>iPhone or iPad:</strong> open in Safari, tap Share, then Add to Home
-                    Screen.
-                  </li>
-                  <li>
-                    <strong>Android or desktop:</strong> use your browser’s Install app option when
-                    available.
-                  </li>
-                  <li>
-                    <strong>Offline:</strong> the app shell and tools you have loaded are cached.
-                    Open a tool online once before relying on it offline. OCR language packs
-                    download separately.
-                  </li>
-                </ol>
-                <p className="small muted">
-                  On the private hosted version, sign in as the owner first. No Apple developer
-                  account is needed.
-                </p>
+                <InstallGuide
+                  installEvent={installEvent}
+                  onPrompt={async () => {
+                    await installEvent?.prompt();
+                    setInstallEvent(null);
+                  }}
+                />
               </>
             )}
             {dialog === 'privacy' && (
@@ -1385,10 +1376,15 @@ export default function App() {
                   </div>
                   <span className="pill">{libraryReady ? 'Ready' : 'Loading'}</span>
                 </div>
-                <button className="button secondary full" onClick={() => window.dispatchEvent(new Event('plivvi:report'))}>
+                <button
+                  className="button secondary full"
+                  onClick={() => window.dispatchEvent(new Event('plivvi:report'))}
+                >
                   Report a bug · suggest an improvement
                 </button>
-                <a className="text-button" href="/support/" target="_blank" rel="noreferrer">Help improve Plivvi · optional donation</a>
+                <a className="text-button" href="/support/" target="_blank" rel="noreferrer">
+                  Help improve Plivvi · optional donation
+                </a>
                 <button
                   className="button secondary full"
                   onClick={() => downloadAll(documents)}
