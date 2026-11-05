@@ -211,7 +211,7 @@ export default function FeatureShowcase({
             <div className="device-orbit" />
             <div className="device-shell">
               <img
-                src={`/visuals/showcase/${item.asset}-ui.webp?v=3.4.0`}
+                src={`/visuals/showcase/${item.asset}-ui.webp?v=3.4.1`}
                 width={item.asset === 'scan' ? 390 : item.asset === 'notebooks' ? 820 : item.asset === 'reader' ? 720 : 1000}
                 height={item.asset === 'scan' ? 844 : item.asset === 'notebooks' ? 1000 : item.asset === 'reader' ? 560 : 680}
                 loading="lazy"

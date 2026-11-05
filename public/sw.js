@@ -1,4 +1,4 @@
-const CACHE = 'plivvi-v4-3';
+const CACHE = 'plivvi-v4-4';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -21,7 +21,7 @@ self.addEventListener('message', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      const keys = (await caches.keys()).filter((k) => k.startsWith('pocket-'));
+      const keys = (await caches.keys()).filter((k) => k.startsWith('plivvi-') || k.startsWith('pocket-'));
       const previous = keys.filter((k) => k !== CACHE).at(-1);
       await Promise.all(
         keys.filter((k) => k !== CACHE && k !== previous).map((k) => caches.delete(k)),
