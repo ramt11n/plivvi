@@ -256,16 +256,17 @@ export default function FeatureShowcase({
             <button
               className="feature-cta"
               onClick={() =>
-                item.tool === 'notebooks' && onNotebook
-                  ? onNotebook()
-                  : item.key === 'ink' && onComic
-                    ? onComic()
-                    : onAction(item.tool)
+                item.tool === 'notebooks' && onNotebook ? onNotebook() : onAction(item.tool)
               }
             >
-              {item.key === 'ink' && onComic ? "Read Pli's free comic" : item.action}
+              {item.action}
               <ArrowRight size={19} />
             </button>
+            {item.key === 'ink' && onComic && (
+              <button className="feature-notebook-link" onClick={onComic}>
+                Read Pli's free comic <ArrowRight size={17} />
+              </button>
+            )}
           </div>
           <small className="feature-device-note">{item.note}</small>
         </div>
