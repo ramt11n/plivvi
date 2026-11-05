@@ -147,8 +147,10 @@ export function detectCorners(source: ImageData): Point[] {
     sw = Math.ceil(w / scale),
     sh = Math.ceil(h / scale),
     lum = new Uint8Array(sw * sh),
+    warmth = new Int16Array(sw * sh),
     hist = new Uint32Array(256),
-    border: number[] = [];
+    border: number[] = [],
+    borderWarmth: number[] = [];
   const fallback = () => [
     { x: w * 0.05, y: h * 0.05 },
     { x: w * 0.95, y: h * 0.05 },
@@ -162,11 +164,45 @@ export function detectCorners(source: ImageData): Point[] {
         i = (sy * w + sx) * 4,
         v = Math.round(d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
       lum[y * sw + x] = v;
+      warmth[y * sw + x] = d[i] - d[i + 2];
       hist[v]++;
-      if (x < sw * 0.025 || x > sw * 0.975 || y < sh * 0.025 || y > sh * 0.975) border.push(v);
+      if (x < sw * 0.025 || x > sw * 0.975 || y < sh * 0.025 || y > sh * 0.975) {
+        border.push(v);
+        borderWarmth.push(warmth[y * sw + x]);
+      }
     }
   border.sort((a, b) => a - b);
+  borderWarmth.sort((a, b) => a - b);
   const background = border[Math.floor(border.length / 2)];
+  const backgroundWarmth = borderWarmth[Math.floor(borderWarmth.length / 2)];
+  // Color contrast catches cream paper on an evenly lit gray surface, where a
+  // brightness-only threshold would select the surface and miss the document.
+  const warmMask = new Uint8Array(lum.length);
+  for (let i = 0; i < warmMask.length; i++)
+    warmMask[i] = warmth[i] > backgroundWarmth + 10 && lum[i] > background - 8 ? 1 : 0;
+  const warmSeen = new Uint8Array(lum.length);
+  const warmQueue = new Int32Array(lum.length);
+  let warmBest: number[] = [];
+  for (let start = 0; start < warmMask.length; start++) {
+    if (!warmMask[start] || warmSeen[start]) continue;
+    let head = 0, tail = 1;
+    warmQueue[0] = start;
+    warmSeen[start] = 1;
+    const region: number[] = [];
+    while (head < tail) {
+      const i = warmQueue[head++], x = i % sw, y = Math.floor(i / sw);
+      region.push(i);
+      for (const n of [x ? i-1 : -1, x < sw-1 ? i+1 : -1, y ? i-sw : -1, y < sh-1 ? i+sw : -1])
+        if (n >= 0 && warmMask[n] && !warmSeen[n]) { warmSeen[n] = 1; warmQueue[tail++] = n; }
+    }
+    if (region.length > warmBest.length) warmBest = region;
+  }
+  if (warmBest.length > lum.length * .12 && warmBest.length < lum.length * .83) {
+    const pts = warmBest.map(i => ({ x: Math.min(w - 1, (i % sw) * scale), y: Math.min(h - 1, Math.floor(i / sw) * scale) }));
+    const extreme = (f: (p: Point) => number) => pts.reduce((a, b) => f(b) < f(a) ? b : a);
+    const corners = [extreme(p => p.x + p.y), extreme(p => -p.x + p.y), extreme(p => -p.x - p.y), extreme(p => p.x - p.y)];
+    if (corners.every((p, i) => Math.hypot(p.x - corners[(i + 1) % 4].x, p.y - corners[(i + 1) % 4].y) > Math.min(w, h) * .15)) return corners;
+  }
   let total = 0,
     bright = 255;
   for (let i = 0; i < 256; i++) {

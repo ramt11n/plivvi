@@ -9,6 +9,7 @@ const root = process.cwd(),
 if (target === root || root.startsWith(target + path.sep))
   throw Error('Choose a separate export directory.');
 const entries = [
+  'assets',
   'src',
   'public',
   'tests',

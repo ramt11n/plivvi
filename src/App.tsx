@@ -228,6 +228,15 @@ export default function App() {
     if (file) setReaderFile(file);
     setReaderOpen(true);
   }
+  async function openComic() {
+    try {
+      const response = await fetch('/samples/pli-free-pages.pdf');
+      if (!response.ok) throw new Error('Comic unavailable');
+      openReader(new File([await response.blob()], 'Pli vs. the Page Taxman.pdf', { type: 'application/pdf' }));
+    } catch {
+      setToast('The comic could not open. Please try again.');
+    }
+  }
   function openTool(tool: Tool, files: File[] = []) {
     if (currentRoute().toolId !== tool.id) navigateTo(toolPath(tool.id));
     if (tool.id === 'reader') {
@@ -722,20 +731,9 @@ export default function App() {
                     aria-label="Choose documents from your device"
                     onClick={() => upload.current?.click()}
                   >
-                    <span className="page-character" aria-hidden="true">
-                      <span className="character-sheet sheet-mint" />
-                      <span className="character-sheet sheet-peach" />
-                      <span className="character-sheet sheet-white">
-                        <span className="character-stamp" />
-                        <span className="character-eyes">
-                          <i />
-                          <i />
-                        </span>
-                        <span className="character-line" />
-                        <span className="character-line short" />
-                        <span className="character-smile" />
-                      </span>
-                      <span className="character-plus">+</span>
+                    <span className="page-character mascot-eater" aria-hidden="true">
+                      <img src="/visuals/mascot/pli-eats-pages.webp" alt="" width="170" height="160" />
+                      <span className="mascot-speech">Give me your documents. Num num…</span>
                     </span>
                     <strong>Drop it here.</strong>
                     <span>
@@ -745,7 +743,7 @@ export default function App() {
                   </button>
                   <div className="drop-footnote">
                     <ShieldCheck size={13} />
-                    No uploads to a processing server.
+                    Pli eats pages locally. No document upload to a processing server.
                   </div>
                 </div>
               </section>
@@ -798,6 +796,7 @@ export default function App() {
               </section>
               <FeatureShowcase
                 onNotebook={() => nav('notebooks')}
+                onComic={openComic}
                 onAction={(id) => openTool(tools.find((t) => t.id === id)!)}
               />
               <section className="section">
@@ -895,6 +894,7 @@ export default function App() {
             <>
               <FeatureShowcase
                 onNotebook={() => nav('notebooks')}
+                onComic={openComic}
                 compact
                 onAction={(id) => openTool(tools.find((t) => t.id === id)!)}
               />

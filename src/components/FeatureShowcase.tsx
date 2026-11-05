@@ -12,20 +12,20 @@ import {
 
 export const showcaseSlides = [
   {
-    key: 'ink',
-    label: 'Read',
+    key: 'notebook',
+    label: 'Notebooks',
     icon: BookOpen,
-    eyebrow: 'THE READER, REIMAGINED',
-    title: 'Open it.',
-    accent: 'Get lost in it.',
+    eyebrow: 'PDF READER + DIGITAL INK',
+    title: 'Think it.',
+    accent: 'Ink it.',
     description:
-      'Bring a PDF or a graphic story into focus. Turn pages, zoom in, and pick up right where you left off.',
-    features: ['Comfortable page reading', 'Zoom + page navigation', 'Bookmarks and notes'],
-    action: 'Open the PDF reader',
-    tool: 'reader',
-    asset: 'reader',
-    device: 'book-style foldable phone',
-    note: 'A reading space that adapts to phones, foldables, tablets, and larger screens.',
+      'Make a notebook that feels like yours. Write with Apple Pencil or a compatible digital pen, sketch, type, and add more pages.',
+    features: ['Pressure-aware ink', 'Five paper styles', 'PDF or image export'],
+    action: 'Start a free notebook',
+    tool: 'notebooks',
+    asset: 'notebooks',
+    device: 'stylus tablet',
+    note: 'Apple Pencil requires a compatible iPad. Finger and mouse drawing work too.',
   },
   {
     key: 'scan',
@@ -36,7 +36,7 @@ export const showcaseSlides = [
     accent: 'More clarity.',
     description:
       'Turn a page on your desk into a document you can use. Straighten the edges and give your scan a cleaner finish.',
-    features: ['Camera or photo import', 'Perspective correction', 'Filters + shadow reduction'],
+    features: ['On-device edge guide', 'Adjustable crop corners', 'Filters + shadow reduction'],
     action: 'Make a cleaner scan',
     tool: 'scan',
     asset: 'scan',
@@ -76,30 +76,32 @@ export const showcaseSlides = [
     note: 'More conversion tools live on your tool shelf.',
   },
   {
-    key: 'notebook',
-    label: 'Notebooks',
+    key: 'ink',
+    label: 'Read',
     icon: BookOpen,
-    eyebrow: 'DIGITAL INK + FRESH PAGES',
-    title: 'Think it.',
-    accent: 'Ink it.',
+    eyebrow: 'THE READER, REIMAGINED',
+    title: 'Open it.',
+    accent: 'Get lost in it.',
     description:
-      'Make a notebook that feels like yours. Write with Apple Pencil or a compatible digital pen, sketch, type, and add more pages.',
-    features: ['Pressure-aware ink', 'Five paper styles', 'PDF or image export'],
-    action: 'Start a free notebook',
-    tool: 'notebooks',
-    asset: 'notebooks',
-    device: 'stylus tablet',
-    note: 'Apple Pencil requires a compatible iPad. Finger and mouse drawing work too.',
+      'Read PDFs or a colorful comic in the actual Plivvi reader. Turn pages, zoom in, and pick up where you left off.',
+    features: ['Comfortable page reading', 'Zoom + page navigation', 'Bookmarks and notes'],
+    action: 'Open the PDF reader',
+    tool: 'reader',
+    asset: 'reader',
+    device: 'book-style foldable phone',
+    note: 'A reading space that adapts to phones, foldables, tablets, and larger screens.',
   },
 ] as const;
 
 export default function FeatureShowcase({
   onAction,
   onNotebook,
+  onComic,
   compact = false,
 }: {
   onAction: (tool: string) => void;
   onNotebook?: () => void;
+  onComic?: () => void;
   compact?: boolean;
 }) {
   const [index, setIndex] = useState(0),
@@ -190,6 +192,11 @@ export default function FeatureShowcase({
               {item.action}
               <ArrowRight size={19} />
             </button>
+            {item.key === 'ink' && onComic && (
+              <button className="feature-notebook-link" onClick={onComic}>
+                Read Pli's free comic <ArrowRight size={19} />
+              </button>
+            )}
             {item.key === 'notebook' && (
               <button className="feature-notebook-link" onClick={() => onAction('reader')}>
                 Open the PDF reader
@@ -200,17 +207,23 @@ export default function FeatureShowcase({
           <small className="feature-device-note">{item.note}</small>
         </div>
         <figure className={`showcase-product ${item.asset}`}>
-          <img
-            key={item.asset}
-            src={`/visuals/showcase/${item.asset}.webp`}
-            srcSet={`/visuals/showcase/${item.asset}-640.webp 640w, /visuals/showcase/${item.asset}.webp 1280w`}
-            sizes="(max-width: 600px) calc(100vw - 60px), (max-width: 1100px) 42vw, 560px"
-            width="1280"
-            height="960"
-            loading="lazy"
-            decoding="async"
-            alt={`${item.device} showing ${item.label.toLowerCase()} in a document workspace — product illustration`}
-          />
+          <div className={`device-scene device-${item.asset}`}>
+            <div className="device-orbit" />
+            <div className="device-shell">
+              <img
+                src={`/visuals/showcase/${item.asset}-ui.webp?v=3.4.0`}
+                width={item.asset === 'scan' ? 390 : item.asset === 'notebooks' ? 820 : item.asset === 'reader' ? 720 : 1000}
+                height={item.asset === 'scan' ? 844 : item.asset === 'notebooks' ? 1000 : item.asset === 'reader' ? 560 : 680}
+                loading="lazy"
+                decoding="async"
+                alt={`Actual Plivvi ${item.label.toLowerCase()} interface in an illustrated ${item.device}`}
+              />
+              {item.asset === 'reader' && <span className="device-fold" aria-hidden="true" />}
+              {item.asset === 'scan' && <span className="device-camera" aria-hidden="true" />}
+            </div>
+            {(item.asset === 'organize' || item.asset === 'convert') && <span className="device-base" aria-hidden="true" />}
+            {item.asset === 'notebooks' && <img className="device-stylus" src="/visuals/stylus.png" alt="" aria-hidden="true" />}
+          </div>
         </figure>
       </div>
       <div className="showcase-bottom">

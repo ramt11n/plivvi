@@ -16,6 +16,19 @@ beforeAll(() => {
     });
 });
 describe('scan processing', () => {
+  it('finds warm paper on a similarly bright gray desk', () => {
+    const source = new ImageData(240, 180);
+    for (let y = 0; y < 180; y++)
+      for (let x = 0; x < 240; x++) {
+        const paper = x >= 40 && x <= 200 && y >= 20 && y <= 160;
+        source.data.set(paper ? [220, 211, 194, 255] : [202, 203, 202, 255], (y * 240 + x) * 4);
+      }
+    const corners = detectCorners(source);
+    expect(corners[0].x).toBeCloseTo(40, 0);
+    expect(corners[0].y).toBeCloseTo(20, 0);
+    expect(corners[2].x).toBeCloseTo(200, 0);
+    expect(corners[2].y).toBeCloseTo(160, 0);
+  });
   it('keeps the shaded side when finding a page on a darker surface', () => {
     const source = new ImageData(200, 250);
     for (let y = 0; y < 250; y++)

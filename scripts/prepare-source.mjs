@@ -7,6 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
 await writeFile(path.join(root,'src/lib/engine-info.json'), JSON.stringify({wasmBytes:(await stat(path.join(root,'node_modules/mupdf/dist/mupdf-wasm.wasm'))).size})+'\n');
 const roots = [
   'src',
+  'assets/comic',
   'public',
   'tests',
   'scripts',

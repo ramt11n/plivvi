@@ -28,13 +28,20 @@ export default function ScanEditor({
     loadImage(file, 1800)
       .then((c) => {
         original.current = c;
-        setPoints([
-          { x: 0, y: 0 },
-          { x: c.width - 1, y: 0 },
-          { x: c.width - 1, y: c.height - 1 },
-          { x: 0, y: c.height - 1 },
-        ]);
         draw(c);
+        setTimeout(() => {
+          if (original.current !== c) return;
+          try {
+            setPoints(detectCorners(c.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, c.width, c.height)));
+          } catch {
+            setPoints([
+              { x: 0, y: 0 },
+              { x: c.width - 1, y: 0 },
+              { x: c.width - 1, y: c.height - 1 },
+              { x: 0, y: c.height - 1 },
+            ]);
+          }
+        }, 0);
       })
       .catch(() =>
         setError(
@@ -146,7 +153,7 @@ export default function ScanEditor({
                       key={i}
                       cx={p.x}
                       cy={p.y}
-                      r={c.width / 45}
+                      r={c.width / 18}
                       fill="white"
                       stroke="#7272ec"
                       strokeWidth={c.width / 230}

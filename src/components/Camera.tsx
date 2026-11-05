@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, Camera as CameraIcon, RefreshCw } from 'lucide-react';
+import { detectCorners, type Point } from '../lib/image';
 export default function Camera({
   onCapture,
   onClose,
@@ -13,10 +14,12 @@ export default function Camera({
     [ready, setReady] = useState(false),
     [devices, setDevices] = useState<MediaDeviceInfo[]>([]),
     [selected, setSelected] = useState('rear'),
-    [retry, setRetry] = useState(0);
+    [retry, setRetry] = useState(0),
+    [outline, setOutline] = useState<{ width: number; height: number; points: Point[] } | null>(null);
   useEffect(() => {
     let alive = true;
     setReady(false);
+    setOutline(null);
     setError('');
     stream.current?.getTracks().forEach((t) => t.stop());
     stream.current = null;
@@ -63,6 +66,48 @@ export default function Camera({
       stream.current?.getTracks().forEach((t) => t.stop());
     };
   }, [selected, retry]);
+  useEffect(() => {
+    if (!ready || error) return;
+    const sample = document.createElement('canvas');
+    let alive = true;
+    let frame = 0;
+    let last = 0;
+    const update = (now: number) => {
+      if (!alive) return;
+      const v = video.current;
+      if (v && v.readyState >= 2 && now - last > 650) {
+        last = now;
+        const width = Math.min(320, v.videoWidth);
+        const height = Math.max(1, Math.round((width * v.videoHeight) / v.videoWidth));
+        if (width && height) {
+          sample.width = width;
+          sample.height = height;
+          const ctx = sample.getContext('2d', { willReadFrequently: true });
+          if (ctx) {
+            try {
+              ctx.drawImage(v, 0, 0, width, height);
+              const points = detectCorners(ctx.getImageData(0, 0, width, height));
+              const insetX = width * 0.05;
+              const insetY = height * 0.05;
+              const isFallback = points.every((point, index) =>
+                Math.abs(point.x - (index === 0 || index === 3 ? insetX : width - insetX)) < 2 &&
+                Math.abs(point.y - (index < 2 ? insetY : height - insetY)) < 2,
+              );
+              setOutline(isFallback ? null : { width, height, points });
+            } catch {
+              setOutline(null);
+            }
+          }
+        }
+      }
+      frame = requestAnimationFrame(update);
+    };
+    frame = requestAnimationFrame(update);
+    return () => {
+      alive = false;
+      cancelAnimationFrame(frame);
+    };
+  }, [ready, error]);
   return (
     <div className="modal-shade camera-shade">
       <section
@@ -106,6 +151,7 @@ export default function Camera({
           </div>
         ) : (
           <div className="camera-view">
+            <div className="camera-stage">
             <video
               ref={(node) => {
                 video.current = node;
@@ -116,8 +162,19 @@ export default function Camera({
               muted
               onLoadedMetadata={() => setReady(true)}
             />
-            <div className="camera-guides" />
-            <p>Place your document on a contrasting surface</p>
+            {outline && (
+              <svg
+                className="camera-edge-overlay"
+                viewBox={`0 0 ${outline.width} ${outline.height}`}
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <polygon points={outline.points.map((p) => `${p.x},${p.y}`).join(' ')} />
+                {outline.points.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="3" />)}
+              </svg>
+            )}
+            </div>
+            <p>{outline ? 'Edges found · adjust corners after capture' : 'Place the page on a contrasting surface'}</p>
           </div>
         )}
         <div className="camera-bottom">

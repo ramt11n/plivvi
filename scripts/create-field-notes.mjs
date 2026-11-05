@@ -1,0 +1,25 @@
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+
+const root = fileURLToPath(new URL('..', import.meta.url));
+const pdf = await PDFDocument.create();
+pdf.setTitle('Field notes · A fresh page');
+pdf.setAuthor('Plivvi');
+const page = pdf.addPage([650, 850]);
+const regular = await pdf.embedFont(StandardFonts.Helvetica);
+const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+const navy = rgb(.13, .19, .34), blue = rgb(.21, .35, .89);
+page.drawRectangle({ x: 0, y: 0, width: 650, height: 850, color: rgb(1, 1, 1) });
+page.drawText('MONDAY / A FRESH PAGE', { x: 58, y: 754, size: 12, font: bold, color: rgb(.43, .51, .69), characterSpacing: 2 });
+page.drawText('Make room', { x: 58, y: 659, size: 57, font: bold, color: navy });
+page.drawText('for a good idea.', { x: 58, y: 590, size: 57, font: bold, color: navy });
+page.drawText('Read a little. Mark what matters.', { x: 58, y: 517, size: 17, font: regular, color: rgb(.40, .49, .66) });
+page.drawRectangle({ x: 54, y: 474, width: 452, height: 17, color: rgb(.84, .96, .70), rotate: { type: 'degrees', angle: -2 } });
+page.drawText('Leave your thoughts in the margins.', { x: 58, y: 478, size: 16, font: regular, color: rgb(.39, .47, .63) });
+const strokes = [[80,270],[119,323],[145,280],[170,307],[185,270],[218,294],[240,253],[270,275],[304,253],[345,252],[392,236]];
+for (let i = 1; i < strokes.length; i++) page.drawLine({ start: {x:strokes[i-1][0], y:strokes[i-1][1]}, end: {x:strokes[i][0], y:strokes[i][1]}, color: blue, thickness: 5, opacity: .92 });
+page.drawLine({ start:{x:70,y:220}, end:{x:385,y:214}, color:blue, thickness:3 });
+page.drawText('worth remembering', { x: 420, y: 95, size: 12, font: regular, color: blue });
+await writeFile(join(root, 'public/samples/field-notes.pdf'), await pdf.save());

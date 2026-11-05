@@ -4,7 +4,7 @@ export function BrandMark({ className = '' }: { className?: string }) {
   return (
     <img
       className={`brand-mark ${className}`}
-      src="/icon.svg"
+      src="/visuals/mascot/pli-logo-head.webp"
       width="48"
       height="48"
       alt=""

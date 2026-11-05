@@ -1090,9 +1090,9 @@ export default function ToolPanel({
                 </details>
               )}
               <div className="local-promise">
-                <ShieldCheck size={20} />
+                <img src="/visuals/mascot/pli-logo-head.webp" width="28" height="28" alt="" aria-hidden="true" />
                 <div>
-                  <strong>Just you and your document.</strong>
+                  <strong>Pli keeps your pages close.</strong>
                   <p>Files are processed on this device. Cloud saving is optional.</p>
                 </div>
               </div>
