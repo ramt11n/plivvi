@@ -2,6 +2,8 @@ import brand from '../brand.json';
 import content from './content.json';
 import featureData from './features.json';
 import { structuredData } from './schema';
+import sitePages from './site-pages.json';
+import guides from './guides.json';
 import { tools } from '../lib/catalog';
 export type ToolContent = {
   slug: string;
@@ -14,7 +16,16 @@ export type ToolContent = {
 export const toolContent = content as Record<string, ToolContent>;
 export type FeatureContent = ToolContent & { toolId: string; options: Record<string, string> };
 export const featureContent = featureData as Record<string, FeatureContent>;
-export type Route = { view: string; toolId?: string; featureId?: string };
+export const guideContent = guides;
+export function guidePath(id: keyof typeof guides) {
+  return '/guides/' + guides[id].slug + '/';
+}
+export type Route = {
+  view: string;
+  toolId?: string;
+  featureId?: string;
+  guideId?: keyof typeof guides;
+};
 export function toolPath(id: string) {
   return '/' + (toolContent[id]?.slug ?? id) + '/';
 }
@@ -23,6 +34,7 @@ export function currentRoute(): Route {
   if (path === '/') return { view: 'home' };
   const views: Record<string, string> = {
     '/tools': 'tools',
+    '/guides': 'guides',
     '/documents': 'documents',
     '/notebooks': 'notebooks',
     '/templates': 'templates',
@@ -33,6 +45,8 @@ export function currentRoute(): Route {
     '/account': 'account',
   };
   if (views[path]) return { view: views[path] };
+  const guide = Object.entries(guides).find(([, g]) => '/guides/' + g.slug === path);
+  if (guide) return { view: 'guide', guideId: guide[0] as keyof typeof guides };
   const feature = Object.entries(featureContent).find(([, f]) => '/' + f.slug === path);
   if (feature) return { view: 'tool', toolId: feature[1].toolId, featureId: feature[0] };
   const entry = Object.entries(toolContent).find(([, c]) => '/' + c.slug === path);
@@ -46,49 +60,20 @@ export function navigateTo(path: string) {
   window.dispatchEvent(new PopStateEvent('popstate'));
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
-const mainTitles: Record<string, [string, string]> = {
-  home: [
-    '{brand} — Free PDF Tools, Editor & Digital Notebooks',
-    'Free, open-source PDF reader, scanner, editor, and converter. Read, draw, merge, split, sign, and organize documents on your device. Vibe coded by Ramtin Neshatvar.',
-  ],
-  tools: [
-    'Free PDF Tools — {brand}',
-    'Browse free document tools for scanning, editing, merging, splitting, compression, conversion, and OCR. No feature paywalls or required account.',
-  ],
-  notebooks: [
-    'Free Digital Notebook & Handwriting — {brand}',
-    'Create free digital notebooks with ruled, dotted, grid, Cornell, or blank paper. Write with Apple Pencil, add text, and export your pages as PDF or images.',
-  ],
-  templates: [
-    'Document Templates & Copy Layouts — {brand}',
-    'Start with blank, lined, graph, invoice, letter, and checklist pages, or arrange genuine ID and passport scans.',
-  ],
-  about: [
-    'About {brand} — Open Source & Vibe Coded',
-    'Meet {brand}, the free and open-source document toolkit made by Ramtin Neshatvar with AI-assisted development.',
-  ],
-  privacy: [
-    'Privacy — {brand}',
-    'How {brand} keeps document processing local, saves browser drafts, and handles optional sign-in and cloud connections.',
-  ],
-  contact: [
-    'Contact Ramtin — {brand}',
-    'Contact Ramtin Neshatvar for {brand} questions, sponsorship, contributions, or custom workflow help.',
-  ],
-  support: [
-    'Support {brand} — Keep Every Feature Free',
-    'Support Plivvi with optional crypto donations: USDT on five networks, Bitcoin, Ethereum, and more. Keep every open-source document tool free.',
-  ],
-};
 export function updateSEO(route: Route) {
-  const data = route.featureId
-      ? featureContent[route.featureId]
-      : route.toolId
-        ? toolContent[route.toolId]
-        : undefined,
+  const main = sitePages[route.view as keyof typeof sitePages];
+  const data = route.guideId
+      ? guides[route.guideId]
+      : route.featureId
+        ? featureContent[route.featureId]
+        : route.toolId
+          ? toolContent[route.toolId]
+          : undefined,
     [title, description] = data
-      ? [data.title + ' · {brand}', data.description]
-      : (mainTitles[route.view] ?? ['Your workspace · {brand}', 'Your local document workspace.']);
+      ? [route.guideId ? data.title : data.title + ' · {brand}', data.description]
+      : main
+        ? [main.title, main.description]
+        : ['Your workspace · {brand}', 'Your local document workspace.'];
   const identity = (value: string) => value.replaceAll('{brand}', brand.name);
   document.title = identity(title);
   const meta = (name: string, value: string, property = false) => {
@@ -111,7 +96,11 @@ export function updateSEO(route: Route) {
   meta('og:description', identity(description), true);
   const url =
     (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') +
-    (data ? '/' + data.slug + '/' : pathForView(route.view));
+    (route.guideId
+      ? guidePath(route.guideId)
+      : data
+        ? '/' + data.slug + '/'
+        : pathForView(route.view));
   let canonical = document.head.querySelector<HTMLLinkElement>('link[rel=canonical]');
   if (!canonical) {
     canonical = document.createElement('link');
@@ -126,6 +115,9 @@ export function updateSEO(route: Route) {
     true,
   );
   meta('og:image:alt', 'Plivvi — free PDF tools and digital notebooks', true);
+  meta('twitter:image:alt', 'Plivvi — free PDF tools and digital notebooks');
+  meta('og:image:width', '1200', true);
+  meta('og:image:height', '630', true);
   meta('twitter:title', identity(title));
   meta('twitter:description', identity(description));
   meta(
@@ -142,7 +134,11 @@ export function updateSEO(route: Route) {
   ld.textContent = JSON.stringify(
     structuredData(
       (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, ''),
-      data ? '/' + data.slug + '/' : pathForView(route.view),
+      route.guideId
+        ? guidePath(route.guideId)
+        : data
+          ? '/' + data.slug + '/'
+          : pathForView(route.view),
       title,
       description,
       route.toolId,

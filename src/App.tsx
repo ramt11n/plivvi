@@ -45,6 +45,7 @@ import {
 import ThemePicker from './components/ThemePicker';
 import Brand from './components/Brand';
 import FeatureShowcase from './components/FeatureShowcase';
+import Guides from './components/Guides';
 import { brand } from './integrations/config';
 import { PublicPage, SiteFooter, SponsorPlacement, ToolLanding } from './components/PublicPages';
 import {
@@ -581,6 +582,8 @@ export default function App() {
                 {
                   home: 'Your workbench',
                   tools: 'The toolbox',
+                  guides: 'Practical guides',
+                  guide: 'Practical guides',
                   documents: 'Your files',
                   notebooks: 'Your notebooks',
                   templates: 'Page starters',
@@ -1149,6 +1152,7 @@ export default function App() {
               onStart={() => openTool(tools.find((t) => t.id === route.toolId)!)}
             />
           )}
+          {(view === 'guides' || view === 'guide') && <Guides id={route.guideId} />}
           {['about', 'privacy', 'support', 'contact', '404'].includes(view) && (
             <PublicPage view={view} />
           )}

@@ -47,3 +47,44 @@ it('identifies the website and free app without invented reviews or ratings', ()
   );
   expect(JSON.stringify(ld)).not.toContain('aggregateRating');
 });
+
+it('resolves original practical guides and synchronizes their metadata and author schema', async () => {
+  const { guideContent, guidePath } = await import('../src/seo/routes');
+  const { tools } = await import('../src/lib/catalog');
+  for (const [id, guide] of Object.entries(guideContent)) {
+    const path = guidePath(id as keyof typeof guideContent);
+    history.replaceState({}, '', path);
+    const route = currentRoute();
+    expect(route).toEqual({ view: 'guide', guideId: id });
+    updateSEO(route);
+    expect(document.title).toBe(guide.title);
+    expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
+      guide.description,
+    );
+    const ld = JSON.parse(document.querySelector('#plivvi-seo-data')!.textContent!);
+    expect(ld['@graph']).toContainEqual(
+      expect.objectContaining({
+        '@type': 'Article',
+        headline: guide.heading,
+        dateModified: guide.updated,
+      }),
+    );
+    expect(
+      ld['@graph'].find((node: Record<string, unknown>) => node['@type'] === 'BreadcrumbList')
+        .itemListElement,
+    ).toHaveLength(3);
+    for (const tool of guide.toolIds) expect(tools.some((t) => t.id === tool)).toBe(true);
+  }
+});
+it('uses the same metadata source for all main landing pages', async () => {
+  const { default: pages } = await import('../src/seo/site-pages.json');
+  for (const [view, page] of Object.entries(pages)) {
+    history.replaceState({}, '', page.path);
+    expect(currentRoute().view).toBe(view);
+    updateSEO({ view });
+    expect(document.title).toBe(page.title);
+    expect(document.querySelector('meta[name="description"]')?.getAttribute('content')).toBe(
+      page.description,
+    );
+  }
+});

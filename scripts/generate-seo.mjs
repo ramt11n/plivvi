@@ -1,8 +1,13 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { loadEnv } from 'vite';
 import { tools } from '../src/lib/catalog.ts';
 import { structuredData } from '../src/seo/schema.ts';
+const sitePages = JSON.parse(await readFile('src/seo/site-pages.json', 'utf8'));
+const guides = JSON.parse(await readFile('src/seo/guides.json', 'utf8'));
+const modified = '2026-11-05';
+const manifest = [];
 const features = JSON.parse(await readFile('src/seo/features.json', 'utf8'));
 const brand = JSON.parse(await readFile('src/brand.json', 'utf8'));
 const identity = (value) => String(value).replaceAll('{brand}', brand.name);
@@ -17,13 +22,18 @@ const esc = (s) =>
   );
 const schema = (value) => JSON.stringify(value).replace(/</g, '\\u003c');
 const nav =
-  '<nav aria-label="Main navigation"><a href="/">{brand}.</a><a href="/pdf-reader/">PDF reader</a><a href="/tools/">All tools</a><a href="/notebooks/">Free notebooks</a><a href="/about/">About</a><a href="/support/">Support</a><a href="/contact/">Contact</a></nav>';
+  '<nav aria-label="Main navigation"><a href="/">{brand}.</a><a href="/pdf-reader/">PDF reader</a><a href="/tools/">All tools</a><a href="/notebooks/">Free notebooks</a><a href="/guides/">Practical guides</a><a href="/about/">About</a><a href="/support/">Support</a><a href="/contact/">Contact</a></nav>';
 const footer =
   '<footer><p>Free. Open source. Vibe coded. Made by <a href="https://github.com/ramt11n">Ramtin Neshatvar</a>.</p><a href="/privacy/">Privacy</a> · <a href="/source.zip">Application source</a> · <a href="mailto:plivvi.pages@gmail.com">Contact & sponsorship</a></footer>';
 const routes = [];
 async function page(route, title, description, body, ld = {}, index = true) {
+  const main = Object.values(sitePages).find((item) => item.path === route);
+  if (main) {
+    title = main.title;
+    description = main.description;
+  }
   const url = origin + route,
-    head = `<link rel="canonical" href="${esc(url)}"><meta name="robots" content="${index ? 'index,follow' : 'noindex,nofollow'}"><meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(url)}"><meta property="og:image" content="${origin}/og.png"><meta property="og:site_name" content="{brand}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${origin}/og.png"><meta property="og:image:alt" content="Plivvi — free PDF tools and digital notebooks"><script id="plivvi-seo-data" type="application/ld+json">${schema(structuredData(origin, route, title, description, Object.entries(content).find(([, d]) => route === '/' + d.slug + '/')?.[0] ?? Object.values(features).find((d) => route === '/' + d.slug + '/')?.toolId))}</script>`;
+    head = `<link rel="canonical" href="${esc(url)}"><meta name="robots" content="${index ? 'index,follow' : 'noindex,nofollow'}"><meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(url)}"><meta property="og:image" content="${origin}/og.png"><meta property="og:site_name" content="{brand}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${origin}/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:image:alt" content="Plivvi — free PDF tools and digital notebooks"><meta property="og:image:alt" content="Plivvi — free PDF tools and digital notebooks"><script id="plivvi-seo-data" type="application/ld+json">${schema(structuredData(origin, route, title, description, Object.entries(content).find(([, d]) => route === '/' + d.slug + '/')?.[0] ?? Object.values(features).find((d) => route === '/' + d.slug + '/')?.toolId))}</script>`;
   let html = base
     .replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`)
     .replace(
@@ -39,7 +49,16 @@ async function page(route, title, description, body, ld = {}, index = true) {
   const destination = route === '/' ? 'dist/index.html' : `dist${route}index.html`;
   await mkdir(path.dirname(destination), { recursive: true });
   await writeFile(destination, html);
-  if (index) routes.push(route);
+  if (index) {
+    routes.push(route);
+    manifest.push({
+      url,
+      lastModified: modified,
+      hash: createHash('sha256')
+        .update(identity(title + description + body))
+        .digest('hex'),
+    });
+  }
   return html;
 }
 const links =
@@ -72,7 +91,7 @@ await page(
   '/',
   '{brand} — Free PDF Tools, Editor & Digital Notebooks',
   'Free PDF reader, scanner, editor, converter, OCR, merge, split, and document tools. Open source and vibe coded by Ramtin Neshatvar.',
-  `<span class="eyebrow">FREE. OPEN SOURCE. VIBE CODED.</span><h1>A little less paperwork.</h1><p>Read, annotate, scan, sign, merge, split, and convert documents on your device. Camera capture and sign-in are optional. Every document feature is free.</p><a href="/pdf-reader/">Open the PDF reader & editor</a><h2>A tool for every little task.</h2><div class="seo-tools">${links}</div><h2>Your files. Your choice.</h2><p>Documents are processed in your browser. Save outputs locally, download a copy, or choose an optional cloud connection. Loaded tools can be cached for offline use.</p>`,
+  `<span class="eyebrow">FREE. OPEN SOURCE. VIBE CODED.</span><h1>Your docs. Your next move.</h1><p>Read, annotate, scan, sign, merge, split, and convert documents on your device. Camera capture and sign-in are optional. Every document feature is free.</p><a href="/pdf-reader/">Open the PDF reader & editor</a><h2>A tool for every little task.</h2><div class="seo-tools">${links}</div><h2>Practical guides for your next task</h2><p><a href="/guides/">Private PDF workflows, iPhone scanning, Apple Pencil notes and multilingual OCR</a></p><h2>Your files. Your choice.</h2><p>Documents are processed in your browser. Save outputs locally, download a copy, or choose an optional cloud connection. Loaded tools can be cached for offline use.</p>`,
   appSchema,
 );
 await page(
@@ -89,6 +108,30 @@ await page(
   '<h1>A fresh page. A world of possibility.</h1><p>Free digital notebooks for handwritten notes, study, sketches, and planning. Keep notebook pages and ink on your device, with optional account workspaces.</p><h2>Make paper work your way</h2><p>Choose ruled, dotted, graph, Cornell, or blank pages. Duplicate, reorder, or add pages as your ideas grow. Write with Apple Pencil or another digital pen using pressure and tilt where supported by your browser. Add photographs and multilingual text.</p><h2>Your notes, yours to keep</h2><p>Export PDF, PNG, or JPG, and back up through Files. Local notebook storage does not automatically sync across devices. Apple Pencil hardware features vary by iPad, Pencil model, and browser. Native squeeze and double-tap actions are not exposed by the web editor.</p><h2>What does Plivvi mean?</h2><p>Plivvi is an invented name, pronounced PLIV-ee. It is a little space for your next good idea.</p>',
   { ...appSchema, name: '{brand} Digital Notebooks' },
 );
+const guideLinks = (items) =>
+  items
+    .map(
+      (g) =>
+        `<a class="seo-tool-link" href="/guides/${g.slug}/"><strong>${esc(g.heading)}</strong><span>${esc(g.description)}</span></a>`,
+    )
+    .join('');
+await page(
+  '/guides/',
+  sitePages.guides.title,
+  sitePages.guides.description,
+  `<h1>A useful way through the paperwork.</h1><p>Practical workflows, clear instructions, and a few things to check before sharing the result.</p><div class="seo-tools">${guideLinks(Object.values(guides))}</div>`,
+);
+for (const [id, guide] of Object.entries(guides)) {
+  const actions = guide.toolIds
+    .map((id) => `<a href="/${content[id].slug}/">${esc(tools.find((t) => t.id === id).title)}</a>`)
+    .join(' · ');
+  await page(
+    '/guides/' + guide.slug + '/',
+    guide.title,
+    guide.description,
+    `<article class="public-page workflow-guide"><nav aria-label="Breadcrumbs"><a href="/guides/">Guides</a></nav><h1>${esc(guide.heading)}</h1><p>${esc(guide.intro)}</p><p>By <a href="https://github.com/ramt11n">Ramtin Neshatvar</a> · Updated <time datetime="${guide.updated}">5 November 2026</time></p><h2>Get started</h2><ol>${guide.steps.map((step) => `<li>${esc(step)}</li>`).join('')}</ol><nav aria-label="Tools for this guide">${actions}${id === 'pencil-notebooks' ? ' · <a href="/notebooks/">Start a free notebook</a>' : ''}${id === 'persian-arabic-ocr' ? ' · <a href="/persian-ocr/">Persian OCR</a> · <a href="/arabic-ocr/">Arabic OCR</a>' : ''}</nav>${guide.sections.map((section) => `<section><h2>${esc(section.heading)}</h2>${section.paragraphs.map((p) => `<p>${esc(p)}</p>`).join('')}</section>`).join('')}${guide.sample ? `<a href="${esc(guide.sample.href)}" download>${esc(guide.sample.label)}</a>` : ''}<p><a href="/guides/">Browse all practical guides</a> · <a href="/tools/">Explore all free tools</a></p></article>`,
+  );
+}
 for (const tool of [
   ...tools,
   ...Object.entries(features).map(([id, data]) => ({
@@ -106,7 +149,7 @@ for (const tool of [
     route,
     d.title + ' · {brand}',
     d.description,
-    `<article class="tool-landing"><div class="tool-landing-hero"><span class="eyebrow">FREE. OPEN SOURCE. ON YOUR DEVICE.</span><h1>${esc(d.title.split(' — ')[0])}</h1><p>${esc(d.description)}</p><a class="button primary" href="#start">${esc(tool.action)}</a><p>No feature paywalls. Sign-in is optional.</p></div><section class="tool-guide" id="start"><div><h2>${esc(d.heading)}</h2><p>${esc(tool.description)} ${esc(tool.note ?? 'Create a new output while keeping your original file unchanged.')}</p></div><ol>${steps}</ol></section><section class="tool-faq"><h2>A few useful answers.</h2>${faqs}<details><summary>Can I use it on a phone or tablet?</summary><p>Yes. {brand} adapts to modern phones, tablets, laptops, and desktop browsers. File import works without a camera. Load tools online before relying on offline use.</p></details></section><p>Keep the tools free: <a href="/support/">sponsor the project</a>, <a href="/contact/">send feedback</a>, or contribute to the open-source application.</p><h2>More document tools</h2><div class="seo-tools">${tools
+    `<article class="tool-landing"><div class="tool-landing-hero"><span class="eyebrow">FREE. OPEN SOURCE. ON YOUR DEVICE.</span><h1>${esc(d.title.split(' — ')[0])}</h1><p>${esc(d.description)}</p><a class="button primary" href="#start">${esc(tool.action)}</a><p>No feature paywalls. Sign-in is optional.</p></div><section class="tool-guide" id="start"><div><h2>${esc(d.heading)}</h2><p>${esc(tool.description)} ${esc(tool.note ?? 'Create a new output while keeping your original file unchanged.')}</p></div><ol>${steps}</ol></section><section class="tool-faq"><h2>A few useful answers.</h2>${faqs}<details><summary>Can I use it on a phone or tablet?</summary><p>Yes. {brand} adapts to modern phones, tablets, laptops, and desktop browsers. File import works without a camera. Load tools online before relying on offline use.</p></details></section><p>Keep the tools free: <a href="/support/">sponsor the project</a>, <a href="/contact/">send feedback</a>, or contribute to the open-source application.</p>${Object.values(guides).some((g) => g.toolIds.includes(d.toolId ?? tool.id)) ? `<h2>Put this tool to work</h2><div class="seo-tools">${guideLinks(Object.values(guides).filter((g) => g.toolIds.includes(d.toolId ?? tool.id)))}</div>` : ''}<h2>More document tools</h2><div class="seo-tools">${tools
       .filter((t) => t.id !== tool.id && t.group === tool.group)
       .slice(0, 4)
       .map((t) => `<a href="/${content[t.id].slug}/">${esc(t.title)}</a>`)
@@ -197,18 +240,63 @@ const notFound = await page(
   false,
 );
 await writeFile('dist/404.html', notFound);
+const xmlHeader = '<?xml version="1.0" encoding="UTF-8"?>';
+const urlset = (entries) =>
+  xmlHeader +
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+  entries
+    .map(
+      (entry) => `<url><loc>${esc(entry.url)}</loc><lastmod>${entry.lastModified}</lastmod></url>`,
+    )
+    .join('') +
+  '</urlset>';
+// Preserve the original URL while exposing a small, categorized sitemap index.
+await writeFile('dist/sitemap.xml', urlset(manifest));
+await mkdir('dist/sitemaps', { recursive: true });
+const groups = {
+  pages: manifest.filter((entry) =>
+    Object.values(sitePages).some((p) => origin + p.path === entry.url),
+  ),
+  tools: manifest.filter((entry) =>
+    [...Object.values(content), ...Object.values(features)].some(
+      (p) => origin + '/' + p.slug + '/' === entry.url,
+    ),
+  ),
+  guides: manifest.filter((entry) =>
+    Object.values(guides).some((p) => origin + '/guides/' + p.slug + '/' === entry.url),
+  ),
+};
+for (const [name, entries] of Object.entries(groups))
+  await writeFile(`dist/sitemaps/${name}.xml`, urlset(entries));
 await writeFile(
-  'dist/sitemap.xml',
-  '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
-    routes.map((route) => `<url><loc>${esc(origin + route)}</loc></url>`).join('') +
-    '</urlset>',
+  'dist/sitemap-index.xml',
+  xmlHeader +
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' +
+    Object.keys(groups)
+      .map(
+        (name) =>
+          `<sitemap><loc>${origin}/sitemaps/${name}.xml</loc><lastmod>${modified}</lastmod></sitemap>`,
+      )
+      .join('') +
+    '</sitemapindex>',
 );
 await writeFile(
   'dist/robots.txt',
-  `User-agent: *\nAllow: /\nDisallow: /documents/\nDisallow: /account/\nDisallow: /redirect.html\nSitemap: ${origin}/sitemap.xml\n`,
+  `User-agent: *\nAllow: /\nDisallow: /documents/\nDisallow: /account/\nDisallow: /redirect.html\nSitemap: ${origin}/sitemap-index.xml\n`,
+);
+await writeFile(
+  'dist/search-manifest.json',
+  JSON.stringify({ origin, version: brand.version, entries: manifest }, null, 2),
 );
 console.log(
-  `Generated ${routes.length} indexable pages, private-page noindex rules, sitemap, and social metadata for ${origin}`,
+  `Generated ${routes.length} indexable pages, categorized sitemaps, search manifest, and social metadata for ${origin}`,
 );
 
-await writeFile('dist/version.json', JSON.stringify({version:brand.version,builtAt:new Date().toISOString(),entry:base.match(/<script[^>]+src="([^"]+)"/)?.[1]}));
+await writeFile(
+  'dist/version.json',
+  JSON.stringify({
+    version: brand.version,
+    builtAt: new Date().toISOString(),
+    entry: base.match(/<script[^>]+src="([^"]+)"/)?.[1],
+  }),
+);

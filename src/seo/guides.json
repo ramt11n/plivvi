@@ -1,0 +1,158 @@
+{
+  "private-pdf-workflow": {
+    "slug": "private-pdf-workflow",
+    "title": "A Private PDF Workflow: Merge, Sign & Export · Plivvi",
+    "description": "Prepare a PDF without sending it to a document-processing server. Merge pages, add a handwritten signature, check the result and keep a local copy.",
+    "heading": "Finish the paperwork. Keep the files close.",
+    "updated": "2026-11-05",
+    "intro": "A document workflow often needs several small tasks: combine attachments, put the pages in order, sign a form and send one final file. Plivvi performs these document operations in your browser. You can work as a guest and download the result without creating an account.",
+    "toolIds": ["merge", "organize", "sign", "reader"],
+    "steps": [
+      "Open Merge PDF and choose the PDFs you want to combine.",
+      "Arrange the input files, merge them, and download a new copy.",
+      "Open the merged copy in the reader to review pages and add your signature or notes.",
+      "Download the finished PDF, reopen it, and check the pages before sharing."
+    ],
+    "sections": [
+      {
+        "heading": "Understand what stays local",
+        "paragraphs": [
+          "The document engine runs on your device. Your PDF is not uploaded with the engine, fonts or language packs that the app downloads. Optional Google Drive transfers happen only when you choose a cloud action. Signing in does not turn your local workspace into an automatic server backup.",
+          "For a confidential file, start with Files or the local file picker. Keep cloud actions closed if you do not need them. A browser extension, a shared computer or a compromised device can still access information; local processing is one part of a private workflow."
+        ]
+      },
+      {
+        "heading": "Use the right kind of signature",
+        "paragraphs": [
+          "Plivvi can place a handwritten or typed signature on a page. That is a visual mark. It does not create a certificate-backed digital signature or guarantee that a recipient will accept the document. If a form requires a specific signing service, follow that requirement.",
+          "Editing a PDF that already has a cryptographic signature can invalidate that signature. Keep the original and make an edited copy, especially for contracts, certificates and official forms."
+        ]
+      },
+      {
+        "heading": "Verify the exported copy",
+        "paragraphs": [
+          "Open the download after exporting. Check page order, orientation, signature placement and any text that matters. An editable annotation export and a flattened export behave differently: flattening makes the new marks part of the page appearance, while editable marks can be adjusted later.",
+          "Save important copies outside the browser. Local drafts are convenient, but clearing website data, using private browsing or storage eviction can remove them. Your downloaded original and final PDF should be the copies you rely on."
+        ]
+      }
+    ]
+  },
+  "scan-iphone-ipad": {
+    "slug": "scan-documents-iphone-ipad",
+    "title": "How to Scan Documents on iPhone & iPad · Plivvi",
+    "description": "Scan paper in Safari or import a photo. Follow the edge guide, use the 3× corner magnifier, reduce shadows and create a PDF with free on-device tools.",
+    "heading": "From the desk to a clear PDF.",
+    "updated": "2026-11-05",
+    "intro": "You can scan a page in Plivvi through Safari or start with a photo already in Files. Camera access is optional. The live edge guide suggests a document boundary; after capture, you can adjust every corner before applying perspective correction and filters.",
+    "toolIds": ["scan", "image-pdf", "ocr"],
+    "steps": [
+      "Open Scan to PDF and choose the camera or import an existing image.",
+      "Place the page on a contrasting surface with even light. Keep all four corners visible.",
+      "After capture, open Adjust scan and drag the four corners to the paper edges. The 3× preview helps with precise placement.",
+      "Choose a filter, review the enhanced page, save it, then create and download your PDF."
+    ],
+    "sections": [
+      {
+        "heading": "Take a better source photograph",
+        "paragraphs": [
+          "Move the camera roughly parallel to the document. Leave a little background around the page instead of cropping its edges in the camera. A darker desk under pale paper usually makes the boundary easier to detect. Hold the device steady until the text is sharp.",
+          "Avoid direct glare, hard shadows from your hand and fingers over the text. Shadow reduction can balance uneven brightness, but it cannot restore missing letters or recover detail from a blurred photograph. Retaking one poor page is often faster than trying every filter."
+        ]
+      },
+      {
+        "heading": "Adjust the boundary before enhancing",
+        "paragraphs": [
+          "Treat the automatic outline as a starting point. Drag each corner onto the document, checking the magnified preview on the opposite side of the image. With a keyboard, focus a corner and use the arrow keys for small adjustments; Shift makes a larger adjustment.",
+          "If the photo is sideways, rotate it in the scan editor before refining the corners. Portrait and landscape camera layouts adapt to the available screen space. If your browser cannot open a camera, take a photo with your device's camera app and import it through Files."
+        ]
+      },
+      {
+        "heading": "Choose a useful output",
+        "paragraphs": [
+          "Clean paper is a useful starting point for everyday documents. Grayscale removes distracting color, while vivid color can help preserve a diagram. Compare the result with the original and check fine print before saving.",
+          "Choose A4, US Letter or original image size for your PDF. A scan is still a picture of the words. If you need searchable text, run the exported PDF through OCR using a supported language. Always review recognized numbers and names before relying on them."
+        ]
+      }
+    ]
+  },
+  "pencil-notebooks": {
+    "slug": "apple-pencil-pdf-notebooks",
+    "title": "Apple Pencil PDF Notes & Free Digital Notebooks · Plivvi",
+    "description": "Create a free notebook or annotate a PDF with a compatible digital pen. Learn writing mode, page navigation, paper styles, editable ink and PDF export.",
+    "heading": "Make room for handwritten ideas.",
+    "updated": "2026-11-05",
+    "intro": "Plivvi lets you start a notebook or write on an existing PDF in the browser. Apple Pencil needs a compatible iPad; other digital pens depend on the device and browser. Finger and mouse drawing are available too. No page subscription is required.",
+    "toolIds": ["reader", "sign"],
+    "steps": [
+      "Create a notebook with blank, ruled, dotted, grid or Cornell paper, or open your own PDF.",
+      "Choose Pen or Highlighter. Set a color and stroke width before writing.",
+      "Use the pen-and-gesture guide in the toolbar to check the current drawing and navigation controls.",
+      "Add pages as needed, then export a PDF or page image and keep a downloaded backup."
+    ],
+    "sections": [
+      {
+        "heading": "Separate writing from moving around",
+        "paragraphs": [
+          "When writing with a pen, leave Draw with finger off if you want fingers reserved for navigation. Use the on-screen zoom and fit controls when you need a predictable page size. The pen-and-gesture guide explains the current interaction model and is available again from the toolbar.",
+          "Pressure and tilt depend on the actual stylus and the information exposed by your browser. A mouse does not provide the same pressure signal. Native Pencil squeeze and double-tap actions are not currently exposed by Plivvi's web editor, so use the visible tool buttons."
+        ]
+      },
+      {
+        "heading": "Build a notebook you can keep editing",
+        "paragraphs": [
+          "Choose a name and paper style that match the task: ruled for writing, grid for diagrams, dotted for flexible layouts or Cornell for structured study notes. Add text and photographs when a handwritten page needs more context.",
+          "Use Add page in the reader to extend the document. Your notes and editable marks can be kept in the local workspace for later sessions. Workspaces are separated by the current account, but they do not automatically synchronize to another device."
+        ]
+      },
+      {
+        "heading": "Choose between editable marks and a finished copy",
+        "paragraphs": [
+          "Export editable annotations when you want to continue working on your notes. A flattened export is useful when you want new marks to be part of the visible page. Neither mode rewrites or reflows the original PDF's paragraphs.",
+          "Try the downloadable field-notes sample before opening an important document. Check an exported page in another viewer, especially when handwriting, text and images overlap. Keep a PDF backup in Files so browser storage is not your only copy."
+        ]
+      }
+    ],
+    "sample": {
+      "href": "/samples/field-notes.pdf",
+      "label": "Download the field-notes practice PDF"
+    }
+  },
+  "persian-arabic-ocr": {
+    "slug": "searchable-persian-arabic-pdf",
+    "title": "Persian & Arabic OCR: Searchable Scanned PDFs · Plivvi",
+    "description": "Recognize Persian or Arabic text in scanned PDFs locally. Choose the correct language, improve the source scan and check the searchable text layer.",
+    "heading": "Give scanned words a searchable layer.",
+    "updated": "2026-11-05",
+    "intro": "A scanned PDF may display clear words while search finds nothing, because its pages are images. OCR recognizes those images and adds text you can search or extract. Plivvi offers English, Persian / فارسی and Arabic / العربية recognition on your device.",
+    "toolIds": ["ocr", "scan", "text"],
+    "steps": [
+      "Open the Persian OCR or Arabic OCR preset and choose your scanned PDF.",
+      "Check the selected language before starting recognition. Its model downloads on first use.",
+      "Run OCR and download the new PDF with its recognized text layer.",
+      "Search for a known word and inspect names, numbers and several pages before trusting the result."
+    ],
+    "sections": [
+      {
+        "heading": "Improve the scan first",
+        "paragraphs": [
+          "OCR works best with sharp, upright printed text. If a page is skewed, cropped, dark or affected by glare, improve it with the scan editor before recognizing words. Choose the crop carefully so letters at the page edge are not lost.",
+          "A high-contrast source usually helps, but an aggressive black-and-white filter can also erase small dots or fine strokes. Those details matter in Persian and Arabic. Compare a processed page with its original instead of assuming the strongest filter is the best."
+        ]
+      },
+      {
+        "heading": "Select the language the page uses",
+        "paragraphs": [
+          "Use the Persian preset for Persian writing and the Arabic preset for Arabic writing. The right model helps distinguish language-specific letter forms. Mixed-language text, handwriting, tables, ornate fonts and poor scans can still produce recognition errors.",
+          "Recognition runs in the browser after its engine and language model load. A first run may take longer because those assets must download. Load the needed tool online before relying on offline use, and keep the tab open until the operation completes."
+        ]
+      },
+      {
+        "heading": "Check the text, not just the page image",
+        "paragraphs": [
+          "A searchable PDF preserves the scanned page appearance and adds recognized words. That text layer can contain mistakes even when the image looks correct. Search for a phrase you know, then inspect copied text and any important dates or amounts.",
+          "Right-to-left text extraction and reading order can vary between viewers, especially with columns and tables. OCR does not translate a document or recreate a perfectly formatted Word file. Keep the original scan and review any text you use in another document."
+        ]
+      }
+    ]
+  }
+}

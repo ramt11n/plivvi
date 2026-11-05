@@ -50,3 +50,46 @@ assert(source.size > 1000, 'Source download missing');
 console.log(
   `Verified ${Object.keys(content).length} tool pages, sitemap, account privacy rules, source archive, and social preview.`,
 );
+const mainPages = JSON.parse(await readFile('src/seo/site-pages.json', 'utf8'));
+const guides = JSON.parse(await readFile('src/seo/guides.json', 'utf8'));
+const escapeHTML = (value) =>
+  value.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
+  );
+for (const page of [
+  ...Object.values(mainPages),
+  ...Object.values(guides).map((g) => ({ ...g, path: '/guides/' + g.slug + '/' })),
+]) {
+  const html = await readFile('dist' + page.path + 'index.html', 'utf8');
+  assert(
+    html.includes('<title>' + escapeHTML(page.title) + '</title>'),
+    page.path + ': static title mismatch',
+  );
+  assert(
+    html.includes('<meta name="description" content="' + escapeHTML(page.description) + '">'),
+    page.path + ': static description mismatch',
+  );
+  if (page.sections)
+    for (const section of page.sections)
+      for (const paragraph of section.paragraphs)
+        assert(html.includes(escapeHTML(paragraph)), page.path + ': guide missing content');
+}
+const manifest = JSON.parse(await readFile('dist/search-manifest.json', 'utf8'));
+const expectedCount =
+  Object.keys(content).length + Object.keys(mainPages).length + Object.keys(guides).length;
+assert.equal(manifest.entries.length, expectedCount);
+const categorized = [];
+for (const name of ['pages', 'tools', 'guides']) {
+  const xml = await readFile('dist/sitemaps/' + name + '.xml', 'utf8');
+  categorized.push(...[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]));
+}
+assert.equal(new Set(categorized).size, expectedCount);
+assert.deepEqual(new Set(categorized), new Set(manifest.entries.map((entry) => entry.url)));
+const robots = await readFile('dist/robots.txt', 'utf8');
+assert(robots.includes('/sitemap-index.xml'));
+for (const icon of ['favicon.ico', 'favicon-96.png', 'icon-180.png', 'icon-512.png'])
+  assert((await stat('dist/' + icon)).size > 500);
+console.log(
+  `Verified shared metadata, four complete guides, ${expectedCount} categorized public URLs, and favicon assets.`,
+);

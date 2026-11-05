@@ -3,6 +3,7 @@ import LoadingProgress from './LoadingProgress';
 const DonatePanel = lazy(() => import('../donations/DonatePanel'));
 import {
   ArrowRight,
+  BookOpen,
   ArrowUpRight,
   Code2,
   Heart,
@@ -18,6 +19,8 @@ import {
   toolContent,
   toolPath,
   featureContent,
+  guideContent,
+  guidePath,
   type ToolContent,
 } from '../seo/routes';
 import type { Tool } from '../lib/catalog';
@@ -79,6 +82,7 @@ export function SiteFooter() {
           <h3>The workshop</h3>
           <InternalLink href="/pdf-reader/">PDF reader & editor</InternalLink>
           <InternalLink href="/tools/">All document tools</InternalLink>
+          <InternalLink href="/guides/">Practical how-to guides</InternalLink>
           <InternalLink href="/templates/">Document layouts</InternalLink>
         </div>
         <div>
@@ -229,6 +233,22 @@ export function ToolLanding({
         </details>
       </section>
       <SponsorPlacement />
+      {Object.values(guideContent).some((guide) => guide.toolIds.includes(tool.id)) && (
+        <section className="related-tools">
+          <h2>Put this tool to work.</h2>
+          <div>
+            {Object.entries(guideContent)
+              .filter(([, guide]) => guide.toolIds.includes(tool.id))
+              .map(([id, guide]) => (
+                <InternalLink key={id} href={guidePath(id as keyof typeof guideContent)}>
+                  <BookOpen size={20} />
+                  <span>{guide.heading}</span>
+                  <ArrowRight size={16} />
+                </InternalLink>
+              ))}
+          </div>
+        </section>
+      )}
       <section className="related-tools">
         <h2>Keep the good work going.</h2>
         <div>

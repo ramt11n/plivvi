@@ -31,8 +31,16 @@ jobs:
           VITE_MICROSOFT_CLIENT_ID: ${{ vars.MICROSOFT_CLIENT_ID }}
           VITE_MICROSOFT_TENANT: ${{ vars.MICROSOFT_TENANT }}
       - run: node scripts/verify-build.mjs
+      - name: Snapshot public search content before deployment
+        run: node scripts/search-notifications.mjs --snapshot=.sites-runtime/search-before.json
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PROJECT_NAME }}
+      - name: Verify public search pages
+        run: node scripts/audit-live-seo.mjs
+        env:
+          VITE_SITE_URL: ${{ vars.SITE_URL }}
+      - name: Notify search engines of changed public content
+        run: node scripts/search-notifications.mjs --previous=.sites-runtime/search-before.json

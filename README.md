@@ -19,6 +19,12 @@ Read, mark up, scan, organize, sign, and convert documents on your device. No fe
 - **Optional real integrations:** Firebase email/Google accounts, Google Drive Picker/direct uploads, and OneDrive MSAL/Graph import/export. They require owner-controlled project configuration and are clearly unavailable until configured. iCloud/Dropbox/other OS providers can be accessed through the device file picker where supported.
 - **Public pages:** dedicated tool URLs and pre-rendered HTML, original guides, canonical/social metadata, sitemap, robots rules, structured data, creator attribution, and contributor resources.
 
+## Go straight to a tool
+
+[Merge PDF](https://plivvi.pages.dev/merge-pdf/) · [PDF reader](https://plivvi.pages.dev/pdf-reader/) · [Scan to PDF](https://plivvi.pages.dev/scan-to-pdf/) · [Compress PDF](https://plivvi.pages.dev/compress-pdf/) · [Persian OCR](https://plivvi.pages.dev/persian-ocr/) · [Free notebooks](https://plivvi.pages.dev/notebooks/)
+
+[Practical guides](https://plivvi.pages.dev/guides/): private PDF preparation, scanning on iPhone/iPad, digital pen notes, and searchable Persian/Arabic scans. Each guide links directly to its tools and explains the relevant limits.
+
 ## Run it
 
 Use **Node.js 24**.
@@ -67,6 +73,12 @@ This is an independent open-source workshop, not Adobe Acrobat, CamScanner, or i
 - Large documents can exceed browser memory, especially on iOS. Sources are capped at 100 MB each and PDFs at 300 pages; visual organization previews up to 60. These are browser resource guards, not paid limits.
 - Lossless optimization may return the original if rewriting is larger. Raster compression loses interactive/searchable structure. PDF edits can invalidate existing cryptographic signatures.
 - Crop changes the visible box; it is not redaction. Content redaction does not automatically sanitize attachments, every metadata field, or all other document structures.
+
+## Search discovery
+
+The production build generates **58 indexable pages**, including 45 tool/workflow pages, nine main pages and four practical guides. Each has static HTML, a distinct title and description, a canonical URL, social metadata and matching structured data. Private workspace/account routes are excluded and marked noindex.
+
+`/sitemap-index.xml` lists the tools, pages and guides sitemaps. `/sitemap.xml` remains available for existing submissions. Run `node scripts/audit-live-seo.mjs` after deployment to check public HTTP responses. The optional Cloudflare workflow notifies IndexNow of changed public content; it does not submit private user data. See [search operations](docs/SEARCH-OPERATIONS.md). Submission is a discovery hint, not a guarantee of indexing or ranking.
 
 ## Tests and contribution
 

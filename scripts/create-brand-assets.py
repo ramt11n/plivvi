@@ -32,13 +32,27 @@ def app_icon(size, maskable=False):
         x=start+d.textlength(text[:i],font=word)+tracking*i+(vv_tracking if i>=4 else 0)
         color='#a9baff' if i in (3,4) else '#55c998' if char=='.' else '#f3f6ff'
         d.text((x,baseline),char,font=word,fill=color,anchor='ls')
-    mascot=Image.open(ROOT/'public/visuals/mascot/pli-app-cutout.webp').convert('RGBA')
-    mascot=mascot.resize((large,large),Image.Resampling.LANCZOS)
-    # Layer the very top of the paper head over the bottom edge of the wordmark.
-    result.alpha_composite(mascot,(0,125 if maskable else 0))
+    mascot=Image.open(HEAD).convert('RGBA')
+    mascot=mascot.crop(mascot.getchannel('A').point(lambda a:255 if a>10 else 0).getbbox())
+    edge=650 if maskable else 800
+    mascot.thumbnail((edge,edge),Image.Resampling.LANCZOS)
+    # Original head-and-shoulders mark, with only its top tip crossing the wordmark.
+    result.alpha_composite(mascot,((large-mascot.width)//2,338 if maskable else 213))
     return result.convert('RGB').resize((size,size),Image.Resampling.LANCZOS)
 for size in (180,192,512):app_icon(size).quantize(colors=256,method=Image.Quantize.MEDIANCUT).save(ROOT/f'public/icon-{size}.png',optimize=True)
 app_icon(512,True).quantize(colors=256,method=Image.Quantize.MEDIANCUT).save(ROOT/'public/icon-maskable-512.png',optimize=True)
+# Browser tabs use a dedicated, text-free face at native favicon sizes.
+def favicon(size):
+    result=Image.new('RGBA',(size,size),'#1b2540')
+    face=Image.open(HEAD).convert('RGBA')
+    face=face.crop(face.getchannel('A').point(lambda a:255 if a>10 else 0).getbbox())
+    face=face.crop((int(face.width*.08),0,int(face.width*.91),int(face.height*.79)))
+    face.thumbnail((int(size*.90),int(size*.90)),Image.Resampling.LANCZOS)
+    result.alpha_composite(face,((size-face.width)//2,(size-face.height)//2))
+    return result.convert('RGB')
+for size in (16,32,48,96):
+    favicon(size).save(ROOT/f'public/favicon-{size}.png',optimize=True)
+favicon(96).save(ROOT/'public/favicon.ico',sizes=[(16,16),(32,32),(48,48)])
 # A native, reproducible social card. Typography and drawings are generated from source.
 im=Image.new('RGB',(1200,630),'#f5f7fc');d=ImageDraw.Draw(im)
 def font(size):
@@ -54,7 +68,7 @@ d.rounded_rectangle((67,431,503,480),radius=13,fill='#3659e3')
 d.text((86,444),'Free tools. Open source. Vibe coded.',font=body(18),fill='white')
 d.text((69,550),'Made by Ramtin Neshatvar',font=body(16),fill='#64718b')
 d.ellipse((807,103,1180,497),fill='#dce5ff')
-hero=Image.open(ROOT/'public/visuals/mascot/pli-paper-hero.webp').convert('RGBA')
+hero=Image.open(HEAD).convert('RGBA')
 hero.thumbnail((440,520),Image.Resampling.LANCZOS)
 im.paste(hero,(780,95),hero)
 im.save(ROOT/'public/og.png',optimize=True)

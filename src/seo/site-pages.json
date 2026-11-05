@@ -1,0 +1,47 @@
+{
+  "home": {
+    "path": "/",
+    "title": "Plivvi — Free PDF Tools, Scanner & Digital Notebooks",
+    "description": "Read, annotate, scan, merge, split and convert PDFs on your device. Free, open-source document tools and digital notebooks, with no required account."
+  },
+  "tools": {
+    "path": "/tools/",
+    "title": "Free PDF Tools Online — Private & Open Source · Plivvi",
+    "description": "Choose from 35 free document tools: PDF editing, scanning, merging, splitting, conversion and OCR. Files are processed in your browser. No feature paywalls."
+  },
+  "notebooks": {
+    "path": "/notebooks/",
+    "title": "Free Digital Notebook & Apple Pencil Writing · Plivvi",
+    "description": "Make ruled, dotted, grid, Cornell or blank notebooks. Write with Apple Pencil or a compatible pen, add text and photos, and export PDF or images for free."
+  },
+  "templates": {
+    "path": "/templates/",
+    "title": "Free Document Templates & Copy Layouts · Plivvi",
+    "description": "Start with blank, lined, graph, invoice, letter and checklist pages. Arrange genuine ID and passport scans, then edit your document in the free reader."
+  },
+  "guides": {
+    "path": "/guides/",
+    "title": "PDF & Scanning Guides — Practical Free Workflows · Plivvi",
+    "description": "Practical guides to private PDF workflows, iPhone document scanning, Apple Pencil notes, and Persian or Arabic OCR. Clear steps, useful tools and honest limits."
+  },
+  "about": {
+    "path": "/about/",
+    "title": "About Plivvi — Free, Open Source & Vibe Coded",
+    "description": "Meet Plivvi, a free document workshop made by Ramtin Neshatvar. Explore its open-source code, privacy approach and community contributions."
+  },
+  "privacy": {
+    "path": "/privacy/",
+    "title": "Privacy & Local Document Processing · Plivvi",
+    "description": "Learn how Plivvi processes documents on your device, saves browser drafts, and handles optional sign-in, cloud transfers and private bug reports."
+  },
+  "contact": {
+    "path": "/contact/",
+    "title": "Contact Plivvi — Feedback, Bugs & Sponsorship",
+    "description": "Contact the Plivvi team for feedback, private bug reports, sponsorship and custom document workflows. Made by Ramtin Neshatvar."
+  },
+  "support": {
+    "path": "/support/",
+    "title": "Support Plivvi — Improve Free Open-Source Tools",
+    "description": "Help improve Plivvi, fix bugs and keep every document feature free. Optional direct crypto donations, sponsorship and open-source contributions."
+  }
+}
