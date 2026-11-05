@@ -21,6 +21,7 @@
   Cache-Control: no-cache
 
 /favicon.ico
+  Content-Type: image/x-icon
   Cache-Control: no-cache
 /favicon-*.png
   Cache-Control: no-cache
