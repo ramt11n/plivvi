@@ -15,27 +15,30 @@ def icon(size):
     head.thumbnail((int(size*.92),int(size*.92)),Image.Resampling.LANCZOS)
     im.alpha_composite(head,((size-head.width)//2,(size-head.height)//2))
     return im
-def app_icon(size):
-    # One app badge combines the mascot and the existing Plivvi typography.
+def app_icon(size, maskable=False):
+    # Typeset the website's real Sora 800 wordmark; keep raster art free of lettering.
     large=1024
-    result=Image.new('RGB',(large,large),'#1b2540')
+    result=Image.new('RGBA',(large,large),'#1b2540')
     d=ImageDraw.Draw(result)
-    d.ellipse((190,70,850,750),fill='#253a72')
-    mark=icon(390).convert('RGB')
-    mask=Image.new('L',(390,390))
-    ImageDraw.Draw(mask).rounded_rectangle((0,0,389,389),radius=100,fill=255)
-    result.paste(mark,(317,104),mask)
-    word=ImageFont.truetype(str(ROOT/'public/fonts/Sora.ttf'),140)
+    word=ImageFont.truetype(str(ROOT/'public/fonts/Sora.ttf'),180 if maskable else 260)
     word.set_variation_by_axes([800])
-    parts=[('pli','#f3f6ff'),('vv','#a9baff'),('i','#f3f6ff'),('.','#55c998')]
-    total=sum(d.textlength(piece,font=word) for piece,_ in parts)
-    x=(large-total)/2
-    for piece,color in parts:
-        d.text((x,610),piece,font=word,fill=color,stroke_width=1)
-        x+=d.textlength(piece,font=word)
-    d.rounded_rectangle((287,820,737,831),radius=5,fill='#a9baff')
-    return result.resize((size,size),Image.Resampling.LANCZOS)
-for size in (192,512):app_icon(size).save(ROOT/f'public/icon-{size}.png',optimize=True)
+    text='plivvi.'
+    tracking=-word.size*1.5/27
+    vv_tracking=-word.size/27
+    total=d.textlength(text,font=word)+tracking*6+vv_tracking
+    start=(large-total)/2
+    baseline=345 if maskable else 220
+    for i,char in enumerate(text):
+        x=start+d.textlength(text[:i],font=word)+tracking*i+(vv_tracking if i>=4 else 0)
+        color='#a9baff' if i in (3,4) else '#55c998' if char=='.' else '#f3f6ff'
+        d.text((x,baseline),char,font=word,fill=color,anchor='ls')
+    mascot=Image.open(ROOT/'public/visuals/mascot/pli-app-cutout.webp').convert('RGBA')
+    mascot=mascot.resize((large,large),Image.Resampling.LANCZOS)
+    # Layer the very top of the paper head over the bottom edge of the wordmark.
+    result.alpha_composite(mascot,(0,125 if maskable else 0))
+    return result.convert('RGB').resize((size,size),Image.Resampling.LANCZOS)
+for size in (180,192,512):app_icon(size).quantize(colors=256,method=Image.Quantize.MEDIANCUT).save(ROOT/f'public/icon-{size}.png',optimize=True)
+app_icon(512,True).quantize(colors=256,method=Image.Quantize.MEDIANCUT).save(ROOT/'public/icon-maskable-512.png',optimize=True)
 # A native, reproducible social card. Typography and drawings are generated from source.
 im=Image.new('RGB',(1200,630),'#f5f7fc');d=ImageDraw.Draw(im)
 def font(size):

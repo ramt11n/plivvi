@@ -100,11 +100,15 @@ export default function FeatureShowcase({
   onAction,
   onNotebook,
   onComic,
+  onExplore,
+  toolCount,
   compact = false,
 }: {
   onAction: (tool: string) => void;
   onNotebook?: () => void;
   onComic?: () => void;
+  onExplore: () => void;
+  toolCount: number;
   compact?: boolean;
 }) {
   const [index, setIndex] = useState(0),
@@ -168,6 +172,11 @@ export default function FeatureShowcase({
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
       }}
     >
+      <div className="showcase-topline">
+        <button onClick={onExplore}>
+          Explore all {toolCount} tools <ArrowRight size={15} />
+        </button>
+      </div>
       <div className="feature-tabs" role="tablist" aria-label="Featured workflows">
         {showcaseSlides.map((slide, i) => (
           <button

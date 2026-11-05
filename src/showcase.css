@@ -1,4 +1,21 @@
 /* The artwork is one complete, proportionally scaled image per device. */
+.curated-showcase .showcase-topline {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 20px 0;
+}
+.curated-showcase .showcase-topline > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 9px;
+  color: #c4f2df;
+  background: #a8e5ca10;
+  border: 1px solid #a8e5ca40;
+  font-size: 11px;
+  font-weight: 750;
+}
 html .curated-showcase,
 html[data-theme='dark'] .curated-showcase {
   --feature-bg: #202d4c;

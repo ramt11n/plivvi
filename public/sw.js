@@ -1,4 +1,4 @@
-const CACHE = 'plivvi-v4-5';
+const CACHE = 'plivvi-v4-6';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -6,7 +6,9 @@ self.addEventListener('install', (event) => {
         response = await fetch('/', { cache: 'reload' });
       if (!response.ok) throw Error('App shell unavailable');
       const html = await response.clone().text();
-      const assets = [...html.matchAll(/(?:src|href)="([^"#]+\.(?:js|css|svg|png|webmanifest))"/g)]
+      const assets = [
+        ...html.matchAll(/(?:src|href)="([^"#]+\.(?:js|css|svg|png|webmanifest)(?:\?[^"#]*)?)"/g),
+      ]
         .map((m) => m[1])
         .filter((p) => p.startsWith('/'));
       await cache.addAll([...new Set(['/icon.svg', '/manifest.webmanifest', ...assets])]);
@@ -21,7 +23,9 @@ self.addEventListener('message', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      const keys = (await caches.keys()).filter((k) => k.startsWith('plivvi-') || k.startsWith('pocket-'));
+      const keys = (await caches.keys()).filter(
+        (k) => k.startsWith('plivvi-') || k.startsWith('pocket-'),
+      );
       const previous = keys.filter((k) => k !== CACHE).at(-1);
       await Promise.all(
         keys.filter((k) => k !== CACHE && k !== previous).map((k) => caches.delete(k)),

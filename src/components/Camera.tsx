@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Camera as CameraIcon, RefreshCw } from 'lucide-react';
 import { detectCorners, type Point } from '../lib/image';
 export default function Camera({
@@ -15,7 +15,15 @@ export default function Camera({
     [devices, setDevices] = useState<MediaDeviceInfo[]>([]),
     [selected, setSelected] = useState('rear'),
     [retry, setRetry] = useState(0),
-    [outline, setOutline] = useState<{ width: number; height: number; points: Point[] } | null>(null);
+    [outline, setOutline] = useState<{ width: number; height: number; points: Point[] } | null>(
+      null,
+    );
+  // A changing callback ref reassigns srcObject on every detected outline in Safari.
+  const attachVideo = useCallback((node: HTMLVideoElement | null) => {
+    video.current = node;
+    if (node && stream.current && node.srcObject !== stream.current)
+      node.srcObject = stream.current;
+  }, []);
   useEffect(() => {
     let alive = true;
     setReady(false);
@@ -50,7 +58,7 @@ export default function Camera({
           return;
         }
         stream.current = s;
-        if (video.current) video.current.srcObject = s;
+        if (video.current && video.current.srcObject !== s) video.current.srcObject = s;
         await refresh();
       })
       .catch(() => {
@@ -89,9 +97,10 @@ export default function Camera({
               const points = detectCorners(ctx.getImageData(0, 0, width, height));
               const insetX = width * 0.05;
               const insetY = height * 0.05;
-              const isFallback = points.every((point, index) =>
-                Math.abs(point.x - (index === 0 || index === 3 ? insetX : width - insetX)) < 2 &&
-                Math.abs(point.y - (index < 2 ? insetY : height - insetY)) < 2,
+              const isFallback = points.every(
+                (point, index) =>
+                  Math.abs(point.x - (index === 0 || index === 3 ? insetX : width - insetX)) < 2 &&
+                  Math.abs(point.y - (index < 2 ? insetY : height - insetY)) < 2,
               );
               setOutline(isFallback ? null : { width, height, points });
             } catch {
@@ -152,29 +161,32 @@ export default function Camera({
         ) : (
           <div className="camera-view">
             <div className="camera-stage">
-            <video
-              ref={(node) => {
-                video.current = node;
-                if (node && stream.current) node.srcObject = stream.current;
-              }}
-              autoPlay
-              playsInline
-              muted
-              onLoadedMetadata={() => setReady(true)}
-            />
-            {outline && (
-              <svg
-                className="camera-edge-overlay"
-                viewBox={`0 0 ${outline.width} ${outline.height}`}
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <polygon points={outline.points.map((p) => `${p.x},${p.y}`).join(' ')} />
-                {outline.points.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="3" />)}
-              </svg>
-            )}
+              <video
+                ref={attachVideo}
+                autoPlay
+                playsInline
+                muted
+                onLoadedMetadata={() => setReady(true)}
+              />
+              {outline && (
+                <svg
+                  className="camera-edge-overlay"
+                  viewBox={`0 0 ${outline.width} ${outline.height}`}
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <polygon points={outline.points.map((p) => `${p.x},${p.y}`).join(' ')} />
+                  {outline.points.map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r="3" />
+                  ))}
+                </svg>
+              )}
             </div>
-            <p>{outline ? 'Edges found · adjust corners after capture' : 'Place the page on a contrasting surface'}</p>
+            <p>
+              {outline
+                ? 'Edges found · adjust corners after capture'
+                : 'Place the page on a contrasting surface'}
+            </p>
           </div>
         )}
         <div className="camera-bottom">

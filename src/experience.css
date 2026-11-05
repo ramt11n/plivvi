@@ -212,7 +212,9 @@ textarea:focus-visible {
   flex-direction: column;
   overflow: auto;
 }
-.camera-shade { padding: 12px; }
+.camera-shade {
+  padding: 12px;
+}
 .camera-panel .camera-selector {
   background: #263149;
   color: #e8efff;
@@ -224,7 +226,10 @@ textarea:focus-visible {
   color-scheme: dark;
 }
 @media (orientation: landscape) and (max-height: 600px) {
-  .camera-shade { padding: 0; align-items: stretch; }
+  .camera-shade {
+    padding: 0;
+    align-items: stretch;
+  }
   .camera-panel {
     width: 100%;
     max-width: 100%;
@@ -236,7 +241,10 @@ textarea:focus-visible {
     grid-template-columns: minmax(0, 1fr) minmax(128px, 23vw);
     grid-template-rows: auto minmax(0, 1fr);
   }
-  .camera-top { grid-column: 1 / -1; padding: 8px max(12px, env(safe-area-inset-right)); }
+  .camera-top {
+    grid-column: 1 / -1;
+    padding: 8px max(12px, env(safe-area-inset-right));
+  }
   .camera-selector {
     grid-column: 2;
     grid-row: 2;
@@ -245,13 +253,22 @@ textarea:focus-visible {
     padding: 10px;
     font-size: 11px;
   }
-  .camera-selector select { width: 100%; margin-top: 5px; padding: 7px; font-size: 12px; }
-  .camera-view, .camera-error {
+  .camera-selector select {
+    width: 100%;
+    margin-top: 5px;
+    padding: 7px;
+    font-size: 12px;
+  }
+  .camera-view,
+  .camera-error {
     grid-column: 1;
     grid-row: 2;
     min-height: 0;
   }
-  .camera-stage, .camera-stage video { max-height: calc(100dvh - 54px); }
+  .camera-stage,
+  .camera-stage video {
+    max-height: calc(100dvh - 54px);
+  }
   .camera-bottom {
     grid-column: 2;
     grid-row: 2;
@@ -260,8 +277,13 @@ textarea:focus-visible {
     flex-direction: column;
     gap: 12px;
   }
-  .camera-bottom > span { display: none; }
-  .shutter { width: 52px; height: 52px; }
+  .camera-bottom > span {
+    display: none;
+  }
+  .shutter {
+    width: 52px;
+    height: 52px;
+  }
 }
 .camera-view video {
   object-fit: contain;
@@ -704,16 +726,47 @@ textarea:focus-visible {
   width: min(850px, calc(100vw - 24px));
 }
 /* Keep the guide clear of the reader's persistent zoom and page controls. */
-body:has(.reader-shell) .guide-fab {
-  bottom: max(76px, calc(env(safe-area-inset-bottom) + 68px));
+body:has(.reader-shell) .guide-fab,
+body:has(.reader-shell) .guide-intro {
+  display: none;
 }
 body:has(.reader-shell) .support-prompt {
   bottom: max(138px, calc(env(safe-area-inset-bottom) + 130px));
 }
-@media (max-width: 600px) {
-  body:has(.reader-shell) .guide-fab {
-    bottom: max(112px, calc(env(safe-area-inset-bottom) + 104px));
-  }
+.camera-view > p {
+  min-height: 2.8em;
+}
+.corner-loupe {
+  position: absolute;
+  top: 12px;
+  z-index: 4;
+  width: 104px;
+  padding: 4px;
+  pointer-events: none;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 4px 18px #111c3d38;
+}
+.corner-loupe.left {
+  left: 12px;
+}
+.corner-loupe.right {
+  right: 12px;
+}
+.corner-loupe canvas {
+  display: block;
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+}
+.corner-loupe span {
+  display: block;
+  padding: 5px 0 2px;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
 }
 .feature-actions {
   display: flex;
@@ -807,8 +860,12 @@ html[data-theme='dark'] .mascot-eater .mascot-speech {
   color: #16213d;
 }
 @media (max-width: 800px) {
-  .document-drop-card > .mascot-eater { transform: translateY(-50%) scale(.78); }
-  .document-drop-card:hover .mascot-eater { transform: translateY(-54%) scale(.78); }
+  .document-drop-card > .mascot-eater {
+    transform: translateY(-50%) scale(0.78);
+  }
+  .document-drop-card:hover .mascot-eater {
+    transform: translateY(-54%) scale(0.78);
+  }
 }
 @media (max-width: 600px) {
   .document-drop-card {
@@ -827,8 +884,16 @@ html[data-theme='dark'] .mascot-eater .mascot-speech {
     margin: 0 0 5px;
     transform: none;
   }
-  .mascot-eater img { width: 129px; height: 129px; }
-  .mascot-eater .mascot-speech { right: -10px; top: -2px; width: 78px; font-size: 8px; }
+  .mascot-eater img {
+    width: 129px;
+    height: 129px;
+  }
+  .mascot-eater .mascot-speech {
+    right: -10px;
+    top: -2px;
+    width: 78px;
+    font-size: 8px;
+  }
   .document-drop-card > span:not(.page-character) {
     display: flex;
     justify-content: center;
@@ -846,7 +911,9 @@ html[data-theme='dark'] .panel-footer {
   background: var(--surface);
   color: var(--ink);
 }
-html[data-theme='dark'] .tool-main { background: var(--surface-soft); }
+html[data-theme='dark'] .tool-main {
+  background: var(--surface-soft);
+}
 html[data-theme='dark'] .tool-note,
 html[data-theme='dark'] .info-note,
 html[data-theme='dark'] .password-details,
@@ -873,7 +940,10 @@ html[data-theme='dark'] .panel-footer .small,
 html[data-theme='dark'] .tool-options label small {
   color: #b9c5dc;
 }
-html[data-theme='dark'] .upload-orbit { background: #2a3655; color: #b5c8ff; }
+html[data-theme='dark'] .upload-orbit {
+  background: #2a3655;
+  color: #b5c8ff;
+}
 html[data-theme='dark'] .tool-options input:not([type='range']),
 html[data-theme='dark'] .tool-options select,
 html[data-theme='dark'] .tool-options textarea,

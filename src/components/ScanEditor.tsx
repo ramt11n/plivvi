@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, X, ScanLine, RotateCw, WandSparkles } from 'lucide-react';
 import { loadImage, detectCorners, canvasBlob, type Point, type Filter } from '../lib/image';
 import { rpc } from '../lib/client';
+import CornerLoupe from './CornerLoupe';
 export default function ScanEditor({
   file,
   onSave,
@@ -22,6 +23,9 @@ export default function ScanEditor({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(''),
     [before, setBefore] = useState(false),
+    [loupe, setLoupe] = useState<{ point: Point; span: number; side: 'left' | 'right' } | null>(
+      null,
+    ),
     drag = useRef(-1),
     generation = useRef(0);
   useEffect(() => {
@@ -32,7 +36,13 @@ export default function ScanEditor({
         setTimeout(() => {
           if (original.current !== c) return;
           try {
-            setPoints(detectCorners(c.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, c.width, c.height)));
+            setPoints(
+              detectCorners(
+                c
+                  .getContext('2d', { willReadFrequently: true })!
+                  .getImageData(0, 0, c.width, c.height),
+              ),
+            );
           } catch {
             setPoints([
               { x: 0, y: 0 },
@@ -57,11 +67,15 @@ export default function ScanEditor({
     target.getContext('2d')!.drawImage(c, 0, 0);
   }
   useEffect(() => {
+    if (original.current && (mode === 'crop' || before)) draw(original.current);
+    setLoupe(null);
+  }, [mode, before]);
+  useEffect(() => {
     const c = original.current;
     if (!c || !points.length) return;
     const gen = ++generation.current;
     if (mode === 'crop' || before) {
-      draw(c);
+      setBusy(false);
       return;
     }
     const timer = setTimeout(async () => {
@@ -128,6 +142,7 @@ export default function ScanEditor({
                   className="crop-overlay"
                   onPointerMove={(e) => {
                     if (drag.current < 0) return;
+                    e.preventDefault();
                     const r = e.currentTarget.getBoundingClientRect(),
                       x = Math.max(
                         0,
@@ -138,9 +153,20 @@ export default function ScanEditor({
                         Math.min(c.height - 1, ((e.clientY - r.top) / r.height) * c.height),
                       );
                     setPoints((p) => p.map((q, i) => (i === drag.current ? { x, y } : q)));
+                    setLoupe((old) => old && { ...old, point: { x, y } });
                   }}
-                  onPointerUp={() => (drag.current = -1)}
-                  onPointerCancel={() => (drag.current = -1)}
+                  onPointerUp={() => {
+                    drag.current = -1;
+                    setLoupe(null);
+                  }}
+                  onPointerCancel={() => {
+                    drag.current = -1;
+                    setLoupe(null);
+                  }}
+                  onLostPointerCapture={() => {
+                    drag.current = -1;
+                    setLoupe(null);
+                  }}
                 >
                   <polygon
                     points={points.map((p) => `${p.x},${p.y}`).join(' ')}
@@ -151,21 +177,69 @@ export default function ScanEditor({
                   {points.map((p, i) => (
                     <circle
                       key={i}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Adjust ${['top left', 'top right', 'bottom right', 'bottom left'][i]} corner`}
                       cx={p.x}
                       cy={p.y}
                       r={c.width / 18}
                       fill="white"
                       stroke="#7272ec"
                       strokeWidth={c.width / 230}
+                      onFocus={(e) => {
+                        const overlay = e.currentTarget.parentElement!;
+                        setLoupe({
+                          point: p,
+                          span: (c.width * 96) / (3 * overlay.getBoundingClientRect().width),
+                          side: p.x < c.width / 2 ? 'right' : 'left',
+                        });
+                      }}
+                      onBlur={() => setLoupe(null)}
+                      onKeyDown={(e) => {
+                        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key))
+                          return;
+                        e.preventDefault();
+                        const step = e.shiftKey ? 10 : 1;
+                        const point = {
+                          x: Math.max(
+                            0,
+                            Math.min(
+                              c.width - 1,
+                              p.x +
+                                (e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0),
+                            ),
+                          ),
+                          y: Math.max(
+                            0,
+                            Math.min(
+                              c.height - 1,
+                              p.y +
+                                (e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0),
+                            ),
+                          ),
+                        };
+                        setPoints((values) =>
+                          values.map((value, at) => (at === i ? point : value)),
+                        );
+                        setLoupe((old) => old && { ...old, point });
+                      }}
                       onPointerDown={(e) => {
-                        e.currentTarget.parentElement!.setPointerCapture(e.pointerId);
+                        e.preventDefault();
+                        const overlay = e.currentTarget.parentElement!;
+                        overlay.setPointerCapture(e.pointerId);
                         drag.current = i;
+                        setLoupe({
+                          point: p,
+                          span: (c.width * 96) / (3 * overlay.getBoundingClientRect().width),
+                          side: p.x < c.width / 2 ? 'right' : 'left',
+                        });
                       }}
                     />
                   ))}
                 </svg>
               )}
             </div>
+            {mode === 'crop' && c && loupe && <CornerLoupe source={c} {...loupe} />}
             {busy && (
               <span className="scan-processing">
                 <span className="spinner" />
@@ -189,8 +263,8 @@ export default function ScanEditor({
               <>
                 <h3>Follow the paper</h3>
                 <p className="muted small">
-                  Drag the four corners to match your document. Perspective is corrected when you
-                  save.
+                  Drag the corners for a 3× close-up. Arrow keys fine-tune a focused corner.
+                  Perspective is corrected when you save.
                 </p>
                 <button
                   className="button secondary full"

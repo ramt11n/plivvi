@@ -232,7 +232,11 @@ export default function App() {
     try {
       const response = await fetch('/samples/pli-free-pages.pdf');
       if (!response.ok) throw new Error('Comic unavailable');
-      openReader(new File([await response.blob()], 'Pli vs. the Page Taxman.pdf', { type: 'application/pdf' }));
+      openReader(
+        new File([await response.blob()], 'Pli vs. the Page Taxman.pdf', {
+          type: 'application/pdf',
+        }),
+      );
     } catch {
       setToast('The comic could not open. Please try again.');
     }
@@ -337,6 +341,17 @@ export default function App() {
     setQuery('');
     setGroup('All tools');
     setMobileNav(false);
+  }
+  function exploreTools() {
+    nav('tools');
+    requestAnimationFrame(() => {
+      const grid = document.getElementById('all-document-tools');
+      grid?.scrollIntoView({
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+        block: 'start',
+      });
+      grid?.focus({ preventScroll: true });
+    });
   }
   const filtered = tools.filter(
       (t) =>
@@ -732,7 +747,12 @@ export default function App() {
                     onClick={() => upload.current?.click()}
                   >
                     <span className="page-character mascot-eater" aria-hidden="true">
-                      <img src="/visuals/mascot/pli-eats-pages.webp" alt="" width="170" height="160" />
+                      <img
+                        src="/visuals/mascot/pli-eats-pages.webp"
+                        alt=""
+                        width="170"
+                        height="160"
+                      />
                       <span className="mascot-speech">Give me your documents. Num num…</span>
                     </span>
                     <strong>Drop it here.</strong>
@@ -795,6 +815,8 @@ export default function App() {
                 ))}
               </section>
               <FeatureShowcase
+                onExplore={exploreTools}
+                toolCount={tools.length}
                 onNotebook={() => nav('notebooks')}
                 onComic={openComic}
                 onAction={(id) => openTool(tools.find((t) => t.id === id)!)}
@@ -893,6 +915,8 @@ export default function App() {
           {view === 'tools' && (
             <>
               <FeatureShowcase
+                onExplore={exploreTools}
+                toolCount={tools.length}
                 onNotebook={() => nav('notebooks')}
                 onComic={openComic}
                 compact
@@ -942,7 +966,13 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <div className="tool-grid all-tools-grid">
+              <div
+                id="all-document-tools"
+                tabIndex={-1}
+                role="region"
+                aria-label="All document tools"
+                className="tool-grid all-tools-grid"
+              >
                 {filtered.map((t) => (
                   <ToolCard key={t.id} tool={t} />
                 ))}
