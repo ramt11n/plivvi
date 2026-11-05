@@ -51,7 +51,7 @@ The application is static. Cloudflare Pages is the recommended free production-h
 
 The repository includes CI and an opt-in Cloudflare deployment workflow. Deployment is skipped until the owner adds the project name and required account secrets. A workflow file alone is not a deployed website.
 
-[Hosting and Actions setup](docs/DEPLOYMENT.md) · [Account/cloud configuration](docs/ACCOUNTS-AND-CLOUD.md) · [Monetization and SEO](docs/MONETIZATION-AND-SEO.md)
+[Hosting and Actions setup](docs/DEPLOYMENT.md) · [Account/cloud configuration](docs/ACCOUNTS-AND-CLOUD.md) · [Monetization and SEO](docs/MONETIZATION-AND-SEO.md) · [Launch plan and English/Persian post drafts](docs/LAUNCH-KIT.md)
 
 ## Privacy and offline use
 
