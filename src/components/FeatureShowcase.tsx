@@ -252,7 +252,9 @@ export default function FeatureShowcase({
               </li>
             ))}
           </ul>
-          <div className="feature-actions">
+          <div
+            className={`feature-actions ${item.key === 'ink' && onComic ? 'has-secondary' : ''}`}
+          >
             <button
               className="feature-cta"
               onClick={() =>
@@ -263,8 +265,8 @@ export default function FeatureShowcase({
               <ArrowRight size={19} />
             </button>
             {item.key === 'ink' && onComic && (
-              <button className="feature-notebook-link" onClick={onComic}>
-                Read Pli's free comic <ArrowRight size={17} />
+              <button className="feature-cta feature-cta-secondary" onClick={onComic}>
+                Read Pli's free comic <ArrowRight size={19} />
               </button>
             )}
           </div>

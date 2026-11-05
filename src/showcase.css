@@ -155,14 +155,18 @@ html[data-theme='dark'] .curated-showcase .feature-copy h2 em {
 .curated-showcase .feature-actions {
   display: grid;
   grid-template-columns: 1fr;
-  align-items: start;
-  gap: 8px;
-  max-width: 350px;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
   margin: 22px 0 0;
 }
+.curated-showcase .feature-actions.has-secondary {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  max-width: 460px;
+}
 .curated-showcase .feature-cta,
-.curated-showcase.compact .feature-cta,
-.curated-showcase .feature-notebook-link {
+.curated-showcase.compact .feature-cta {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -180,16 +184,25 @@ html[data-theme='dark'] .curated-showcase .feature-copy h2 em {
   white-space: normal;
   color: #fff;
   background: #3659e3;
+  border: 1px solid transparent;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
-.curated-showcase .feature-notebook-link,
-html[data-theme='dark'] .curated-showcase .feature-notebook-link {
-  min-height: 32px;
-  padding: 4px 2px;
-  color: #c4f2df;
-  background: transparent;
-  border: 0;
-  border-radius: 4px;
-  font-size: 12px;
+.curated-showcase .feature-cta.feature-cta-secondary {
+  color: #d5f5e7;
+  background: #c4f2df0a;
+  border-color: #a8dec659;
+}
+.curated-showcase .feature-cta.feature-cta-secondary:hover {
+  background: #c4f2df1a;
+  border-color: #a8dec699;
+  filter: none;
+}
+.curated-showcase .feature-cta:focus-visible {
+  outline: 2px solid #f3f6ff;
+  outline-offset: 3px;
 }
 .curated-showcase .feature-actions svg {
   flex: none;
@@ -345,13 +358,12 @@ html[data-theme='dark'] .curated-showcase .feature-notebook-link {
     letter-spacing: 1.5px;
   }
   .curated-showcase .feature-actions {
-    max-width: none;
     margin-top: 18px;
   }
   .curated-showcase .feature-cta,
   .curated-showcase.compact .feature-cta {
     font-size: 12px;
-    min-height: 46px;
+    min-height: 48px;
   }
   .curated-showcase .feature-device-note {
     font-size: 9px;
