@@ -21,3 +21,4 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 }
 
 import './experience.css';
+import './showcase.css';

@@ -1,4 +1,5 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { useShowcasePlayback } from './useShowcasePlayback';
 import {
   ArrowRight,
   Check,
@@ -8,6 +9,8 @@ import {
   Layers3,
   Images,
   BookOpen,
+  Pause,
+  Play,
 } from 'lucide-react';
 
 export const showcaseSlides = [
@@ -26,6 +29,22 @@ export const showcaseSlides = [
     asset: 'notebooks',
     device: 'stylus tablet',
     note: 'Apple Pencil requires a compatible iPad. Finger and mouse drawing work too.',
+  },
+  {
+    key: 'ink',
+    label: 'Read',
+    icon: BookOpen,
+    eyebrow: 'THE READER, REIMAGINED',
+    title: 'Open it.',
+    accent: 'Get lost in it.',
+    description:
+      'Read PDFs or a colorful comic in the actual Plivvi reader. Turn pages, zoom in, and pick up where you left off.',
+    features: ['Comfortable page reading', 'Zoom + page navigation', 'Bookmarks and notes'],
+    action: 'Open the PDF reader',
+    tool: 'reader',
+    asset: 'reader',
+    device: 'book-style foldable phone',
+    note: 'A reading space that adapts to phones, foldables, tablets, and larger screens.',
   },
   {
     key: 'scan',
@@ -75,22 +94,6 @@ export const showcaseSlides = [
     device: 'all-in-one desktop',
     note: 'More conversion tools live on your tool shelf.',
   },
-  {
-    key: 'ink',
-    label: 'Read',
-    icon: BookOpen,
-    eyebrow: 'THE READER, REIMAGINED',
-    title: 'Open it.',
-    accent: 'Get lost in it.',
-    description:
-      'Read PDFs or a colorful comic in the actual Plivvi reader. Turn pages, zoom in, and pick up where you left off.',
-    features: ['Comfortable page reading', 'Zoom + page navigation', 'Bookmarks and notes'],
-    action: 'Open the PDF reader',
-    tool: 'reader',
-    asset: 'reader',
-    device: 'book-style foldable phone',
-    note: 'A reading space that adapts to phones, foldables, tablets, and larger screens.',
-  },
 ] as const;
 
 export default function FeatureShowcase({
@@ -105,17 +108,65 @@ export default function FeatureShowcase({
   compact?: boolean;
 }) {
   const [index, setIndex] = useState(0),
+    [revision, setRevision] = useState(0),
+    [paused, setPaused] = useState(false),
+    [hovered, setHovered] = useState(false),
+    [focused, setFocused] = useState(false),
+    [visible, setVisible] = useState(false),
+    [pageVisible, setPageVisible] = useState(true),
+    [reducedMotion, setReducedMotion] = useState(false),
+    [artReady, setArtReady] = useState(false),
+    section = useRef<HTMLElement>(null),
+    progress = useRef<HTMLElement>(null),
     id = useId(),
     start = useRef<{ x: number; y: number } | null>(null);
   const item = showcaseSlides[index];
   function change(next: number) {
-    setIndex((next + showcaseSlides.length) % showcaseSlides.length);
+    const nextIndex = (next + showcaseSlides.length) % showcaseSlides.length;
+    if (nextIndex !== index) setArtReady(false);
+    setIndex(nextIndex);
+    setRevision((n) => n + 1);
   }
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
+      threshold: 0.25,
+    });
+    if (section.current) observer.observe(section.current);
+    const media = matchMedia('(prefers-reduced-motion: reduce)');
+    const motion = () => setReducedMotion(media.matches);
+    const visibility = () => setPageVisible(!document.hidden);
+    motion();
+    visibility();
+    media.addEventListener('change', motion);
+    document.addEventListener('visibilitychange', visibility);
+    return () => {
+      observer.disconnect();
+      media.removeEventListener('change', motion);
+      document.removeEventListener('visibilitychange', visibility);
+    };
+  }, []);
+  useEffect(() => {
+    const next = showcaseSlides[(index + 1) % showcaseSlides.length];
+    const image = new Image();
+    image.src = `/visuals/showcase/${next.asset}-device.${next.asset === 'reader' ? 'svg' : 'webp'}`;
+  }, [index]);
+  const playing =
+    !paused && !hovered && !focused && visible && pageVisible && !reducedMotion && artReady;
+  useShowcasePlayback(playing, `${index}:${revision}`, progress, () => change(index + 1));
   return (
     <section
+      ref={section}
       className={`feature-showcase curated-showcase ${item.key} ${compact ? 'compact' : ''}`}
       aria-label="Discover five free document workflows"
       aria-roledescription="carousel"
+      onPointerEnter={(e) => {
+        if (e.pointerType === 'mouse') setHovered(true);
+      }}
+      onPointerLeave={() => setHovered(false)}
+      onFocusCapture={() => setFocused(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false);
+      }}
     >
       <div className="feature-tabs" role="tablist" aria-label="Featured workflows">
         {showcaseSlides.map((slide, i) => (
@@ -145,6 +196,16 @@ export default function FeatureShowcase({
           </button>
         ))}
       </div>
+      <div className="showcase-timeline" aria-hidden="true">
+        {showcaseSlides.map((slide, i) => (
+          <span key={slide.key}>
+            <i
+              ref={index === i ? progress : undefined}
+              style={{ transform: `scaleX(${i < index ? 1 : 0})` }}
+            />
+          </span>
+        ))}
+      </div>
       <div
         className="feature-panel"
         id={`${id}-panel`}
@@ -166,7 +227,7 @@ export default function FeatureShowcase({
           start.current = null;
         }}
       >
-        <div className="feature-copy">
+        <div className="feature-copy" key={`copy-${item.key}`}>
           <span className="feature-eyebrow">{item.eyebrow}</span>
           <h2>
             {item.title}
@@ -186,52 +247,50 @@ export default function FeatureShowcase({
             <button
               className="feature-cta"
               onClick={() =>
-                item.tool === 'notebooks' && onNotebook ? onNotebook() : onAction(item.tool)
+                item.tool === 'notebooks' && onNotebook
+                  ? onNotebook()
+                  : item.key === 'ink' && onComic
+                    ? onComic()
+                    : onAction(item.tool)
               }
             >
-              {item.action}
+              {item.key === 'ink' && onComic ? "Read Pli's free comic" : item.action}
               <ArrowRight size={19} />
             </button>
-            {item.key === 'ink' && onComic && (
-              <button className="feature-notebook-link" onClick={onComic}>
-                Read Pli's free comic <ArrowRight size={19} />
-              </button>
-            )}
-            {item.key === 'notebook' && (
-              <button className="feature-notebook-link" onClick={() => onAction('reader')}>
-                Open the PDF reader
-                <ArrowRight size={19} />
-              </button>
-            )}
           </div>
           <small className="feature-device-note">{item.note}</small>
         </div>
-        <figure className={`showcase-product ${item.asset}`}>
-          <div className={`device-scene device-${item.asset}`}>
-            <div className="device-orbit" />
-            <div className="device-shell">
-              <img
-                src={`/visuals/showcase/${item.asset}-ui.webp?v=3.4.1`}
-                width={item.asset === 'scan' ? 390 : item.asset === 'notebooks' ? 820 : item.asset === 'reader' ? 720 : 1000}
-                height={item.asset === 'scan' ? 844 : item.asset === 'notebooks' ? 1000 : item.asset === 'reader' ? 560 : 680}
-                loading="lazy"
-                decoding="async"
-                alt={`Actual Plivvi ${item.label.toLowerCase()} interface in an illustrated ${item.device}`}
-              />
-              {item.asset === 'reader' && <span className="device-fold" aria-hidden="true" />}
-              {item.asset === 'scan' && <span className="device-camera" aria-hidden="true" />}
-            </div>
-            {(item.asset === 'organize' || item.asset === 'convert') && <span className="device-base" aria-hidden="true" />}
-            {item.asset === 'notebooks' && <img className="device-stylus" src="/visuals/stylus.png" alt="" aria-hidden="true" />}
-          </div>
+        <figure className={`showcase-product ${item.asset}`} key={`art-${item.key}`}>
+          <img
+            src={`/visuals/showcase/${item.asset}-device.${item.asset === 'reader' ? 'svg' : 'webp'}`}
+            width={item.asset === 'reader' ? 1433 : item.asset === 'notebooks' ? 1448 : 1536}
+            height={item.asset === 'reader' ? 1098 : item.asset === 'notebooks' ? 1086 : 1024}
+            decoding="async"
+            onLoad={() => setArtReady(true)}
+            onError={() => setArtReady(true)}
+            alt={`Plivvi ${item.label.toLowerCase()} interface on an illustrated ${item.device}`}
+          />
         </figure>
       </div>
       <div className="showcase-bottom">
         <span className="showcase-free">Free to create. Yours to keep.</span>
         <div className="showcase-controls">
-          <span aria-live="polite" aria-atomic="true">
+          <span>
             <b>{String(index + 1).padStart(2, '0')}</b> / 05
           </span>
+          <button
+            className="showcase-playback"
+            aria-label={
+              paused || reducedMotion ? 'Play automatic slides' : 'Pause automatic slides'
+            }
+            onClick={() => {
+              setPaused(!(paused || reducedMotion));
+              setReducedMotion(false);
+              setFocused(false);
+            }}
+          >
+            {paused || reducedMotion ? <Play size={17} /> : <Pause size={17} />}
+          </button>
           <button
             className="icon-button"
             aria-label="Previous feature"
