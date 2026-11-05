@@ -10,6 +10,7 @@ if (target === root || root.startsWith(target + path.sep))
   throw Error('Choose a separate export directory.');
 const entries = [
   'assets',
+  'marketing',
   'src',
   'public',
   'tests',
@@ -40,7 +41,9 @@ for (const entry of entries)
   await cp(path.join(root, entry), path.join(target, entry), {
     recursive: true,
     force: true,
-    filter: (source) => source !== path.join(root, 'public/source.zip'),
+    filter: (source) =>
+      source !== path.join(root, 'public/source.zip') &&
+      source !== path.join(root, 'marketing/output'),
   });
 console.log(
   `Exported application source to ${target}. No Git history, hosting identity, runtime files, private environment files, or test outputs were included.`,

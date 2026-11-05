@@ -2,6 +2,10 @@
 
 The release supports optional direct crypto donations, direct sponsorship and paid custom workflow help through `plivvi.pages@gmail.com`. Sponsor invitations appear on public pages, with no feature locks, invented visitor counts, or fake paying sponsors. A visitor can use the workshop without an account.
 
+## Current plan — 6 November 2026
+
+See the [business model](BUSINESS-MODEL.md) for a first-income experiment and the [reusable content renderer](../marketing/README.md) for low-cost Instagram assets. Current public SEO output is 58 indexable pages. Promotional positioning is browser-local document processing, free tools, open-source code, simple guest access and responsive PWA installation. Do not use Persian/Arabic OCR as a lead promise: the owner reports poor recognition quality.
+
 ## Practical income options
 
 - Sell a clearly labeled sponsor placement on a public tool guide after agreeing scope directly.

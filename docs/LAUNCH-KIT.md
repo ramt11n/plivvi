@@ -2,13 +2,15 @@
 
 ## What to lead with
 
-**Your PDF, your device. Every tool free.**
+**Your PDF, your device. Free. Open source.**
+
+Updated 6 November 2026: do not promote Persian/Arabic OCR as a dependable result. The owner reports poor recognition quality. Keep experimental features out of demonstrations until they work reliably on representative real samples. Lead with browser-local processing, free core tools, open-source code, simple guest access and an installable, responsive web app.
 
 Lead with a task someone needs today, rather than a list of 35 features. The strongest first demonstrations are:
 
 1. **Merge and sign a PDF without a document upload.** Show two synthetic PDFs becoming one finished file. Link directly to https://plivvi.pages.dev/merge-pdf/ and the [private workflow guide](https://plivvi.pages.dev/guides/private-pdf-workflow/).
 2. **Turn a phone photo into a clean PDF.** Show the original, crop corners and enhanced result. Link to https://plivvi.pages.dev/scan-to-pdf/. Demonstrate on a real phone; avoid claiming an illustration is a camera test.
-3. **Make a Persian scan searchable.** Show a real, public-domain printed sample and a successful search in the exported PDF. Link to https://plivvi.pages.dev/persian-ocr/. Review the recognized text first. Do not promise perfect recognition or a layout-preserving Word conversion.
+3. **A useful app, without an app-store download.** Show the real tool on a phone and a laptop, then show the browser's installation route. Link to https://plivvi.pages.dev/. Call it an installable web app; browser installation controls vary. Do not claim identical stylus or camera behavior on every device.
 
 Keep the mascot as a memorable accent. The useful before/after result should occupy most of a demo. A 15–25 second screen recording with readable captions is a good starting experiment. Use actual Plivvi screens and synthetic/public documents.
 
@@ -18,7 +20,7 @@ This is an experiment, not a traffic or revenue forecast.
 
 - **Before sharing:** verify the three workflows on target devices, the final public links, guest access and export. Keep a short list of reproducible bugs. Complete the free Product Hunt account setup only if choosing that channel.
 - **First wave:** post one personal maker introduction on your own LinkedIn or Telegram channel, with one task and one direct tool link. Ask a small group of willing testers to complete a task and describe where they got stuck. Do not ask for positive reviews or coordinated votes.
-- **Second wave:** publish two different before/after demonstrations. One can explain Persian OCR in Persian. Share with a relevant student/productivity community only when its rules allow maker posts; disclose that you made the app and participate in replies.
+- **Second wave:** publish two different before/after demonstrations. One can explain browser-local document processing in Persian, without making an OCR claim. Share with a relevant student/productivity community only when its rules allow maker posts; disclose that you made the app and participate in replies.
 - **After feedback:** fix the most common failure before widening promotion. A successful export is more useful than a large number of empty visits.
 - **Broader launch:** consider one Show HN or Product Hunt launch when the core workflows are reliable and you can answer questions. Do not submit the same release repeatedly. Show HN expects a working project people can try, not a fundraiser or a generic landing page.
 
@@ -47,8 +49,8 @@ Plivvi رو ساختم تا ادغام، اسکن، امضا و خواندن ف�
 برای شروع، چند PDF رو یکی کنید:
 https://plivvi.pages.dev/merge-pdf/
 
-برای اسکن‌های فارسی هم OCR داریم؛ نتیجهٔ تشخیص متن رو قبل از استفاده بررسی کنید:
-https://plivvi.pages.dev/persian-ocr/
+روی گوشی، تبلت یا لپ‌تاپ از مرورگر بازش کنید. می‌تونید به صفحهٔ اصلی دستگاه هم اضافه‌اش کنید:
+https://plivvi.pages.dev/
 
 اگر جایی گیر کردید، از «Report a bug» داخل سایت بهم خبر بدید. خودم سازندهٔ پروژه‌ام و بازخورد واقعی خیلی کمک می‌کنه.
 
@@ -104,7 +106,7 @@ The build provides 58 pre-rendered public URLs, matching canonical metadata, int
 
 On 5 November 2026, Google's homepage live test passed, while its sitemap report still showed “Couldn't fetch.” The manual indexing quota was already exhausted. The sitemap submissions were accepted, but that does not prove Google fetched or indexed them. Recheck Search Console after it processes the submissions and investigate any specific fetch error it exposes. Do not repeatedly resubmit an unchanged sitemap or attempt to bypass the quota.
 
-Google describes crawling as taking a few days to a few weeks, with no inclusion guarantee. Useful content, working tools and relevant genuine links matter more than repeated submission. Target long-tail tasks such as Persian OCR and on-device PDF merging before competing for a broad phrase like “PDF tools.”
+Google describes crawling as taking a few days to a few weeks, with no inclusion guarantee. Useful content, working tools and relevant genuine links matter more than repeated submission. Target useful tasks such as on-device PDF merging, free PDF reading and installation without an app store before competing for a broad phrase like “PDF tools.”
 
 ## Official references
 
@@ -113,3 +115,7 @@ Google describes crawling as taking a few days to a few weeks, with no inclusion
 - [Show HN guidelines](https://news.ycombinator.com/showhn.html)
 - [Product Hunt launch guide](https://help.producthunt.com/en/articles/17350772-launch-guide)
 - [Product Hunt launch FAQ](https://help.producthunt.com/en/articles/17734646-8-launch-faq-and-myths)
+
+## A repeatable content system
+
+Use the code-rendered motion and carousel template in [marketing](../marketing/README.md). Batch one reel and two carousels per week as an initial experiment. Rotate privacy explanations, demonstrated PDF tasks, PWA installation and the mascot. A human voiceover is optional; animated type and accurate captions carry the message without paid AI-video generation. See [the business model](BUSINESS-MODEL.md) for revenue priorities and a first-income experiment.

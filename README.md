@@ -13,7 +13,7 @@ Read, mark up, scan, organize, sign, and convert documents on your device. No fe
 - **Appearance:** Light, Dark, or System; System follows the device’s schedule. Document colors remain unchanged. Reduced-motion preferences are respected.
 - **35 free document tools:** scan enhancement, perspective crop, shadow reduction, merge, split, extract, remove, reorder, duplicate, rotate, compress, repair, OCR, signatures, watermarks, numbering, forms, encryption, redaction, comparison, flattening, metadata, and format conversion.
 - **Conversions:** PDF/images, JPG/PNG/WebP image conversion, text/Markdown extraction, DOCX paragraphs, inferred XLSX rows, PPTX page images, and basic Office/HTML/text reading copies.
-- **OCR:** browser-local English, Persian, and Arabic recognition; plain text or searchable PDF output.
+- **Experimental OCR:** browser-local recognition with English, Persian and Arabic models. Recognition quality, especially Persian/Arabic, is not reliable enough to lead promotional claims; review all output.
 - **Layouts:** blank, lined, graph, letter, invoice, checklist, and genuine ID/passport-copy arrangements. No fabricated credentials.
 - **Workspace:** browser-local saved files and drafts, individual/ZIP exports, device Files/share sheet, and used-tool offline caching.
 - **Optional real integrations:** Firebase email/Google accounts, Google Drive Picker/direct uploads, and OneDrive MSAL/Graph import/export. They require owner-controlled project configuration and are clearly unavailable until configured. iCloud/Dropbox/other OS providers can be accessed through the device file picker where supported.
@@ -21,9 +21,9 @@ Read, mark up, scan, organize, sign, and convert documents on your device. No fe
 
 ## Go straight to a tool
 
-[Merge PDF](https://plivvi.pages.dev/merge-pdf/) · [PDF reader](https://plivvi.pages.dev/pdf-reader/) · [Scan to PDF](https://plivvi.pages.dev/scan-to-pdf/) · [Compress PDF](https://plivvi.pages.dev/compress-pdf/) · [Persian OCR](https://plivvi.pages.dev/persian-ocr/) · [Free notebooks](https://plivvi.pages.dev/notebooks/)
+[Merge PDF](https://plivvi.pages.dev/merge-pdf/) · [PDF reader](https://plivvi.pages.dev/pdf-reader/) · [Scan to PDF](https://plivvi.pages.dev/scan-to-pdf/) · [Compress PDF](https://plivvi.pages.dev/compress-pdf/) · [Free notebooks](https://plivvi.pages.dev/notebooks/)
 
-[Practical guides](https://plivvi.pages.dev/guides/): private PDF preparation, scanning on iPhone/iPad, digital pen notes, and searchable Persian/Arabic scans. Each guide links directly to its tools and explains the relevant limits.
+[Practical guides](https://plivvi.pages.dev/guides/): private PDF preparation, scanning on iPhone/iPad, digital pen notes, and guidance on experimental text recognition. Each guide links directly to its tools and explains the relevant limits.
 
 ## Run it
 
@@ -51,7 +51,7 @@ The application is static. Cloudflare Pages is the recommended free production-h
 
 The repository includes CI and an opt-in Cloudflare deployment workflow. Deployment is skipped until the owner adds the project name and required account secrets. A workflow file alone is not a deployed website.
 
-[Hosting and Actions setup](docs/DEPLOYMENT.md) · [Account/cloud configuration](docs/ACCOUNTS-AND-CLOUD.md) · [Monetization and SEO](docs/MONETIZATION-AND-SEO.md) · [Launch plan and English/Persian post drafts](docs/LAUNCH-KIT.md)
+[Hosting and Actions setup](docs/DEPLOYMENT.md) · [Account/cloud configuration](docs/ACCOUNTS-AND-CLOUD.md) · [Monetization and SEO](docs/MONETIZATION-AND-SEO.md) · [Launch plan and English/Persian post drafts](docs/LAUNCH-KIT.md) · [Business model](docs/BUSINESS-MODEL.md) · [Reusable motion/carousel template](marketing/README.md)
 
 ## Privacy and offline use
 
@@ -116,7 +116,7 @@ Plivvi is an invented name, pronounced **PLIV-ee**. Its logo, type, cobalt/mint 
 
 Optional crypto support is now available at [plivvi.pages.dev/support](https://plivvi.pages.dev/support/): 14 owner-supplied receiving routes, including USDT on five networks. The site does not connect to wallets or process payments. Every document feature stays free.
 
-Ten focused workflow URLs open real presets for JPG/PNG, Word, Excel, PowerPoint, Persian/Arabic OCR, and Apple Pencil annotation. Together with the core tool guides, Plivvi generates 53 indexable pages. Document and account workspaces remain excluded from indexing.
+Ten focused workflow URLs open real presets for JPG/PNG, Word, Excel, PowerPoint, Persian/Arabic OCR, and Apple Pencil annotation. Together with the core tool guides, Plivvi generates 58 indexable pages, including four practical guides and nine main pages. Document and account workspaces remain excluded from indexing.
 
 The pen workspace includes a first-visit gesture guide and a toolbar help button. Two-finger translation and pinch share one page anchor, with absolute per-frame scale updates. Automated pointer tests do not replace testing on a physical iPad.
 

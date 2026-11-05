@@ -1,0 +1,60 @@
+{
+  "name": "Your PDF. Your device. Your call.",
+  "url": "plivvi.pages.dev",
+  "fps": 24,
+  "scenes": [
+    {
+      "kind": "intro",
+      "seconds": 3,
+      "lines": [
+        "Your PDF.",
+        "Your device.",
+        "Your call."
+      ],
+      "body": "Free tools for everyday paperwork."
+    },
+    {
+      "kind": "privacy",
+      "seconds": 4,
+      "lines": [
+        "Work in",
+        "your browser."
+      ],
+      "body": "Document processing runs on your device.",
+      "note": "Cloud connections are optional."
+    },
+    {
+      "kind": "workspace",
+      "seconds": 4,
+      "lines": [
+        "Read it.",
+        "Make it yours."
+      ],
+      "body": "A real workspace. No required account.",
+      "note": "Real Plivvi interface \u00b7 public sample document"
+    },
+    {
+      "kind": "benefits",
+      "seconds": 4,
+      "lines": [
+        "Free tools.",
+        "Open source.",
+        "No forced login.",
+        "Your screen."
+      ],
+      "body": "Phone, tablet or laptop.",
+      "note": "An installable web app"
+    },
+    {
+      "kind": "outro",
+      "seconds": 3,
+      "lines": [
+        "Less paperwork."
+      ],
+      "body": "Try it free."
+    }
+  ],
+  "voiceover": "Your PDFs. Your device. Your call. Meet Plivvi: free, open-source tools for everyday paperwork. Read, merge, sign and organize files in your browser. No account required. Use it on your phone, tablet or laptop. Try Plivvi free.",
+  "caption": "Your PDF. Your device. Your call.\n\nMeet Plivvi: free, open-source tools for everyday paperwork. Read, merge, sign and organize documents in your browser, with no required account. Document processing runs on your device; optional cloud connections are your choice.\n\nOpen it on your phone, tablet or laptop: plivvi.pages.dev\n\nBuilt by Ramtin Neshatvar. Try one real task and tell me where the app could be better.",
+  "carousel_caption": "A document tool should make the small jobs easier.\n\nPlivvi is free, open source and built around processing documents in your browser. Use it as a guest, or add the web app to your device for quicker access.\n\nSave this for the next time you need to merge, read or sign a PDF.\nplivvi.pages.dev"
+}

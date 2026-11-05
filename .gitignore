@@ -11,3 +11,4 @@ test-output/
 *.pem
 *.key
 public/source.zip
+marketing/output/

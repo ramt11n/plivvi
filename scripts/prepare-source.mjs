@@ -4,9 +4,15 @@ import { fileURLToPath } from 'node:url';
 import { zipSync, strToU8 } from 'fflate';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
   files = {};
-await writeFile(path.join(root,'src/lib/engine-info.json'), JSON.stringify({wasmBytes:(await stat(path.join(root,'node_modules/mupdf/dist/mupdf-wasm.wasm'))).size})+'\n');
+await writeFile(
+  path.join(root, 'src/lib/engine-info.json'),
+  JSON.stringify({
+    wasmBytes: (await stat(path.join(root, 'node_modules/mupdf/dist/mupdf-wasm.wasm'))).size,
+  }) + '\n',
+);
 const roots = [
   'src',
+  'marketing',
   'assets/comic',
   'public',
   'tests',
@@ -33,7 +39,12 @@ const roots = [
   '.gitignore',
 ];
 async function add(relative) {
-  if (relative === 'public/source.zip' || relative.endsWith('.tsbuildinfo')) return;
+  if (
+    relative === 'public/source.zip' ||
+    relative === 'marketing/output' ||
+    relative.endsWith('.tsbuildinfo')
+  )
+    return;
   const full = path.join(root, relative);
   try {
     for (const child of await readdir(full)) await add(`${relative}/${child}`);
