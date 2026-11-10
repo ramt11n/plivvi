@@ -64,6 +64,7 @@ export async function textDocument(
   size = 11,
   margin = 48,
   color = '#1f2633',
+  direction?: 'ltr' | 'rtl',
 ) {
   await unicodeFonts(m, text);
   const paragraphs = text
@@ -71,7 +72,7 @@ export async function textDocument(
     .map((line) =>
       line === '\f'
         ? '<div style="page-break-before:always"></div>'
-        : `<p dir="${textDirection(line)}">${escapeHTML(line.replace(/\t/g, '    ')) || '&#160;'}</p>`,
+        : `<p dir="${direction ?? textDirection(line)}"${direction === 'rtl' ? ' style="text-align:right"' : ''}>${escapeHTML(line.replace(/\t/g, '    ')) || '&#160;'}</p>`,
     )
     .join('');
   const html = `<html><head><meta charset="UTF-8"><style>@page{margin:${margin}pt}body{margin:0;font-family:sans-serif;font-size:${size}pt;color:${color};line-height:1.4}p{margin:0 0 ${size * 0.3}pt;white-space:pre-wrap;overflow-wrap:break-word}</style></head><body>${paragraphs}</body></html>`;

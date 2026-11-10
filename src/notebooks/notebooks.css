@@ -288,7 +288,7 @@
 }
 .paper-options {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
   gap: 9px;
 }
 .paper-options button {
@@ -318,6 +318,63 @@
 .paper-sample.ruled,
 .paper-sample.cornell {
   background: repeating-linear-gradient(white 0 8px, #d2dceb 8px 9px);
+}
+.paper-sample.dashed {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 6px,
+    #d6ddec 6px 7px,
+    transparent 7px 10px
+  );
+}
+.paper-sample.handwriting {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 4px,
+    #d6ddec 4px 5px,
+    transparent 5px 9px,
+    #d6ddec 9px 10px,
+    transparent 10px 14px,
+    #a7b6d3 14px 15px
+  );
+}
+.paper-controls {
+  min-width: 0;
+}
+.paper-swatches {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding: 4px 0 10px;
+}
+.paper-swatches button {
+  width: 31px;
+  height: 31px;
+  border: 1px solid #a1acc3;
+  border-radius: 50%;
+}
+.paper-swatches button[aria-pressed='true'] {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+.paper-control-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.paper-control-fields label {
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+}
+.paper-control-fields :is(select, input) {
+  width: 100%;
+  height: 36px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 4px 6px;
 }
 .paper-sample.grid {
   background-image:

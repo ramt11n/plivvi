@@ -2,15 +2,19 @@
   "reader": {
     "slug": "pdf-reader",
     "title": "Free PDF Reader & Editor",
-    "description": "Read PDFs, draw with Apple Pencil or a stylus, highlight passages, add text, and export annotated PDFs locally.",
+    "description": "Read PDFs and CBR comics, open direct file links, and use fullscreen reading or stylus writing. Annotate and export PDFs locally.",
     "heading": "Your quiet reading space, with room to think.",
     "steps": [
-      "Open a PDF or start with blank, lined, or graph paper.",
-      "Choose Select to copy text, or pick Pen, Highlighter, Text, Note, or Rectangle.",
+      "Open a PDF or CBR from your device, paste a direct file link, or start a new page.",
+      "Choose fullscreen reading, or write, draw lines, refine shapes, and mark up your pages.",
       "Adjust color and width. Use undo, search, bookmarks, and page navigation as you work.",
       "Download a PDF with portable annotations, or flatten a copy when you need a static result."
     ],
     "faqs": [
+      {
+        "q": "Can I read manga and comic archives?",
+        "a": "Yes. Open a CBR with JPG, PNG, or WebP pages, choose single-page or two-page reading, and switch the reading direction for manga."
+      },
       {
         "q": "Can I use Apple Pencil?",
         "a": "The reader accepts pen pointer events and pressure values where your device and browser provide them. Finger drawing is optional; stylus and touch behavior still depends on the hardware."

@@ -1,6 +1,6 @@
 import brand from '../brand.json';
 import { textDocument } from '../lib/unicode';
-import { notebookPDF, type Paper } from '../notebooks/model';
+import { notebookPDF, type Paper, type PaperSettings } from '../notebooks/model';
 import { mu, open, render } from '../lib/engine';
 import type { Input, Output } from '../lib/client';
 import {
@@ -75,12 +75,13 @@ export async function readerAppendPage(
   input: Input,
   password = '',
   paper: Paper = 'blank',
+  settings?: PaperSettings,
 ): Promise<Output> {
   const doc = await open(input, password);
   try {
     if (doc.countPages() >= 300)
       throw Error('This document has reached the 300-page browser limit.');
-    const source = new (await mu()).PDFDocument(await notebookPDF(paper));
+    const source = new (await mu()).PDFDocument(await notebookPDF(paper, 1, undefined, settings));
     try {
       doc.graftPage(-1, source, 0);
     } finally {
@@ -353,6 +354,7 @@ export async function exportAnnotations(
                 size,
                 0,
                 mark.color,
+                mark.direction,
               );
               try {
                 const page = shaped.loadPage(0),

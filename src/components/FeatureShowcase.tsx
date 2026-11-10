@@ -23,7 +23,7 @@ export const showcaseSlides = [
     accent: 'Ink it.',
     description:
       'Make a notebook that feels like yours. Write with Apple Pencil or a compatible digital pen, sketch, type, and add more pages.',
-    features: ['Pressure-aware ink', 'Five paper styles', 'PDF or image export'],
+    features: ['Pressure-aware ink', 'Custom paper and RTL layouts', 'PDF or image export'],
     action: 'Start a free notebook',
     tool: 'notebooks',
     asset: 'notebooks',
@@ -38,8 +38,8 @@ export const showcaseSlides = [
     title: 'Open it.',
     accent: 'Get lost in it.',
     description:
-      'Read PDFs or a colorful comic in the actual Plivvi reader. Turn pages, zoom in, and pick up where you left off.',
-    features: ['Comfortable page reading', 'Zoom + page navigation', 'Bookmarks and notes'],
+      'Open a PDF or CBR comic from your device or a direct file link. Read page by page or settle into a fullscreen spread.',
+    features: ['PDF and CBR comics', 'Fullscreen and two-page spreads', 'Left-to-right or right-to-left'],
     action: 'Open the PDF reader',
     tool: 'reader',
     asset: 'reader',

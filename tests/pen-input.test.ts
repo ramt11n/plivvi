@@ -84,7 +84,6 @@ async function mount(
           selected: null,
           onSelect: () => {},
           onMark,
-          onErase: () => {},
           onUpdate: () => {},
           onVisible: () => {},
         }),

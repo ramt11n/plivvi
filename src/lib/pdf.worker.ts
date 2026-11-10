@@ -68,11 +68,13 @@ async function prepareEngine(id: number) {
 async function handle({ data: { id, op, payload } }: MessageEvent) {
   try {
     let result: any;
-    if (op !== 'enhance') await prepareEngine(id);
+    if (op !== 'enhance' && op !== 'reader-comic') await prepareEngine(id);
     const progress = (label: string, percent?: number) =>
       self.postMessage({ id, progress: label, percent });
     progress('Preparing your document…', 45);
-    if (op === 'reader-open')
+    if (op === 'reader-comic')
+      result = await (await import('../reader/comic')).comicPDF(payload.input, progress);
+    else if (op === 'reader-open')
       result = await readerOpen(payload.input, payload.password, (done, total) =>
         progress(`Preparing page ${done} of ${total}…`, 45 + (50 * done) / total),
       );
@@ -89,7 +91,12 @@ async function handle({ data: { id, op, payload } }: MessageEvent) {
         payload.flatten,
       );
     else if (op === 'reader-add-page')
-      result = await readerAppendPage(payload.input, payload.password, payload.paper);
+      result = await readerAppendPage(
+        payload.input,
+        payload.password,
+        payload.paper,
+        payload.paperSettings,
+      );
     else if (op === 'reader-reorder')
       result = await readerReorder(payload.input, payload.password, payload.order);
     else if (op === 'reader-layout-text')

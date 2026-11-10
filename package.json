@@ -1,6 +1,6 @@
 {
   "name": "plivvi",
-  "version": "3.7.2",
+  "version": "3.8.0",
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-or-later",
@@ -21,6 +21,7 @@
     "firebase": "latest",
     "html-to-image": "latest",
     "idb-keyval": "latest",
+    "libarchive-wasm": "1.2.0",
     "lucide-react": "latest",
     "mammoth": "latest",
     "mupdf": "latest",

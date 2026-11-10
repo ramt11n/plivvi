@@ -2,8 +2,11 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { rpc } from '../lib/client';
 import InkStroke from './InkStroke';
 import { renderPage } from './renderQueue';
+import { eraseInk } from './eraseInk';
+import { patternLine, refineShape, type LinePattern, type ShapeStyle } from './shapes';
 import {
   pressureWidth,
+  penStyles,
   isStroke,
   strokePressure,
   type PenStyle,
@@ -25,11 +28,17 @@ type Props = {
   size: number;
   touchInk: boolean;
   penStyle: PenStyle;
+  eraserSize?: number;
+  wholeEraser?: boolean;
+  linePattern?: LinePattern;
+  shapeStyle?: ShapeStyle;
+  direction?: 'rtl' | 'ltr';
   penActivity?: PenActivity;
   selected: string | null;
   onSelect: (id: string | null) => void;
   onMark: (m: Mark) => void;
-  onErase: (id: string) => void;
+  onEraseInk?: (marks: Mark[]) => void;
+  onMarkGroup?: (marks: Mark[]) => void;
   onUpdate: (mark: Mark) => void;
   onVisible: (page: number) => void;
   searchQuads?: number[][];
@@ -58,6 +67,15 @@ export default function PDFPage(p: Props) {
     moveStart = useRef<{ pointer: number; start: InkPoint; original: Mark } | null>(null),
     localPen = useRef<PenActivity>({ pointer: null, until: 0 });
   const penActivity = p.penActivity ?? localPen.current;
+  const [erasePreview, setErasePreview] = useState<Mark[]>();
+  const eraseSession = useRef<{
+    original: Mark[];
+    marks: Mark[];
+    last: InkPoint;
+    frame?: number;
+  } | null>(null);
+  const eraserCursor = useRef<SVGCircleElement>(null);
+  const shownMarks = erasePreview ?? p.marks;
   useEffect(() => {
     const surface = root.current;
     if (!surface || p.tool === 'select') return;
@@ -133,6 +151,8 @@ export default function PDFPage(p: Props) {
   useEffect(
     () => () => {
       if (draftFrame.current !== null) cancelAnimationFrame(draftFrame.current);
+      if (eraseSession.current?.frame !== undefined)
+        cancelAnimationFrame(eraseSession.current.frame);
       if (active.current?.type === 'pen' && penActivity.pointer === active.current.pointer) {
         penActivity.pointer = null;
         penActivity.until = 0;
@@ -248,22 +268,42 @@ export default function PDFPage(p: Props) {
       tiltY: e.tiltY ?? 0,
     };
   }
+  function showEraser(q: InkPoint) {
+    const cursor = eraserCursor.current;
+    if (!cursor) return;
+    cursor.setAttribute('cx', String(q.x * p.width));
+    cursor.setAttribute('cy', String(q.y * p.height));
+    cursor.setAttribute('visibility', 'visible');
+  }
   function erase(q: InkPoint) {
-    for (const m of [...p.marks].reverse()) {
-      const hit = isStroke(m)
-        ? m.points.some(
-            (z) =>
-              Math.hypot((z.x - q.x) * p.width, (z.y - q.y) * p.height) < Math.max(12, m.size * 2),
-          )
-        : q.x >= m.rect.x &&
-          q.x <= m.rect.x + m.rect.w &&
-          q.y >= m.rect.y &&
-          q.y <= m.rect.y + m.rect.h;
-      if (hit) {
-        p.onErase(m.id);
-        break;
-      }
-    }
+    const state = eraseSession.current;
+    if (!state) return;
+    showEraser(q);
+    const next = eraseInk(
+      state.marks,
+      state.last,
+      q,
+      (p.eraserSize ?? 18) / 2,
+      p.width,
+      p.height,
+      p.wholeEraser,
+    );
+    state.last = q;
+    if (next === state.marks) return;
+    state.marks = next;
+    if (state.frame === undefined)
+      state.frame = requestAnimationFrame(() => {
+        state.frame = undefined;
+        setErasePreview(state.marks);
+      });
+  }
+  function finishErase() {
+    const state = eraseSession.current;
+    if (!state) return;
+    if (state.frame !== undefined) cancelAnimationFrame(state.frame);
+    eraseSession.current = null;
+    setErasePreview(undefined);
+    if (state.marks !== state.original) p.onEraseInk?.(state.marks);
   }
   function down(e: ReactPointerEvent<SVGSVGElement>) {
     if (p.tool === 'select') return;
@@ -280,6 +320,7 @@ export default function PDFPage(p: Props) {
       // Recover from a missing pointerup/lost capture before accepting the next pen stroke.
       if (active.current.type === 'pen' && isStroke(active.current.mark))
         p.onMark(active.current.mark);
+      if (active.current.mark.id === 'eraser') finishErase();
       active.current = null;
       clearPreview();
     }
@@ -292,6 +333,7 @@ export default function PDFPage(p: Props) {
     const bounds = svg.current!.getBoundingClientRect(),
       q = point(e, bounds);
     if (p.tool === 'eraser' || e.buttons & 32) {
+      eraseSession.current = { original: p.marks, marks: p.marks, last: q };
       erase(q);
       active.current = {
         pointer: e.pointerId,
@@ -303,7 +345,7 @@ export default function PDFPage(p: Props) {
       return;
     }
     const kind =
-      p.tool === 'pen'
+      p.tool === 'pen' || p.tool === 'line' || p.tool === 'shape'
         ? 'ink'
         : p.tool === 'highlighter'
           ? 'highlight-ink'
@@ -315,13 +357,26 @@ export default function PDFPage(p: Props) {
       color: p.color,
       size: p.size,
       opacity:
-        kind === 'highlight-ink' ? 0.32 : kind === 'ink' && p.penStyle === 'pencil' ? 0.72 : 1,
-      penStyle: p.penStyle,
+        kind === 'highlight-ink'
+          ? 0.32
+          : p.tool === 'pen'
+            ? penStyles.find((style) => style.id === p.penStyle)!.opacity
+            : 1,
+      penStyle: p.tool === 'line' || p.tool === 'shape' ? 'ballpoint' : p.penStyle,
+      direction: p.direction,
       points: [q],
       rect: {
-        x: q.x,
+        x:
+          kind === 'text' && p.direction === 'rtl'
+            ? Math.max(0, q.x - 0.4)
+            : Math.min(kind === 'text' ? 0.97 : 1, q.x),
         y: q.y,
-        w: kind === 'text' ? Math.min(0.4, 1 - q.x) : kind === 'note' ? 0.035 : 0,
+        w:
+          kind === 'text'
+            ? Math.max(0.03, Math.min(0.4, p.direction === 'rtl' ? q.x : 1 - q.x))
+            : kind === 'note'
+              ? 0.035
+              : 0,
         h: kind === 'text' ? 0.08 : kind === 'note' ? 0.035 : 0,
       },
       text: kind === 'text' ? 'Your text' : kind === 'note' ? 'Your note' : '',
@@ -348,6 +403,7 @@ export default function PDFPage(p: Props) {
     p.onSelect(null);
   }
   function move(e: ReactPointerEvent<SVGSVGElement>) {
+    if (p.tool === 'eraser' && e.pointerType !== 'touch') showEraser(point(e));
     const drag = moveStart.current;
     if (drag?.pointer === e.pointerId) {
       e.preventDefault();
@@ -370,7 +426,7 @@ export default function PDFPage(p: Props) {
     e.preventDefault();
     if (e.pointerType === 'pen') penActivity.until = performance.now() + 600;
     if (current.mark.id === 'eraser') {
-      erase(point(e));
+      erase(point(e, current.bounds));
       return;
     }
     if (isStroke(current.mark)) {
@@ -429,6 +485,32 @@ export default function PDFPage(p: Props) {
     }
     active.current = null;
     clearPreview();
+    if (current.mark.id === 'eraser') {
+      if (!cancel) erase(point(e, current.bounds));
+      finishErase();
+      return;
+    }
+    if (!cancel && isStroke(current.mark) && (p.tool === 'line' || p.tool === 'shape')) {
+      const mark = current.mark;
+      const points = refineShape(
+        mark.points,
+        p.width,
+        p.height,
+        p.tool === 'line' ? 'line' : (p.shapeStyle ?? 'auto'),
+      );
+      const parts =
+        p.tool === 'line'
+          ? patternLine(points, p.linePattern ?? 'solid', p.size, p.width, p.height)
+          : [points];
+      const result = parts.map((points, i) => ({
+        ...mark,
+        id: i ? crypto.randomUUID() : mark.id,
+        points,
+      }));
+      if (p.onMarkGroup) p.onMarkGroup(result);
+      else p.onMark(result[0]);
+      return;
+    }
     if (
       current.mark.id !== 'eraser' &&
       (isStroke(current.mark) ||
@@ -487,7 +569,7 @@ export default function PDFPage(p: Props) {
             overflow="visible"
           >
             <div
-              dir="auto"
+              dir={m.direction ?? 'auto'}
               style={{
                 color: m.color,
                 fontSize: m.size,
@@ -495,7 +577,7 @@ export default function PDFPage(p: Props) {
                 lineHeight: 1.7,
                 whiteSpace: 'pre-wrap',
                 overflowWrap: 'anywhere',
-                unicodeBidi: 'plaintext',
+                unicodeBidi: m.direction ? 'normal' : 'plaintext',
                 textAlign: 'start',
               }}
             >
@@ -586,7 +668,7 @@ export default function PDFPage(p: Props) {
         aria-hidden="true"
       >
         {near &&
-          p.marks.filter((m) => m.kind === 'highlight-ink' || m.kind === 'highlight').map(draw)}
+          shownMarks.filter((m) => m.kind === 'highlight-ink' || m.kind === 'highlight').map(draw)}
       </svg>
       <svg
         ref={svg}
@@ -601,6 +683,7 @@ export default function PDFPage(p: Props) {
         onPointerUp={(e) => end(e)}
         onPointerCancel={(e) => end(e, true)}
         onLostPointerCapture={(e) => end(e, true)}
+        onPointerLeave={() => eraserCursor.current?.setAttribute('visibility', 'hidden')}
         onContextMenu={(e) => {
           if (p.tool !== 'select') e.preventDefault();
         }}
@@ -624,8 +707,16 @@ export default function PDFPage(p: Props) {
           );
         })}
         {near &&
-          p.marks.filter((m) => m.kind !== 'highlight-ink' && m.kind !== 'highlight').map(draw)}
+          shownMarks.filter((m) => m.kind !== 'highlight-ink' && m.kind !== 'highlight').map(draw)}
         {draft && draw(draft)}
+        <circle
+          ref={eraserCursor}
+          visibility="hidden"
+          r={(p.eraserSize ?? 18) / 2}
+          className="reader-eraser-cursor"
+          vectorEffect="non-scaling-stroke"
+          aria-hidden="true"
+        />
       </svg>
       <canvas
         ref={inkCanvas}

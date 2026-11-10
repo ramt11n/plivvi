@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import {
   changeNotebook,
+  defaultPaper,
+  paperStyles as papers,
   notebookPDF,
   readNotebooks,
   saveNotebookDraft,
@@ -23,15 +25,9 @@ import LoadingProgress from '../components/LoadingProgress';
 import { readFile } from '../lib/readFile';
 import { download, type Output } from '../lib/client';
 import type { Mark } from '../reader/types';
+import PaperControls from './PaperControls';
 const PDFReader = lazy(() => import('../reader/PDFReader'));
 const covers = ['#3659e3', '#35916f', '#ce725d', '#8972ba', '#25344f', '#ca9848'];
-const papers: [Paper, string][] = [
-  ['ruled', 'Ruled'],
-  ['dots', 'Dotted'],
-  ['grid', 'Grid'],
-  ['cornell', 'Cornell'],
-  ['blank', 'Blank'],
-];
 export default function Notebooks({
   workspace,
   onSave,
@@ -49,6 +45,7 @@ export default function Notebooks({
     [creating, setCreating] = useState(false),
     [title, setTitle] = useState('My next big idea'),
     [paper, setPaper] = useState<Paper>('ruled'),
+    [paperSettings, setPaperSettings] = useState(defaultPaper),
     [color, setColor] = useState(covers[0]),
     [count, setCount] = useState(3),
     [busy, setBusy] = useState(false),
@@ -106,11 +103,16 @@ export default function Notebooks({
         );
         setEditing(undefined);
       } else {
-        const data = await notebookPDF(paper, count, (done, total) =>
-            setCreationProgress({
-              label: `Creating pages · ${done} of ${total}`,
-              value: 5 + (done / total) * 85,
-            }),
+        const data = await notebookPDF(
+            paper,
+            count,
+            (done, total) => {
+              setCreationProgress({
+                label: `Creating pages · ${done} of ${total}`,
+                value: 5 + (done / total) * 85,
+              });
+            },
+            paperSettings,
           ),
           now = new Date().toISOString(),
           book: Notebook = {
@@ -118,6 +120,7 @@ export default function Notebooks({
             title: title.trim() || 'Untitled notebook',
             color,
             paper,
+            paperSettings,
             data,
             marks: [],
             updated: now,
@@ -421,6 +424,7 @@ export default function Notebooks({
                     ))}
                   </div>
                 </fieldset>
+                <PaperControls value={paperSettings} onChange={setPaperSettings} />
                 <label>
                   Starting pages
                   <input
@@ -491,6 +495,7 @@ export default function Notebooks({
               id: active.id,
               marks: active.marks,
               paper: active.paper,
+              paperSettings: active.paperSettings,
               onDraft: saveDraft,
             }}
             onClose={() => setActive(undefined)}

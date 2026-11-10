@@ -15,6 +15,11 @@ import {
   List,
   LoaderCircle,
   Maximize2,
+  Minimize2,
+  Link2,
+  Minus,
+  Shapes,
+  SlidersHorizontal,
   MessageSquare,
   MousePointer2,
   PanelLeftClose,
@@ -46,7 +51,17 @@ import { bindNavigation, type NavigationPoint } from './navigation';
 import PenGuide from './PenGuide';
 import { captureZoomAnchor, restoreZoomAnchor, type ZoomAnchor } from './zoomAnchor';
 import PageThumbnail from './PageThumbnail';
-import { notebookPDF, type Paper } from '../notebooks/model';
+import {
+  defaultPaper,
+  notebookPDF,
+  paperStyles,
+  type Paper,
+  type PaperSettings,
+} from '../notebooks/model';
+import PaperControls from '../notebooks/PaperControls';
+import PenPicker from './PenPicker';
+import { fetchReaderFile, isComicFile, readerAccept, readerFileLimit } from './sources';
+import type { LinePattern, ShapeStyle } from './shapes';
 import { readerDraftKey } from '../lib/workspace';
 import { brand } from '../integrations/config';
 import ThemePicker from '../components/ThemePicker';
@@ -61,6 +76,7 @@ type Props = {
     id: string;
     marks: Mark[];
     paper: Paper;
+    paperSettings?: PaperSettings;
     onDraft: (marks: Mark[], data: ArrayBuffer) => Promise<void>;
   };
 };
@@ -69,6 +85,8 @@ const palette = ['#28344b', '#6965d8', '#267ba8', '#b94c62', '#278466', '#e8bc32
 const tools: { id: ReaderTool; name: string; icon: typeof PenLine }[] = [
   { id: 'select', name: 'Select text', icon: MousePointer2 },
   { id: 'pen', name: 'Pen', icon: PenLine },
+  { id: 'line', name: 'Straight line', icon: Minus },
+  { id: 'shape', name: 'Smart shapes', icon: Shapes },
   { id: 'highlighter', name: 'Highlighter', icon: Highlighter },
   { id: 'text', name: 'Type text', icon: Type },
   { id: 'note', name: 'Sticky note', icon: MessageSquare },
@@ -106,7 +124,10 @@ export default function PDFReader({
     [cursor, setCursor] = useState(0),
     [zoom, setZoom] = useState(100),
     [fit, setFit] = useState<'width' | 'page' | 'manual'>('width'),
-    [continuous, setContinuous] = useState(true),
+    [layout, setLayout] = useState<'continuous' | 'single' | 'spread'>('continuous'),
+    [direction, setDirection] = useState<'ltr' | 'rtl'>(
+      notebook?.paperSettings?.direction ?? 'ltr',
+    ),
     [query, setQuery] = useState(''),
     [hits, setHits] = useState<{ page: number; count: number; quads: number[][] }[]>([]),
     [searching, setSearching] = useState(false),
@@ -122,6 +143,32 @@ export default function PDFReader({
   const [exportFormat, setExportFormat] = useState('pdf');
   const [penStyle, setPenStyle] = useState<PenStyle>('fountain');
   const [paper, setPaper] = useState<Paper>(notebook?.paper ?? 'blank');
+  const [paperSettings, setPaperSettings] = useState(notebook?.paperSettings ?? defaultPaper);
+  const [paperOpen, setPaperOpen] = useState(false);
+  const [comic, setComic] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [link, setLink] = useState('');
+  const [linkProgress, setLinkProgress] = useState<number | undefined>();
+  const [fetchingLink, setFetchingLink] = useState(false);
+  const [focus, setFocus] = useState<'read' | 'write' | null>(null);
+  const [quickTools, setQuickTools] = useState(false);
+  const [eraserSize, setEraserSize] = useState(18);
+  const [wholeEraser, setWholeEraser] = useState(false);
+  const [linePattern, setLinePattern] = useState<LinePattern>('solid');
+  const [shapeStyle, setShapeStyle] = useState<ShapeStyle>('auto');
+  const remote = useRef<AbortController | null>(null);
+  const shell = useRef<HTMLElement>(null);
+  const previousTool = useRef<ReaderTool>('pen');
+  const swipe = useRef<{ id: number; x: number; y: number } | null>(null);
+  const continuous = layout === 'continuous';
+  const spread = layout === 'spread' && viewport.width >= 600;
+  const spreadStart = spread && page > 0 ? 1 + 2 * Math.floor((page - 1) / 2) : page;
+  const spreadPages =
+    info && spread && spreadStart > 0 && spreadStart + 1 < info.count
+      ? [spreadStart, spreadStart + 1]
+      : [spreadStart];
+  const previousPage = spread ? (spreadStart === 1 ? 0 : spreadStart - 2) : page - 1;
+  const nextPage = spread ? spreadPages.at(-1)! + 1 : page + 1;
   const notebookRef = useRef(notebook);
   notebookRef.current = notebook;
   const pendingLayouts = useRef(new Set<string>());
@@ -141,6 +188,7 @@ export default function PDFReader({
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previous;
+      remote.current?.abort();
     };
   }, []);
 
@@ -178,11 +226,28 @@ export default function PDFReader({
     setHits([]);
     setSelected(null);
     (async () => {
-      if (file.size > 256 * 1048576)
+      const archive = isComicFile(file);
+      if (file.size > (archive ? 96 * 1048576 : readerFileLimit))
         throw Error(
-          'Choose a PDF smaller than 256 MB. Large files also need enough memory on your device.',
+          archive ? 'Choose a CBR smaller than 96 MB.' : 'Choose a PDF smaller than 256 MB.',
         );
-      const data = (await inputs([file], (p) => alive && setLoadingPercent(p * 0.15)))[0];
+      const source = (await inputs([file], (p) => alive && setLoadingPercent(p * 0.12)))[0];
+      if (!alive) return;
+      const data = archive
+        ? await rpc<Input>('reader-comic', { input: source }, (label, percent) => {
+            if (!alive) return;
+            setLoadingStage(label);
+            if (percent !== undefined) setLoadingPercent(12 + percent * 0.43);
+          })
+        : source;
+      if (!alive) return;
+      if (archive) {
+        setComic(true);
+        setLayout('single');
+        setFit('page');
+        setSidebar(null);
+        setTool('select');
+      }
       raw.current = data;
       if (alive) setLoadingStage('Starting the PDF engine and preparing pages…');
       const r = await rpc<ReaderInfo>(
@@ -191,7 +256,8 @@ export default function PDFReader({
         (label, percent) => {
           if (alive) {
             setLoadingStage(label);
-            if (percent !== undefined) setLoadingPercent(15 + percent * 0.8);
+            if (percent !== undefined)
+              setLoadingPercent(archive ? 56 + percent * 0.39 : 15 + percent * 0.8);
           }
         },
       );
@@ -205,7 +271,8 @@ export default function PDFReader({
         setLoadingStage('Restoring saved handwriting and bookmarks…');
         setLoadingPercent(95);
       }
-      const key = await readerDraftKey(workspace, data.data);
+      const key = await readerDraftKey(workspace, source.data);
+      if (!alive) return;
       setDraftKey(key);
       try {
         const { get } = await import('../lib/storage'),
@@ -336,24 +403,138 @@ export default function PDFReader({
     setJump(String(index + 1));
   }, []);
   function go(index: number) {
-    if (!info) return;
-    const next = Math.max(0, Math.min(info.count - 1, index));
+    if (!info || !Number.isFinite(index)) return;
+    const next = Math.max(0, Math.min(info.count - 1, Math.trunc(index)));
     setPage(next);
     setJump(String(next + 1));
     if (continuous)
       document
         .getElementById(`reader-page-${next}`)
         ?.scrollIntoView({ block: 'start', behavior: 'instant' });
+    else if (!spread || next < spreadStart || next > spreadPages.at(-1)!)
+      scroller.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }
   function scaleFor(index: number) {
     if (!info) return 1;
     const p = info.pages[index];
+    const pair = !continuous && spreadPages.length > 1;
+    const availableWidth = Math.max(120, viewport.width - (viewport.width < 600 ? 26 : 76));
+    const pageWidth = pair
+      ? spreadPages.reduce((total, i) => total + info.pages[i].width, 0)
+      : p.width;
+    const pageHeight = pair ? Math.max(...spreadPages.map((i) => info.pages[i].height)) : p.height;
+    const widthScale = (availableWidth - (pair ? 12 : 0)) / pageWidth;
     return fit === 'manual'
       ? zoom / 100
       : fit === 'page'
-        ? Math.min((viewport.width - 56) / p.width, (viewport.height - 55) / p.height)
-        : Math.min(1.65, (viewport.width - (viewport.width < 600 ? 26 : 76)) / p.width);
+        ? Math.min(widthScale, Math.max(100, viewport.height - 55) / pageHeight)
+        : Math.min(1.65, widthScale);
   }
+  function chooseTool(next: ReaderTool) {
+    setSelected(null);
+    if (next === 'eraser' && tool !== 'eraser' && tool !== 'select') previousTool.current = tool;
+    setTool(next);
+    if (tool === 'eraser' && next === previousTool.current) return;
+    if (next === 'highlighter') {
+      setColor('#ffe566');
+      setSize(16);
+    } else if (next === 'pen' || next === 'line' || next === 'shape') {
+      setColor(palette[0]);
+      setSize(2.5);
+    } else if (next === 'text') setSize(18);
+  }
+  function openFile(next: File) {
+    remote.current?.abort();
+    setComic(false);
+    setLinkOpen(false);
+    setLink('');
+    setFocus(null);
+    setQuickTools(false);
+    setPassword('');
+    setFile(next);
+  }
+  async function openLink() {
+    remote.current?.abort();
+    const controller = new AbortController();
+    remote.current = controller;
+    const timeout = setTimeout(() => controller.abort('timeout'), 45000);
+    setFetchingLink(true);
+    setLinkProgress(undefined);
+    setError('');
+    try {
+      const downloaded = await fetchReaderFile(link, controller.signal, setLinkProgress);
+      if (!controller.signal.aborted) openFile(downloaded);
+    } catch (error) {
+      if (controller.signal.reason === 'timeout')
+        setError('The download took too long. Check the link and try again.');
+      else if (!controller.signal.aborted) setError((error as Error).message);
+    } finally {
+      clearTimeout(timeout);
+      if (remote.current === controller) {
+        remote.current = null;
+        setFetchingLink(false);
+      }
+    }
+  }
+  function exitFocus() {
+    setFocus(null);
+    setQuickTools(false);
+    if (document.fullscreenElement === shell.current)
+      void document.exitFullscreen().catch(() => {});
+  }
+  function enterFocus(mode: 'read' | 'write') {
+    setFocus(mode);
+    setQuickTools(false);
+    setAppearance(false);
+    setPaperOpen(false);
+    if (mode === 'read') {
+      chooseTool('select');
+      if (continuous && comic) setLayout('single');
+      if (comic) setFit('page');
+    } else if (tool === 'select') chooseTool('pen');
+    if (
+      document.fullscreenEnabled &&
+      shell.current?.requestFullscreen &&
+      !document.fullscreenElement
+    )
+      void shell.current.requestFullscreen().catch(() => {});
+  }
+  useEffect(() => {
+    if (!focus) return;
+    let wasFullscreen = document.fullscreenElement === shell.current;
+    const sync = () => {
+      const isFullscreen = document.fullscreenElement === shell.current;
+      if (wasFullscreen && !isFullscreen) {
+        setFocus(null);
+        setQuickTools(false);
+      }
+      wasFullscreen = isFullscreen;
+    };
+    document.addEventListener('fullscreenchange', sync);
+    return () => document.removeEventListener('fullscreenchange', sync);
+  }, [focus]);
+  useEffect(() => {
+    function navigate(e: KeyboardEvent) {
+      if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Escape' && focus) {
+        if (quickTools) setQuickTools(false);
+        else exitFocus();
+        return;
+      }
+      if (
+        !info ||
+        continuous ||
+        (e.target as HTMLElement)?.closest('input,textarea,select,button,[contenteditable]')
+      )
+        return;
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        go((e.key === 'ArrowRight') !== (direction === 'rtl') ? nextPage : previousPage);
+      }
+    }
+    window.addEventListener('keydown', navigate);
+    return () => window.removeEventListener('keydown', navigate);
+  }, [info, continuous, focus, quickTools, direction, previousPage, nextPage]);
   const zoomAnchor = useRef<ZoomAnchor | null>(null);
   const navigationSession = useRef<{
     anchor: ZoomAnchor;
@@ -531,7 +712,12 @@ export default function PDFReader({
     if (!raw.current || !info) return;
     setBusy('page');
     try {
-      const out = await rpc<Output>('reader-add-page', { input: raw.current, password, paper });
+      const out = await rpc<Output>('reader-add-page', {
+        input: raw.current,
+        password,
+        paper,
+        paperSettings,
+      });
       carry.current = marks;
       pendingPage.current = info.count;
       setFile(new File([out.data as BlobPart], out.name, { type: out.type }));
@@ -611,22 +797,20 @@ export default function PDFReader({
   const chosen = selectedMark ?? { color, size };
   return (
     <section
-      className="reader-shell"
+      ref={shell}
+      className={`reader-shell ${focus ? 'reader-focus reader-focus-' + focus : ''} ${quickTools ? 'reader-quick-open' : ''}`}
       role="dialog"
       aria-modal="true"
       aria-label={`${brand.name} ${notebook ? 'notebook' : 'PDF reader and editor'}`}
     >
       <input
         type="file"
-        accept="application/pdf,.pdf"
+        accept={notebook ? '.pdf,application/pdf' : readerAccept}
         ref={input}
         hidden
         onChange={(e) => {
           const f = e.target.files?.[0];
-          if (f) {
-            setPassword('');
-            setFile(f);
-          }
+          if (f) openFile(f);
           e.target.value = '';
         }}
       />
@@ -697,11 +881,22 @@ export default function PDFReader({
         <span className="reader-free-badge">Free & open source</span>
         <button
           className="reader-icon"
-          aria-label="Open another PDF"
+          aria-label={notebook ? 'Open another PDF' : 'Open a PDF or CBR'}
           onClick={() => input.current?.click()}
         >
           <Upload size={19} />
         </button>
+        {!notebook && (
+          <button
+            className="reader-icon"
+            aria-label="Open from link"
+            aria-expanded={linkOpen}
+            title="Open from link"
+            onClick={() => setLinkOpen(!linkOpen)}
+          >
+            <Link2 size={19} />
+          </button>
+        )}
         <button
           className="reader-icon"
           aria-label="New blank document"
@@ -763,6 +958,199 @@ export default function PDFReader({
           <span>Download</span>
         </button>
       </header>
+      {info && focus && (
+        <div
+          className="reader-focus-toolbar"
+          role="toolbar"
+          aria-label={focus === 'read' ? 'Reading quick tools' : 'Writing quick tools'}
+        >
+          {focus === 'read' ? (
+            <>
+              <button
+                className="reader-icon"
+                aria-label="Previous page"
+                title="Previous page"
+                disabled={page === 0}
+                onClick={() => go(previousPage)}
+              >
+                {direction === 'rtl' ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+              </button>
+              <span className="reader-focus-counter">
+                {spread && spreadPages.length > 1 ? `${spreadStart + 1}–${nextPage}` : page + 1} /{' '}
+                {info.count}
+              </span>
+              <button
+                className="reader-icon"
+                aria-label="Next page"
+                title="Next page"
+                disabled={nextPage >= info.count}
+                onClick={() => go(nextPage)}
+              >
+                {direction === 'rtl' ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+              </button>
+              <button
+                className="reader-icon"
+                aria-label="Fit page"
+                title="Fit page"
+                onClick={() => setFit('page')}
+              >
+                <BookOpen size={18} />
+              </button>
+              <button
+                className="reader-icon"
+                aria-label="Zoom in"
+                title="Zoom in"
+                onClick={() => changeZoom(1.2)}
+              >
+                <ZoomIn size={18} />
+              </button>
+              <button
+                className="reader-icon"
+                aria-label="Bookmark this page"
+                title="Bookmark this page"
+                aria-pressed={bookmarks.includes(page)}
+                onClick={bookmark}
+              >
+                <Bookmark size={18} />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="reader-icon"
+                aria-label={tool === 'eraser' ? 'Return to writing tool' : 'Switch to eraser'}
+                title={tool === 'eraser' ? 'Return to writing tool' : 'Switch to eraser'}
+                aria-pressed={tool === 'eraser'}
+                onClick={() => chooseTool(tool === 'eraser' ? previousTool.current : 'eraser')}
+              >
+                {tool === 'eraser' ? <PenLine size={19} /> : <Eraser size={19} />}
+              </button>
+              <button
+                className="reader-icon"
+                aria-label="Writing tools"
+                title="Writing tools"
+                aria-expanded={quickTools}
+                onClick={() => setQuickTools(!quickTools)}
+              >
+                <SlidersHorizontal size={18} />
+              </button>
+              <button
+                className="reader-icon"
+                aria-label="Undo annotation"
+                title="Undo annotation"
+                disabled={!cursor}
+                onClick={undo}
+              >
+                <Undo2 size={18} />
+              </button>
+              <button
+                className="reader-icon"
+                aria-label="Redo annotation"
+                title="Redo annotation"
+                disabled={cursor >= history.length - 1}
+                onClick={redo}
+              >
+                <Redo2 size={18} />
+              </button>
+              <button
+                className="reader-icon"
+                aria-label="Add page"
+                title="Add page"
+                disabled={!!busy || info.count >= 300}
+                onClick={appendPage}
+              >
+                <Plus size={18} />
+              </button>
+            </>
+          )}
+          <button
+            className="reader-icon reader-focus-exit"
+            aria-label="Exit fullscreen"
+            title="Exit fullscreen"
+            onClick={exitFocus}
+          >
+            <Minimize2 size={19} />
+          </button>
+        </div>
+      )}
+      {info && focus === 'write' && quickTools && (
+        <div className="reader-quick-palette" role="group" aria-label="Quick writing tool choices">
+          {tools.map((item) => (
+            <button
+              key={item.id}
+              className="reader-icon"
+              aria-label={item.name}
+              title={item.name}
+              aria-pressed={tool === item.id}
+              onClick={() => chooseTool(item.id)}
+            >
+              <item.icon size={19} />
+            </button>
+          ))}
+          <button
+            className="reader-icon"
+            aria-label="Previous page"
+            title="Previous page"
+            disabled={page === 0}
+            onClick={() => go(previousPage)}
+          >
+            {direction === 'rtl' ? <ChevronRight size={19} /> : <ChevronLeft size={19} />}
+          </button>
+          <button
+            className="reader-icon"
+            aria-label="Next page"
+            title="Next page"
+            disabled={nextPage >= info.count}
+            onClick={() => go(nextPage)}
+          >
+            {direction === 'rtl' ? <ChevronLeft size={19} /> : <ChevronRight size={19} />}
+          </button>
+        </div>
+      )}
+      {linkOpen && !notebook && (
+        <form
+          className="reader-link-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!fetchingLink) void openLink();
+          }}
+        >
+          <label>
+            Direct PDF or CBR link
+            <input
+              type="url"
+              value={link}
+              required
+              placeholder="https://example.com/comic.cbr"
+              spellCheck={false}
+              autoComplete="off"
+              onChange={(e) => setLink(e.target.value)}
+            />
+          </label>
+          <button className="button primary" disabled={fetchingLink}>
+            Open link
+          </button>
+          <button
+            type="button"
+            className="reader-icon"
+            title="Close link form"
+            aria-label="Close link form"
+            onClick={() => {
+              remote.current?.abort();
+              setLinkOpen(false);
+            }}
+          >
+            <X size={18} />
+          </button>
+          {fetchingLink ? (
+            <LoadingProgress label="Downloading from the file host…" value={linkProgress} />
+          ) : (
+            <small>
+              Use a public HTTPS file link. Some sites block downloads from other websites.
+            </small>
+          )}
+        </form>
+      )}
       {appearance && (
         <div className="reader-theme-popover">
           <ThemePicker />
@@ -798,17 +1186,7 @@ export default function PDFReader({
                   title={t.name}
                   aria-label={t.name}
                   aria-pressed={tool === t.id}
-                  onClick={() => {
-                    setTool(t.id);
-                    if (t.id === 'highlighter') {
-                      setColor('#ffe566');
-                      setSize(16);
-                    } else if (t.id === 'pen') {
-                      setColor('#28344b');
-                      setSize(2.5);
-                    }
-                    if (t.id === 'text') setSize(18);
-                  }}
+                  onClick={() => chooseTool(t.id)}
                 >
                   <t.icon size={18} />
                   <span>
@@ -875,80 +1253,128 @@ export default function PDFReader({
           </div>
           {(tool !== 'select' || selectedMark) && (
             <div className="reader-properties">
-              {tool === 'pen' && (
-                <label className="reader-weight">
-                  Pen
-                  <select
-                    aria-label="Pen style"
-                    value={penStyle}
-                    onChange={(e) => setPenStyle(e.target.value as PenStyle)}
-                  >
-                    <option value="fountain">Fountain</option>
-                    <option value="ballpoint">Ballpoint</option>
-                    <option value="pencil">Pencil · tilt shading</option>
-                  </select>
-                </label>
+              {tool === 'eraser' ? (
+                <>
+                  <label className="reader-weight">
+                    Eraser
+                    <select
+                      aria-label="Eraser type"
+                      value={wholeEraser ? 'whole' : 'point'}
+                      onChange={(e) => setWholeEraser(e.target.value === 'whole')}
+                    >
+                      <option value="point">Precision</option>
+                      <option value="whole">Whole stroke</option>
+                    </select>
+                  </label>
+                  <label className="reader-weight">
+                    Size
+                    <input
+                      aria-label="Eraser size"
+                      type="range"
+                      min="3"
+                      max="60"
+                      value={eraserSize}
+                      onChange={(e) => setEraserSize(Number(e.target.value))}
+                    />
+                    <span>{eraserSize} pt</span>
+                  </label>
+                </>
+              ) : (
+                <>
+                  {tool === 'pen' && <PenPicker value={penStyle} onChange={setPenStyle} />}
+                  {tool === 'line' && (
+                    <label className="reader-weight">
+                      Line pattern
+                      <select
+                        value={linePattern}
+                        onChange={(e) => setLinePattern(e.target.value as LinePattern)}
+                      >
+                        <option value="solid">Solid</option>
+                        <option value="dash">Dashed</option>
+                        <option value="dot">Dotted</option>
+                      </select>
+                    </label>
+                  )}
+                  {tool === 'shape' && (
+                    <label className="reader-weight">
+                      Shape
+                      <select
+                        value={shapeStyle}
+                        onChange={(e) => setShapeStyle(e.target.value as ShapeStyle)}
+                      >
+                        <option value="auto">Recognize sketch</option>
+                        <option value="rectangle">Rectangle</option>
+                        <option value="ellipse">Ellipse</option>
+                        <option value="triangle">Triangle</option>
+                      </select>
+                    </label>
+                  )}
+                  <div className="ink-colors" aria-label="Ink colors">
+                    {(tool === 'highlighter' || selectedMark?.kind === 'highlight-ink'
+                      ? highlightPalette
+                      : palette
+                    ).map((c) => (
+                      <button
+                        key={c}
+                        aria-label={`Use ${c} ink`}
+                        className={chosen.color === c ? 'active' : ''}
+                        style={{ background: c }}
+                        onClick={() => {
+                          setColor(c);
+                          if (selectedMark)
+                            commit((old) =>
+                              old.map((m) => (m.id === selected ? { ...m, color: c } : m)),
+                            );
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <label className="reader-custom-color">
+                    Custom color
+                    <input
+                      type="color"
+                      aria-label="Custom annotation color"
+                      value={chosen.color}
+                      onChange={(e) => {
+                        setColor(e.target.value);
+                        if (selectedMark)
+                          commit((old) =>
+                            old.map((m) =>
+                              m.id === selected ? { ...m, color: e.target.value } : m,
+                            ),
+                          );
+                      }}
+                    />
+                  </label>
+                  <label className="reader-weight">
+                    {tool === 'text' || selectedMark?.kind === 'text' ? 'Text size' : 'Stroke'}
+                    <input
+                      aria-label="Annotation size"
+                      type="range"
+                      min="1"
+                      max={
+                        tool === 'text' || selectedMark?.kind === 'text'
+                          ? 48
+                          : tool === 'highlighter' || selectedMark?.kind === 'highlight-ink'
+                            ? 40
+                            : 12
+                      }
+                      step=".5"
+                      value={chosen.size}
+                      onChange={(e) => {
+                        setSize(+e.target.value);
+                        if (selectedMark)
+                          commit((old) =>
+                            old.map((m) =>
+                              m.id === selected ? { ...m, size: +e.target.value } : m,
+                            ),
+                          );
+                      }}
+                    />
+                    <span>{chosen.size} pt</span>
+                  </label>
+                </>
               )}
-              <div className="ink-colors" aria-label="Ink colors">
-                {(tool === 'highlighter' || selectedMark?.kind === 'highlight-ink'
-                  ? highlightPalette
-                  : palette
-                ).map((c) => (
-                  <button
-                    key={c}
-                    aria-label={`Use ${c} ink`}
-                    className={chosen.color === c ? 'active' : ''}
-                    style={{ background: c }}
-                    onClick={() => {
-                      setColor(c);
-                      if (selectedMark)
-                        commit((old) =>
-                          old.map((m) => (m.id === selected ? { ...m, color: c } : m)),
-                        );
-                    }}
-                  />
-                ))}
-              </div>
-              <label className="reader-custom-color">
-                Custom color
-                <input
-                  type="color"
-                  aria-label="Custom annotation color"
-                  value={chosen.color}
-                  onChange={(e) => {
-                    setColor(e.target.value);
-                    if (selectedMark)
-                      commit((old) =>
-                        old.map((m) => (m.id === selected ? { ...m, color: e.target.value } : m)),
-                      );
-                  }}
-                />
-              </label>
-              <label className="reader-weight">
-                {tool === 'text' || selectedMark?.kind === 'text' ? 'Text size' : 'Stroke'}
-                <input
-                  aria-label="Annotation size"
-                  type="range"
-                  min="1"
-                  max={
-                    tool === 'text' || selectedMark?.kind === 'text'
-                      ? 48
-                      : tool === 'highlighter' || selectedMark?.kind === 'highlight-ink'
-                        ? 40
-                        : 12
-                  }
-                  step=".5"
-                  value={chosen.size}
-                  onChange={(e) => {
-                    setSize(+e.target.value);
-                    if (selectedMark)
-                      commit((old) =>
-                        old.map((m) => (m.id === selected ? { ...m, size: +e.target.value } : m)),
-                      );
-                  }}
-                />
-                <span>{chosen.size} pt</span>
-              </label>
               <label className="reader-touch">
                 <input
                   type="checkbox"
@@ -1004,7 +1430,7 @@ export default function PDFReader({
           <span className="eyebrow">A SMALL SPACE FOR BIG IDEAS</span>
           <h1>Read it. Mark it. Make it yours.</h1>
           <p>
-            A quiet PDF reader with a useful creative side.
+            A quiet reader for PDFs and CBR comics.
             <br />
             Highlight a thought, write in the margin, or start a fresh page.
           </p>
@@ -1032,8 +1458,13 @@ export default function PDFReader({
             <>
               <button className="button primary" onClick={() => input.current?.click()}>
                 <Upload size={17} />
-                Open a PDF
+                Open a PDF or CBR
               </button>
+              {!linkOpen && (
+                <button className="button secondary" onClick={() => setLinkOpen(true)}>
+                  <Link2 size={17} /> Paste a file link
+                </button>
+              )}
               <div className="reader-new-options">
                 <button onClick={() => newDocument('blank')}>
                   Blank page <Plus size={14} />
@@ -1244,11 +1675,37 @@ export default function PDFReader({
             </aside>
           )}
           <div
-            className={`reader-scroll ${tool !== 'select' ? 'reader-writing' : ''}`}
+            className={`reader-scroll ${tool !== 'select' ? 'reader-writing' : !continuous && fit !== 'manual' ? 'reader-swipe' : ''}`}
             ref={scroller}
+            onPointerDown={(e) => {
+              swipe.current = null;
+              if (
+                e.pointerType === 'touch' &&
+                e.isPrimary &&
+                !continuous &&
+                tool === 'select' &&
+                e.currentTarget.scrollWidth <= e.currentTarget.clientWidth + 2
+              )
+                swipe.current = { id: e.pointerId, x: e.clientX, y: e.clientY };
+            }}
+            onPointerCancel={() => {
+              swipe.current = null;
+            }}
+            onPointerUp={(e) => {
+              const start = swipe.current;
+              swipe.current = null;
+              if (!start || start.id !== e.pointerId) return;
+              const dx = e.clientX - start.x,
+                dy = e.clientY - start.y;
+              if (Math.abs(dx) >= 52 && Math.abs(dx) > Math.abs(dy) * 1.5)
+                go(dx < 0 !== (direction === 'rtl') ? nextPage : previousPage);
+            }}
           >
-            <div className="reader-page-stack">
-              {(continuous ? info.pages.map((_, i) => i) : [page]).map((i) => (
+            <div
+              className={`reader-page-stack ${spreadPages.length > 1 ? 'reader-spread' : ''}`}
+              dir={spreadPages.length > 1 ? direction : undefined}
+            >
+              {(continuous ? info.pages.map((_, i) => i) : spreadPages).map((i) => (
                 <PDFPage
                   key={info.session + '-' + i}
                   session={info.session}
@@ -1262,11 +1719,21 @@ export default function PDFReader({
                   size={size}
                   touchInk={touchInk}
                   penStyle={penStyle}
+                  eraserSize={eraserSize}
+                  wholeEraser={wholeEraser}
+                  linePattern={linePattern}
+                  shapeStyle={shapeStyle}
+                  direction={
+                    notebook ? (paperSettings.direction === 'rtl' ? 'rtl' : undefined) : undefined
+                  }
                   penActivity={penActivity.current}
                   selected={selected}
                   onSelect={setSelected}
                   onMark={(m) => commit((old) => [...old, m])}
-                  onErase={(id) => commit((old) => old.filter((m) => m.id !== id))}
+                  onMarkGroup={(added) => commit((old) => [...old, ...added])}
+                  onEraseInk={(kept) =>
+                    commit((old) => [...old.filter((m) => m.page !== i), ...kept])
+                  }
                   onUpdate={(mark) =>
                     commit((old) => old.map((m) => (m.id === mark.id ? mark : m)))
                   }
@@ -1297,7 +1764,7 @@ export default function PDFReader({
               {(selectedMark.kind === 'text' || selectedMark.kind === 'note') && (
                 <textarea
                   aria-label="Annotation text"
-                  dir="auto"
+                  dir={selectedMark.direction ?? 'auto'}
                   defaultValue={selectedMark.text}
                   onBlur={(e) => {
                     const text = e.target.value;
@@ -1359,9 +1826,9 @@ export default function PDFReader({
               className="reader-icon"
               aria-label="Previous page"
               disabled={!page}
-              onClick={() => go(page - 1)}
+              onClick={() => go(previousPage)}
             >
-              <ChevronLeft size={18} />
+              {direction === 'rtl' ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </button>
             <form
               onSubmit={(e) => {
@@ -1385,10 +1852,10 @@ export default function PDFReader({
             <button
               className="reader-icon"
               aria-label="Next page"
-              disabled={page === info.count - 1}
-              onClick={() => go(page + 1)}
+              disabled={nextPage >= info.count}
+              onClick={() => go(nextPage)}
             >
-              <ChevronRight size={18} />
+              {direction === 'rtl' ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
             </button>
           </div>
           <button
@@ -1405,23 +1872,43 @@ export default function PDFReader({
             value={paper}
             onChange={(e) => setPaper(e.target.value as Paper)}
           >
-            <option value="blank">Blank</option>
-            <option value="ruled">Ruled</option>
-            <option value="dots">Dotted</option>
-            <option value="grid">Grid</option>
-            <option value="cornell">Cornell</option>
+            {paperStyles.map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
           </select>
+          {notebook && (
+            <button
+              className="reader-icon"
+              aria-label="New page paper appearance"
+              title="New page paper appearance"
+              aria-expanded={paperOpen}
+              onClick={() => setPaperOpen(!paperOpen)}
+            >
+              <SlidersHorizontal size={17} />
+            </button>
+          )}
           <span className="reader-draft-notice">
             {notice || `${marks.length} marks · original unchanged`}
           </span>
           <div className="reader-view-controls">
             <select
               aria-label="Page layout"
-              value={continuous ? 'continuous' : 'single'}
-              onChange={(e) => setContinuous(e.target.value === 'continuous')}
+              value={layout}
+              onChange={(e) => setLayout(e.target.value as typeof layout)}
             >
               <option value="continuous">Continuous</option>
               <option value="single">Single page</option>
+              <option value="spread">Two-page spread</option>
+            </select>
+            <select
+              aria-label="Reading direction"
+              value={direction}
+              onChange={(e) => setDirection(e.target.value as typeof direction)}
+            >
+              <option value="ltr">Left to right</option>
+              <option value="rtl">Right to left</option>
             </select>
             <button
               className="reader-icon"
@@ -1450,8 +1937,39 @@ export default function PDFReader({
             >
               <ChevronsUpDown size={17} />
             </button>
+            <button
+              className="reader-icon"
+              aria-label="Fullscreen reading"
+              title="Fullscreen reading"
+              onClick={() => enterFocus('read')}
+            >
+              <Maximize2 size={18} />
+            </button>
+            <button
+              className="reader-icon"
+              aria-label="Fullscreen writing"
+              title="Fullscreen writing"
+              onClick={() => enterFocus('write')}
+            >
+              <PenLine size={18} />
+            </button>
           </div>
         </footer>
+      )}
+      {notebook && paperOpen && (
+        <div className="reader-paper-popover">
+          <div>
+            <strong>Paper for new pages</strong>
+            <button
+              className="reader-icon"
+              aria-label="Close paper settings"
+              onClick={() => setPaperOpen(false)}
+            >
+              <X size={17} />
+            </button>
+          </div>
+          <PaperControls value={paperSettings} onChange={setPaperSettings} />
+        </div>
       )}
     </section>
   );

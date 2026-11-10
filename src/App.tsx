@@ -1,4 +1,5 @@
 import { useAppStatus } from './lib/appStatus';
+import { isComicFile, readerAccept } from './reader/sources';
 import UpdateStatus from './components/UpdateStatus';
 import Guide from './help/Guide';
 import BugReport from './components/BugReport';
@@ -254,15 +255,17 @@ export default function App() {
   function importFiles(files: File[]) {
     if (!files.length) return;
     const f = files[0],
-      id = /\.pdf$/i.test(f.name)
-        ? files.length > 1
-          ? 'merge'
-          : 'reader'
-        : f.type.startsWith('image/')
-          ? 'scan'
-          : /\.(docx|xlsx|pptx)$/i.test(f.name)
-            ? 'office-pdf'
-            : 'html-pdf';
+      id = isComicFile(f)
+        ? 'reader'
+        : /\.pdf$/i.test(f.name)
+          ? files.length > 1
+            ? 'merge'
+            : 'reader'
+          : f.type.startsWith('image/')
+            ? 'scan'
+            : /\.(docx|xlsx|pptx)$/i.test(f.name)
+              ? 'office-pdf'
+              : 'html-pdf';
     openTool(
       tools.find((t) => t.id === id)!,
       files,
@@ -398,7 +401,7 @@ export default function App() {
           <button
             className="document-open"
             onClick={() =>
-              d.type === 'application/pdf'
+              d.type === 'application/pdf' || isComicFile(d)
                 ? openReader(new File([d.data as BlobPart], d.name, { type: d.type }))
                 : download(d)
             }
@@ -659,7 +662,7 @@ export default function App() {
           <input
             ref={upload}
             type="file"
-            accept=".pdf,image/*,.docx,.xlsx,.pptx,.txt,.md,.html"
+            accept={readerAccept + ',image/*,.docx,.xlsx,.pptx,.txt,.md,.html'}
             multiple
             hidden
             onChange={(e) => {
@@ -762,7 +765,7 @@ export default function App() {
                     <span>
                       Or choose a file from your device <ArrowRight size={15} />
                     </span>
-                    <small>PDF, images, Office, and text files</small>
+                    <small>PDF, CBR comics, images, Office, and text files</small>
                   </button>
                   <div className="drop-footnote">
                     <ShieldCheck size={13} />

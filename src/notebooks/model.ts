@@ -1,12 +1,35 @@
 import { get, set, del } from '../lib/storage';
 import { deadline } from '../lib/deadline';
 import type { Mark } from '../reader/types';
-export type Paper = 'blank' | 'ruled' | 'grid' | 'dots' | 'cornell';
+import { hexColor } from '../reader/types';
+export const paperStyles = [
+  ['ruled', 'Ruled'],
+  ['dashed', 'Dashed'],
+  ['handwriting', 'Handwriting'],
+  ['dots', 'Dotted'],
+  ['grid', 'Grid'],
+  ['cornell', 'Cornell'],
+  ['blank', 'Blank'],
+] as const;
+export type Paper = (typeof paperStyles)[number][0];
+export type PaperSettings = {
+  pageColor: string;
+  lineColor: string;
+  spacing: number;
+  direction: 'ltr' | 'rtl';
+};
+export const defaultPaper: PaperSettings = {
+  pageColor: '#ffffff',
+  lineColor: '#ccd6e6',
+  spacing: 25,
+  direction: 'ltr',
+};
 export type Notebook = {
   id: string;
   title: string;
   color: string;
   paper: Paper;
+  paperSettings?: PaperSettings;
   data: Uint8Array;
   marks: Mark[];
   updated: string;
@@ -90,6 +113,7 @@ export async function notebookPDF(
   paper: Paper,
   count = 1,
   onProgress?: (completed: number, total: number) => void,
+  settings: PaperSettings = defaultPaper,
 ): Promise<Uint8Array> {
   if (!Number.isInteger(count) || count < 1 || count > 300)
     throw Error('Choose between 1 and 300 pages.');
@@ -100,25 +124,51 @@ export async function notebookPDF(
     ),
     pdf = await PDFDocument.create();
   onProgress?.(0, count);
+  const spacing = Number.isFinite(settings.spacing)
+    ? Math.max(12, Math.min(40, settings.spacing))
+    : 25;
+  const rtl = settings.direction === 'rtl';
+  const mirror = (x: number) => (rtl ? 595.28 - x : x);
+  const ink = rgb(...hexColor(settings.lineColor));
   for (let i = 0; i < count; i++) {
-    const p = pdf.addPage([595.28, 841.89]),
-      ink = rgb(0.8, 0.84, 0.9);
-    const line = (x1: number, y1: number, x2: number, y2: number) =>
-      p.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, color: ink, thickness: 0.45 });
-    if (paper === 'ruled' || paper === 'cornell') {
-      for (let y = 771; y > 55; y -= 25) line(42, y, 553, y);
+    const p = pdf.addPage([595.28, 841.89]);
+    if (settings.pageColor !== '#ffffff')
+      p.drawRectangle({
+        x: 0,
+        y: 0,
+        width: 595.28,
+        height: 841.89,
+        color: rgb(...hexColor(settings.pageColor)),
+      });
+    const line = (x1: number, y1: number, x2: number, y2: number, dashed = false) =>
+      p.drawLine({
+        start: { x: mirror(x1), y: y1 },
+        end: { x: mirror(x2), y: y2 },
+        color: ink,
+        thickness: 0.55,
+        dashArray: dashed ? [4, 3] : undefined,
+      });
+    if (['ruled', 'cornell', 'dashed', 'handwriting'].includes(paper)) {
+      for (let y = 771; y > (paper === 'cornell' ? 165 : 55); y -= spacing) {
+        line(42, y, 553, y, paper === 'dashed');
+        if (paper === 'handwriting') {
+          line(42, y - spacing / 3, 553, y - spacing / 3, true);
+          line(42, y - (spacing * 2) / 3, 553, y - (spacing * 2) / 3);
+        }
+      }
       if (paper === 'cornell') {
         line(175, 55, 175, 792);
         line(42, 155, 553, 155);
       } else line(78, 45, 78, 796);
     }
     if (paper === 'grid') {
-      for (let x = 42; x < 555; x += 20) line(x, 45, x, 796);
-      for (let y = 56; y < 797; y += 20) line(42, y, 553, y);
+      for (let x = 42; x < 555; x += spacing) line(x, 45, x, 796);
+      for (let y = 56; y < 797; y += spacing) line(42, y, 553, y);
     }
     if (paper === 'dots')
-      for (let x = 48; x < 555; x += 20)
-        for (let y = 56; y < 797; y += 20) p.drawCircle({ x, y, size: 0.7, color: ink });
+      for (let x = 48; x < 555; x += spacing)
+        for (let y = 56; y < 797; y += spacing)
+          p.drawCircle({ x: mirror(x), y, size: 0.7, color: ink });
     onProgress?.(i + 1, count);
     if (onProgress && (i % 5 === 0 || i === count - 1))
       await new Promise((resolve) => setTimeout(resolve, 0));
