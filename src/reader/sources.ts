@@ -1,10 +1,20 @@
 export const readerFileLimit = 256 * 1024 * 1024;
-export const readerAccept = '.pdf,.cbr,application/pdf,application/vnd.comicbook-rar';
 export const isComicFile = (file: Pick<File, 'name' | 'type'>) =>
-  /\.cbr$/i.test(file.name) || file.type === 'application/vnd.comicbook-rar';
+  /\.(cbr|rar)$/i.test(file.name) ||
+  [
+    'application/vnd.comicbook-rar',
+    'application/x-cbr',
+    'application/x-rar-compressed',
+    'application/vnd.rar',
+  ].includes(file.type);
 export const isRar = (head: Uint8Array) =>
   [0x52, 0x61, 0x72, 0x21, 0x1a, 0x07].every((byte, i) => head[i] === byte) &&
   (head[6] === 0 || (head[6] === 1 && head[7] === 0));
+export function readerFormat(head: Uint8Array): 'pdf' | 'cbr' {
+  if (isRar(head)) return 'cbr';
+  if (new TextDecoder().decode(head.subarray(0, 1024)).includes('%PDF-')) return 'pdf';
+  throw Error('Choose a PDF or a CBR comic containing a RAR archive.');
+}
 
 export async function fetchReaderFile(
   value: string,
@@ -59,9 +69,7 @@ export async function fetchReaderFile(
   }
   const blob = new Blob(chunks);
   const head = new Uint8Array(await blob.slice(0, 1024).arrayBuffer());
-  const rar = isRar(head);
-  if (!rar && !new TextDecoder().decode(head).includes('%PDF-'))
-    throw Error('The link did not return a PDF or RAR comic archive.');
+  const rar = readerFormat(head) === 'cbr';
   const path = new URL(response.url || url.href).pathname.split('/').pop() || 'Online document';
   let name = path;
   try {

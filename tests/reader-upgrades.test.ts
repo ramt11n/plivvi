@@ -2,13 +2,21 @@ import { readFile } from 'node:fs/promises';
 import { afterEach, expect, it, vi } from 'vitest';
 import { PDFDocument } from 'pdf-lib';
 import { comicPDF } from '../src/reader/comic';
-import { fetchReaderFile } from '../src/reader/sources';
+import { fetchReaderFile, isComicFile, readerFormat } from '../src/reader/sources';
 import { eraseInk } from '../src/reader/eraseInk';
 import { patternLine, refineShape } from '../src/reader/shapes';
 import type { Mark } from '../src/reader/types';
 import { sampleComic } from './fixtures/sampleComic';
 
 afterEach(() => vi.unstubAllGlobals());
+it('identifies CBR content independently of the filename and device MIME mapping', () => {
+  expect(readerFormat(new Uint8Array(sampleComic()))).toBe('cbr');
+  expect(readerFormat(new TextEncoder().encode('%PDF-1.7'))).toBe('pdf');
+  expect(() => readerFormat(new TextEncoder().encode('<html>'))).toThrow('Choose a PDF');
+  for (const type of ['application/x-cbr', 'application/x-rar-compressed', 'application/vnd.rar']) {
+    expect(isComicFile({ name: 'comic', type })).toBe(true);
+  }
+});
 const point = (x: number, y: number) => ({ x, y, pressure: 0.6 });
 const stroke: Mark = {
   id: 'line',

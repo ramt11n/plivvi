@@ -60,7 +60,7 @@ import {
 } from '../notebooks/model';
 import PaperControls from '../notebooks/PaperControls';
 import PenPicker from './PenPicker';
-import { fetchReaderFile, isComicFile, readerAccept, readerFileLimit } from './sources';
+import { fetchReaderFile, isComicFile, readerFormat, readerFileLimit } from './sources';
 import type { LinePattern, ShapeStyle } from './shapes';
 import { readerDraftKey } from '../lib/workspace';
 import { brand } from '../integrations/config';
@@ -226,13 +226,17 @@ export default function PDFReader({
     setHits([]);
     setSelected(null);
     (async () => {
-      const archive = isComicFile(file);
-      if (file.size > (archive ? 96 * 1048576 : readerFileLimit))
+      const namedComic = isComicFile(file);
+      if (file.size > (namedComic ? 96 * 1048576 : readerFileLimit))
         throw Error(
-          archive ? 'Choose a CBR smaller than 96 MB.' : 'Choose a PDF smaller than 256 MB.',
+          namedComic ? 'Choose a CBR smaller than 96 MB.' : 'Choose a PDF smaller than 256 MB.',
         );
       const source = (await inputs([file], (p) => alive && setLoadingPercent(p * 0.12)))[0];
       if (!alive) return;
+      const archive =
+        readerFormat(new Uint8Array(source.data, 0, Math.min(1024, source.data.byteLength))) ===
+        'cbr';
+      if (archive && file.size > 96 * 1048576) throw Error('Choose a CBR smaller than 96 MB.');
       const data = archive
         ? await rpc<Input>('reader-comic', { input: source }, (label, percent) => {
             if (!alive) return;
@@ -803,9 +807,10 @@ export default function PDFReader({
       aria-modal="true"
       aria-label={`${brand.name} ${notebook ? 'notebook' : 'PDF reader and editor'}`}
     >
+      {/* Keep the picker unrestricted because iOS disables unrecognized archive types.
+          The reader validates file signatures after selection. */}
       <input
         type="file"
-        accept={notebook ? '.pdf,application/pdf' : readerAccept}
         ref={input}
         hidden
         onChange={(e) => {

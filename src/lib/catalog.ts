@@ -30,8 +30,8 @@ export const tools: Tool[] = [
     group: 'Edit',
     icon: 'BookOpen',
     color: 'violet',
-    accept: pdf,
-    action: 'Open PDF',
+    accept: '',
+    action: 'Open PDF or CBR',
     note: 'Adds portable annotations and typed text. Existing document text stays intact; arbitrary paragraph rewriting is not supported.',
   },
   {

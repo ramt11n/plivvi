@@ -1,5 +1,5 @@
 import { useAppStatus } from './lib/appStatus';
-import { isComicFile, readerAccept } from './reader/sources';
+import { isComicFile } from './reader/sources';
 import UpdateStatus from './components/UpdateStatus';
 import Guide from './help/Guide';
 import BugReport from './components/BugReport';
@@ -254,6 +254,20 @@ export default function App() {
   }
   function importFiles(files: File[]) {
     if (!files.length) return;
+    if (
+      !files.every(
+        (file) =>
+          isComicFile(file) ||
+          /\.(pdf|docx|xlsx|pptx|txt|md|html?|jpe?g|png|webp|gif|heic|heif|avif|bmp|tiff?)$/i.test(
+            file.name,
+          ) ||
+          file.type.startsWith('image/') ||
+          file.type === 'application/pdf',
+      )
+    ) {
+      setToast('Choose a PDF, CBR comic, image, Office document, or text file.');
+      return;
+    }
     const f = files[0],
       id = isComicFile(f)
         ? 'reader'
@@ -662,7 +676,6 @@ export default function App() {
           <input
             ref={upload}
             type="file"
-            accept={readerAccept + ',image/*,.docx,.xlsx,.pptx,.txt,.md,.html'}
             multiple
             hidden
             onChange={(e) => {

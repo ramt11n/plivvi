@@ -226,7 +226,6 @@ export default function CloudDialog({
           ref={input}
           hidden
           type="file"
-          accept="application/pdf,image/*,.docx,.xlsx,.pptx,.txt,.md,.html"
           multiple
           onChange={(e) => {
             const files = Array.from(e.target.files ?? []);
