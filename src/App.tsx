@@ -1,5 +1,6 @@
 import { useAppStatus } from './lib/appStatus';
 import { isComicFile } from './reader/sources';
+import { isConvertible } from './converter/formats';
 import UpdateStatus from './components/UpdateStatus';
 import Guide from './help/Guide';
 import BugReport from './components/BugReport';
@@ -75,6 +76,8 @@ const AccountDialog = lazy(() => import('./components/AccountDialog')),
   CloudDialog = lazy(() => import('./components/CloudDialog'));
 const PDFReader = lazy(() => import('./reader/PDFReader'));
 const Notebooks = lazy(() => import('./notebooks/Notebooks'));
+const Converter = lazy(() => import('./converter/Converter'));
+const SVGStudio = lazy(() => import('./converter/SVGStudio'));
 const ToolPanel = lazy(() => import('./components/ToolPanel')),
   CameraView = lazy(() => import('./components/Camera'));
 export default function App() {
@@ -87,6 +90,7 @@ export default function App() {
     [view, setView] = useState(() => currentRoute().view),
     [group, setGroup] = useState('All tools'),
     [query, setQuery] = useState(''),
+    [toolSort, setToolSort] = useState('recommended'),
     [selected, setSelected] = useState<Tool | null>(null),
     [initial, setInitial] = useState<File[]>([]),
     [dialog, setDialog] = useState<string | null>(null),
@@ -258,14 +262,12 @@ export default function App() {
       !files.every(
         (file) =>
           isComicFile(file) ||
-          /\.(pdf|docx|xlsx|pptx|txt|md|html?|jpe?g|png|webp|gif|heic|heif|avif|bmp|tiff?)$/i.test(
-            file.name,
-          ) ||
+          isConvertible(file.name) ||
           file.type.startsWith('image/') ||
           file.type === 'application/pdf',
       )
     ) {
-      setToast('Choose a PDF, CBR comic, image, Office document, or text file.');
+      setToast('Choose a supported PDF, image, SVG, comic, Office document or text file.');
       return;
     }
     const f = files[0],
@@ -275,11 +277,7 @@ export default function App() {
           ? files.length > 1
             ? 'merge'
             : 'reader'
-          : f.type.startsWith('image/')
-            ? 'scan'
-            : /\.(docx|xlsx|pptx)$/i.test(f.name)
-              ? 'office-pdf'
-              : 'html-pdf';
+          : 'converter';
     openTool(
       tools.find((t) => t.id === id)!,
       files,
@@ -371,11 +369,19 @@ export default function App() {
       grid?.focus({ preventScroll: true });
     });
   }
-  const filtered = tools.filter(
-      (t) =>
-        (group === 'All tools' || t.group === group) &&
-        `${t.title} ${t.description} ${t.group}`.toLowerCase().includes(query.toLowerCase()),
-    ),
+  const filtered = tools
+      .filter(
+        (t) =>
+          (group === 'All tools' || t.group === group) &&
+          `${t.title} ${t.description} ${t.group}`.toLowerCase().includes(query.toLowerCase()),
+      )
+      .sort((a, b) =>
+        toolSort === 'az'
+          ? a.title.localeCompare(b.title)
+          : toolSort === 'group'
+            ? a.group.localeCompare(b.group) || a.title.localeCompare(b.title)
+            : 0,
+      ),
     used = documents.reduce((s, d) => s + d.size, 0);
   const ToolCard = ({ tool, compact = false }: { tool: Tool; compact?: boolean }) => (
     <a
@@ -399,6 +405,27 @@ export default function App() {
       </span>
       <ArrowUpRight className="tool-card-arrow" size={17} />
     </a>
+  );
+  const converterBanner = (
+    <section className="converter-banner">
+      <span aria-hidden="true">↔</span>
+      <div>
+        <h2>One file. A world of formats.</h2>
+        <p>
+          PDFs, photos, Office files, comics and SVGs. Choose your pages, adjust the output, and
+          convert on your device.
+        </p>
+      </div>
+      <a
+        href={toolPath('converter')}
+        onClick={(event) => {
+          event.preventDefault();
+          openTool(tools.find((t) => t.id === 'converter')!);
+        }}
+      >
+        Open file converter ↗
+      </a>
+    </section>
   );
   const DocumentList = ({ all = false }: { all?: boolean }) => (
     <div className="document-list">
@@ -719,6 +746,7 @@ export default function App() {
           )}
           {view === 'home' && (
             <>
+              {converterBanner}
               <section className="workbench-hero">
                 <div className="workbench-copy">
                   <div className="workbench-kicker">
@@ -786,6 +814,7 @@ export default function App() {
                   </div>
                 </div>
               </section>
+              {converterBanner}
               <section className="quick-moves" aria-label="Quick document tasks">
                 {[
                   {
@@ -933,6 +962,7 @@ export default function App() {
           )}
           {view === 'tools' && (
             <>
+              {converterBanner}
               <FeatureShowcase
                 onExplore={exploreTools}
                 toolCount={tools.length}
@@ -984,6 +1014,14 @@ export default function App() {
                     {g}
                   </button>
                 ))}
+                <label className="tool-sort">
+                  Sort tools
+                  <select value={toolSort} onChange={(event) => setToolSort(event.target.value)}>
+                    <option value="recommended">Recommended</option>
+                    <option value="az">A–Z</option>
+                    <option value="group">Category</option>
+                  </select>
+                </label>
               </div>
               <div
                 id="all-document-tools"
@@ -1197,7 +1235,11 @@ export default function App() {
             className={
               (n.id === 'reader' ? route.toolId === 'reader' : view === n.id) ? 'active' : ''
             }
-            onClick={() => (n.id === 'scan' ? (openTool(tools[0]), setCamera(true)) : nav(n.id))}
+            onClick={() =>
+              n.id === 'scan'
+                ? (openTool(tools.find((tool) => tool.id === 'scan')!), setCamera(true))
+                : nav(n.id)
+            }
           >
             <n.icon size={20} />
             <span>{n.label}</span>
@@ -1288,26 +1330,62 @@ export default function App() {
             </div>
           }
         >
-          <ToolPanel
-            key={selected.id + initial.map((f) => f.name).join('|')}
-            tool={selected}
-            initialFiles={initial}
-            initialOptions={
-              route.featureId && featureContent[route.featureId].toolId === selected.id
-                ? featureContent[route.featureId].options
-                : undefined
-            }
-            onClose={() => setSelected(null)}
-            onSave={save}
-            onRead={(out) => {
-              setSelected(null);
-              openReader(new File([out.data as BlobPart], out.name, { type: out.type }));
-            }}
-            onCloud={(out) => {
-              setCloudOutput(out);
-              setCloudOpen(true);
-            }}
-          />
+          {selected.id === 'svg-create' ? (
+            <SVGStudio
+              onClose={() => setSelected(null)}
+              onConvert={(file) =>
+                openTool(
+                  tools.find((t) => t.id === 'converter')!,
+                  [file],
+                )
+              }
+            />
+          ) : [
+              'converter',
+              'pdf-image',
+              'image-convert',
+              'image-pdf',
+              'office-pdf',
+              'html-pdf',
+            ].includes(selected.id) ? (
+            <Converter
+              tool={selected}
+              key={selected.id + initial.map((f) => f.name + f.size).join('|')}
+              initialFiles={initial}
+              initialOptions={route.featureId ? featureContent[route.featureId].options : undefined}
+              onClose={() => setSelected(null)}
+              onSave={save}
+              onRead={(out) => {
+                setSelected(null);
+                openReader(new File([out.data as BlobPart], out.name, { type: out.type }));
+              }}
+              onCloud={(out) => {
+                setCloudOutput(out);
+                setCloudOpen(true);
+              }}
+            />
+          ) : (
+            <ToolPanel
+              key={selected.id + initial.map((f) => f.name).join('|')}
+              tool={selected}
+              initialFiles={initial}
+              initialOptions={
+                route.featureId && featureContent[route.featureId].toolId === selected.id
+                  ? featureContent[route.featureId].options
+                  : undefined
+              }
+              onClose={() => setSelected(null)}
+              onSave={save}
+              onRead={(out) => {
+                setSelected(null);
+                openReader(new File([out.data as BlobPart], out.name, { type: out.type }));
+              }}
+              onCloud={(out) => {
+                setCloudOutput(out);
+                setCloudOpen(true);
+              }}
+            />
+          )}
         </Suspense>
       )}
       {camera && (
@@ -1315,7 +1393,7 @@ export default function App() {
           <CameraView
             onCapture={(f) => {
               setInitial([f]);
-              setSelected(tools[0]);
+              setSelected(tools.find((tool) => tool.id === 'scan')!);
             }}
             onClose={() => setCamera(false)}
           />

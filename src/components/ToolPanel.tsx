@@ -72,7 +72,7 @@ export default function ToolPanel({
     }),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(false),
-    [progressValue,setProgressValue]=useState<number|undefined>(0),
+    [progressValue, setProgressValue] = useState<number | undefined>(0),
     [status, setStatus] = useState(''),
     [error, setError] = useState(''),
     [results, setResults] = useState<Output[]>([]),
@@ -107,8 +107,10 @@ export default function ToolPanel({
   useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
   async function add(incoming: File[]) {
     if (!incoming.length) return;
-    if (incoming.some((f) => f.size > 100 * 1048576)) {
-      setError('Please use files smaller than 100 MB each.');
+    if (incoming.some((f) => !/\.pdf$/i.test(f.name) && f.size > 512 * 1048576)) {
+      setError(
+        'Process images and Office documents in batches below 512 MB per file. Large PDFs are read page by page.',
+      );
       return;
     }
     const id = tool.id,
@@ -154,7 +156,8 @@ export default function ToolPanel({
       return;
     }
     let currentUrls: string[] = [];
-    setLoading(true);setProgressValue(0);
+    setLoading(true);
+    setProgressValue(0);
     setPageCount(undefined);
     setError('');
     (async () => {
@@ -165,10 +168,25 @@ export default function ToolPanel({
         const file = files[source];
         if (/\.pdf$/i.test(file.name)) {
           try {
-            const result = await rpc<Preview>('preview', {
-              input: (await inputs([file],p=>gen===generation.current&&setProgressValue(p*0.15)))[0],
-              password: options.currentPassword,
-            },(label,percent)=>{if(gen===generation.current){setStatus(label);if(percent!==undefined)setProgressValue(15+percent*0.8);}});
+            const result = await rpc<Preview>(
+              'preview',
+              {
+                input: (
+                  await inputs(
+                    [file],
+                    (p) => gen === generation.current && setProgressValue(p * 0.15),
+                  )
+                )[0],
+                password: options.currentPassword,
+                options: { limit: tool.id === 'organize' ? 60 : 12, fields: tool.id === 'forms' },
+              },
+              (label, percent) => {
+                if (gen === generation.current) {
+                  setStatus(label);
+                  if (percent !== undefined) setProgressValue(15 + percent * 0.8);
+                }
+              },
+            );
             if (gen !== generation.current) return;
             count += result.count;
             if (source === 0) {
@@ -234,7 +252,8 @@ export default function ToolPanel({
     })();
   }, [placement, options.page, preview, files, options.currentPassword]);
   async function process() {
-    setBusy(true);setProgressValue(0);
+    setBusy(true);
+    setProgressValue(0);
     setError('');
     setStatus('Preparing your document…');
     setSaved(false);
@@ -274,14 +293,17 @@ export default function ToolPanel({
             'operate',
             {
               tool: tool.id,
-              files: await inputs(fs,setProgressValue),
+              files: await inputs(fs, setProgressValue),
               options: {
                 ...options,
                 order: pages.map((p) => p.index),
                 rotations: pages.map((p) => p.rotation),
               },
             },
-            (label,percent)=>{setStatus(label);if(percent!==undefined)setProgressValue(10+percent*0.9);},
+            (label, percent) => {
+              setStatus(label);
+              if (percent !== undefined) setProgressValue(10 + percent * 0.9);
+            },
           );
       }
       setResults(out);
@@ -734,7 +756,12 @@ export default function ToolPanel({
                       )}
                     </>
                   )}
-                  {loading && <LoadingProgress label={status || "Preparing page previews…"} value={progressValue} />}
+                  {loading && (
+                    <LoadingProgress
+                      label={status || 'Preparing page previews…'}
+                      value={progressValue}
+                    />
+                  )}
                   <button
                     className="text-button small"
                     onClick={() => {
@@ -1090,7 +1117,13 @@ export default function ToolPanel({
                 </details>
               )}
               <div className="local-promise">
-                <img src="/visuals/mascot/pli-logo-head.webp" width="28" height="28" alt="" aria-hidden="true" />
+                <img
+                  src="/visuals/mascot/pli-logo-head.webp"
+                  width="28"
+                  height="28"
+                  alt=""
+                  aria-hidden="true"
+                />
                 <div>
                   <strong>Pli keeps your pages close.</strong>
                   <p>Files are processed on this device. Cloud saving is optional.</p>
@@ -1109,7 +1142,10 @@ export default function ToolPanel({
           <footer className="panel-footer">
             <div className="small muted">
               {busy ? (
-                <LoadingProgress label={status || 'Processing your document…'} value={progressValue} />
+                <LoadingProgress
+                  label={status || 'Processing your document…'}
+                  value={progressValue}
+                />
               ) : (
                 <>
                   <ShieldCheck size={15} />

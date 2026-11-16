@@ -185,23 +185,49 @@ export function detectCorners(source: ImageData): Point[] {
   let warmBest: number[] = [];
   for (let start = 0; start < warmMask.length; start++) {
     if (!warmMask[start] || warmSeen[start]) continue;
-    let head = 0, tail = 1;
+    let head = 0,
+      tail = 1;
     warmQueue[0] = start;
     warmSeen[start] = 1;
     const region: number[] = [];
     while (head < tail) {
-      const i = warmQueue[head++], x = i % sw, y = Math.floor(i / sw);
+      const i = warmQueue[head++],
+        x = i % sw,
+        y = Math.floor(i / sw);
       region.push(i);
-      for (const n of [x ? i-1 : -1, x < sw-1 ? i+1 : -1, y ? i-sw : -1, y < sh-1 ? i+sw : -1])
-        if (n >= 0 && warmMask[n] && !warmSeen[n]) { warmSeen[n] = 1; warmQueue[tail++] = n; }
+      for (const n of [
+        x ? i - 1 : -1,
+        x < sw - 1 ? i + 1 : -1,
+        y ? i - sw : -1,
+        y < sh - 1 ? i + sw : -1,
+      ])
+        if (n >= 0 && warmMask[n] && !warmSeen[n]) {
+          warmSeen[n] = 1;
+          warmQueue[tail++] = n;
+        }
     }
     if (region.length > warmBest.length) warmBest = region;
   }
-  if (warmBest.length > lum.length * .12 && warmBest.length < lum.length * .83) {
-    const pts = warmBest.map(i => ({ x: Math.min(w - 1, (i % sw) * scale), y: Math.min(h - 1, Math.floor(i / sw) * scale) }));
-    const extreme = (f: (p: Point) => number) => pts.reduce((a, b) => f(b) < f(a) ? b : a);
-    const corners = [extreme(p => p.x + p.y), extreme(p => -p.x + p.y), extreme(p => -p.x - p.y), extreme(p => p.x - p.y)];
-    if (corners.every((p, i) => Math.hypot(p.x - corners[(i + 1) % 4].x, p.y - corners[(i + 1) % 4].y) > Math.min(w, h) * .15)) return corners;
+  if (warmBest.length > lum.length * 0.12 && warmBest.length < lum.length * 0.83) {
+    const pts = warmBest.map((i) => ({
+      x: Math.min(w - 1, (i % sw) * scale),
+      y: Math.min(h - 1, Math.floor(i / sw) * scale),
+    }));
+    const extreme = (f: (p: Point) => number) => pts.reduce((a, b) => (f(b) < f(a) ? b : a));
+    const corners = [
+      extreme((p) => p.x + p.y),
+      extreme((p) => -p.x + p.y),
+      extreme((p) => -p.x - p.y),
+      extreme((p) => p.x - p.y),
+    ];
+    if (
+      corners.every(
+        (p, i) =>
+          Math.hypot(p.x - corners[(i + 1) % 4].x, p.y - corners[(i + 1) % 4].y) >
+          Math.min(w, h) * 0.15,
+      )
+    )
+      return corners;
   }
   let total = 0,
     bright = 255;
@@ -268,7 +294,19 @@ export async function loadImage(file: Blob, max = 2000) {
   try {
     const img = new Image();
     img.src = url;
-    await img.decode();
+    try {
+      await img.decode();
+    } catch {
+      const { rpc } = await import('./client');
+      const png = await rpc<Uint8Array>('image-decode', { file });
+      const decodedURL = URL.createObjectURL(new Blob([png as BlobPart], { type: 'image/png' }));
+      try {
+        img.src = decodedURL;
+        await img.decode();
+      } finally {
+        URL.revokeObjectURL(decodedURL);
+      }
+    }
     const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
     const c = document.createElement('canvas');
     c.width = Math.round(img.naturalWidth * s);

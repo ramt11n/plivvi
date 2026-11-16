@@ -60,7 +60,7 @@ import {
 } from '../notebooks/model';
 import PaperControls from '../notebooks/PaperControls';
 import PenPicker from './PenPicker';
-import { fetchReaderFile, isComicFile, readerFormat, readerFileLimit } from './sources';
+import { fetchReaderFile, isComicFile, readerFormat } from './sources';
 import type { LinePattern, ShapeStyle } from './shapes';
 import { readerDraftKey } from '../lib/workspace';
 import { brand } from '../integrations/config';
@@ -227,15 +227,15 @@ export default function PDFReader({
     setSelected(null);
     (async () => {
       const namedComic = isComicFile(file);
-      if (file.size > (namedComic ? 96 * 1048576 : readerFileLimit))
-        throw Error(
-          namedComic ? 'Choose a CBR smaller than 96 MB.' : 'Choose a PDF smaller than 256 MB.',
-        );
-      const source = (await inputs([file], (p) => alive && setLoadingPercent(p * 0.12)))[0];
+      if (namedComic && file.size > 96 * 1048576) throw Error('Choose a CBR smaller than 96 MB.');
+      const source = (
+        await inputs([file], (p) => alive && setLoadingPercent(p * 0.12), !notebookRef.current)
+      )[0];
       if (!alive) return;
-      const archive =
-        readerFormat(new Uint8Array(source.data, 0, Math.min(1024, source.data.byteLength))) ===
-        'cbr';
+      const head = source.file
+        ? new Uint8Array(await source.file.slice(0, 1024).arrayBuffer())
+        : new Uint8Array(source.data, 0, Math.min(1024, source.data.byteLength));
+      const archive = readerFormat(head) === 'cbr';
       if (archive && file.size > 96 * 1048576) throw Error('Choose a CBR smaller than 96 MB.');
       const data = archive
         ? await rpc<Input>('reader-comic', { input: source }, (label, percent) => {
@@ -275,7 +275,7 @@ export default function PDFReader({
         setLoadingStage('Restoring saved handwriting and bookmarks…');
         setLoadingPercent(95);
       }
-      const key = await readerDraftKey(workspace, source.data);
+      const key = await readerDraftKey(workspace, source.file ?? source.data);
       if (!alive) return;
       setDraftKey(key);
       try {

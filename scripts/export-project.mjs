@@ -32,8 +32,10 @@ const entries = [
   'package-lock.json',
   'index.html',
   'redirect.html',
+  'codec.html',
   'vite.config.ts',
   'vitest.config.ts',
+  'playwright.config.ts',
   'tsconfig.json',
 ];
 await mkdir(target, { recursive: true });

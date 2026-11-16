@@ -1,0 +1,42 @@
+@font-face {
+  font-family: Manrope;
+  src: url('/fonts/Manrope.ttf');
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #f5f7fc;
+  color: #1a233b;
+  font-family: Manrope, sans-serif;
+}
+main {
+  max-width: 540px;
+  padding: 48px 36px;
+}
+.eyebrow {
+  font-size: 11px;
+  color: #3659e3;
+  letter-spacing: 1.4px;
+  font-weight: 800;
+}
+h1 {
+  font-size: 34px;
+  letter-spacing: -1.5px;
+  line-height: 1.18;
+  margin: 24px 0;
+}
+p {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.muted {
+  color: #66718b;
+  font-size: 12px;
+}
+progress {
+  width: 100%;
+  accent-color: #3659e3;
+  margin-top: 16px;
+}

@@ -177,6 +177,15 @@ export function ToolLanding({
           </span>
         </div>
       </div>
+      {!!data.reverse?.length && (
+        <nav className="feature-quick-links" aria-label="Reverse conversions">
+          {data.reverse.map((link) => (
+            <InternalLink key={link.slug} href={'/' + link.slug + '/'}>
+              {link.label} <ArrowRight size={13} />
+            </InternalLink>
+          ))}
+        </nav>
+      )}
       {Object.values(featureContent).some((f) => f.toolId === tool.id) && (
         <nav className="feature-quick-links" aria-label="Specific workflows">
           {Object.values(featureContent)

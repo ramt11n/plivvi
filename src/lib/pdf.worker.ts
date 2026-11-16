@@ -17,6 +17,7 @@ import {
   locateFile: (path: string) => (path.endsWith('.wasm') ? wasmURL : path),
 };
 let engineReady: Promise<void> | undefined;
+const outputAcks = new Map<number, () => void>();
 const listeners = new Set<(loaded: number) => void>();
 async function prepareEngine(id: number) {
   const listener = (fraction: number) =>
@@ -28,7 +29,7 @@ async function prepareEngine(id: number) {
   listeners.add(listener);
   if (!engineReady)
     engineReady = (async () => {
-      const response = await fetch(wasmURL);
+      const response = await fetch(wasmURL, { signal: AbortSignal.timeout(90000) });
       if (!response.ok)
         throw Error('The document engine could not download. Check your connection and try again.');
       const chunks: Uint8Array[] = [];
@@ -48,6 +49,8 @@ async function prepareEngine(id: number) {
         loaded = value.byteLength;
       }
       const binary = new Uint8Array(loaded);
+      if (loaded < 8 || chunks[0]?.[0] !== 0 || chunks[0]?.[1] !== 97)
+        throw Error('The document engine download was incomplete. Retry to download a fresh copy.');
       let offset = 0;
       for (const chunk of chunks) {
         binary.set(chunk, offset);
@@ -68,11 +71,31 @@ async function prepareEngine(id: number) {
 async function handle({ data: { id, op, payload } }: MessageEvent) {
   try {
     let result: any;
-    if (op !== 'enhance' && op !== 'reader-comic') await prepareEngine(id);
+    if (op !== 'enhance' && op !== 'reader-comic' && op !== 'image-decode') await prepareEngine(id);
     const progress = (label: string, percent?: number) =>
       self.postMessage({ id, progress: label, percent });
     progress('Preparing your document…', 45);
-    if (op === 'reader-comic')
+    if (op === 'convert-inspect')
+      result = await (
+        await import('../converter/engine')
+      ).inspectConversion(payload.input, payload.password);
+    else if (op === 'convert')
+      result = await (
+        await import('../converter/engine')
+      ).convertFiles(payload.files, payload.options, progress, (output) => {
+        const acknowledged = payload.ack
+          ? new Promise<void>((resolve) => outputAcks.set(id, resolve))
+          : undefined;
+        self.postMessage({ id, output }, { transfer: [output.data.buffer as ArrayBuffer] });
+        return acknowledged;
+      });
+    else if (op === 'image-decode')
+      result = (
+        await (
+          await import('../converter/codecs')
+        ).rasterFrames(new Uint8Array(await payload.file.arrayBuffer()))
+      )[0];
+    else if (op === 'reader-comic')
       result = await (await import('../reader/comic')).comicPDF(payload.input, progress);
     else if (op === 'reader-open')
       result = await readerOpen(payload.input, payload.password, (done, total) =>
@@ -102,7 +125,7 @@ async function handle({ data: { id, op, payload } }: MessageEvent) {
     else if (op === 'reader-layout-text')
       result = await layoutReaderText(payload.text, payload.size, payload.width);
     else if (op === 'preview')
-      result = await preview(payload.input, payload.password, payload.pageIndex);
+      result = await preview(payload.input, payload.password, payload.pageIndex, payload.options);
     else if (op === 'operate')
       result = await operate(payload.tool, payload.files, payload.options, (s) =>
         progress(
@@ -148,5 +171,10 @@ async function handle({ data: { id, op, payload } }: MessageEvent) {
 }
 let jobs = Promise.resolve();
 self.onmessage = (event: MessageEvent) => {
+  if (event.data.op === 'convert-ack') {
+    outputAcks.get(event.data.id)?.();
+    outputAcks.delete(event.data.id);
+    return;
+  }
   jobs = jobs.then(() => handle(event));
 };

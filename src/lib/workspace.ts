@@ -69,12 +69,21 @@ export async function clearDocuments(workspace: string) {
   });
 }
 
-export async function readerDraftKey(workspace: string, data: ArrayBuffer) {
-  const digest = await crypto.subtle.digest('SHA-256', data);
+export async function readerDraftKey(workspace: string, data: ArrayBuffer | Blob) {
+  let digest: ArrayBuffer | Uint8Array;
+  if (data instanceof Blob) {
+    const { sha256 } = await import('@noble/hashes/sha2.js');
+    const hash = sha256.create();
+    for (let offset = 0; offset < data.size; offset += 4 * 1048576) {
+      hash.update(new Uint8Array(await data.slice(offset, offset + 4 * 1048576).arrayBuffer()));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    digest = hash.digest();
+  } else digest = await crypto.subtle.digest('SHA-256', data);
   return (
     readerDraftPrefix(workspace) +
     Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('') +
     '-' +
-    data.byteLength
+    (data instanceof Blob ? data.size : data.byteLength)
   );
 }

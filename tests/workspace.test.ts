@@ -66,6 +66,7 @@ describe('account document workspaces', () => {
       second = new Uint8Array(first);
     second[1048578] = 42;
     const key = await readerDraftKey('guest', first.buffer);
+    expect(await readerDraftKey('guest', new Blob([first]))).toBe(key);
     expect(await readerDraftKey(workspaceId('alice'), first.buffer)).not.toBe(key);
     expect(await readerDraftKey('guest', second.buffer)).not.toBe(key);
   });

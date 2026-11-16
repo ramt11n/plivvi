@@ -1,13 +1,13 @@
 {
   "home": {
     "path": "/",
-    "title": "Plivvi — Free PDF Tools, Scanner & Digital Notebooks",
-    "description": "Read, annotate, scan, merge, split and convert PDFs on your device. Free, open-source document tools and digital notebooks, with no required account."
+    "title": "Plivvi — Free PDF Tools, File Converter & Notebooks",
+    "description": "Convert PDF, JPG, PNG, WebP, HEIC and SVG locally. Read, scan, merge, sign and edit documents with free open-source tools and notebooks. No required account."
   },
   "tools": {
     "path": "/tools/",
     "title": "Free PDF Tools Online — Private & Open Source · Plivvi",
-    "description": "Choose from 35 free document tools: PDF editing, scanning, merging, splitting, conversion and OCR. Files are processed in your browser. No feature paywalls."
+    "description": "Choose from 37 free document tools: PDF editing, file and image conversion, SVG creation, scanning, OCR, organization and protection. Process files locally."
   },
   "notebooks": {
     "path": "/notebooks/",

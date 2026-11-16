@@ -1,6 +1,6 @@
 {
   "name": "plivvi",
-  "version": "3.8.1",
+  "version": "3.9.0",
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-or-later",
@@ -8,11 +8,14 @@
     "dev": "vite --host 127.0.0.1",
     "build": "node scripts/prepare-source.mjs && tsc -b && vite build && node scripts/generate-seo.mjs",
     "test": "vitest run",
+    "test:browser": "playwright test",
     "preview": "vite preview --host 127.0.0.1",
     "format": "prettier --write src scripts tests docs .github project-site \"*.{json,ts,html,md}\" public/sw.js"
   },
   "dependencies": {
     "@azure/msal-browser": "latest",
+    "@imagemagick/magick-wasm": "^0.0.46",
+    "@noble/hashes": "^2.4.0",
     "@pdf-lib/fontkit": "latest",
     "docx": "latest",
     "dompurify": "latest",
@@ -20,7 +23,9 @@
     "fflate": "latest",
     "firebase": "latest",
     "html-to-image": "latest",
+    "icodec": "^0.6.0",
     "idb-keyval": "latest",
+    "imagetracerjs": "^1.2.6",
     "libarchive-wasm": "1.2.0",
     "lucide-react": "latest",
     "mammoth": "latest",
@@ -33,6 +38,7 @@
     "tesseract.js": "latest"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@types/node": "latest",
     "@types/qrcode": "^1.5.6",
     "@types/react": "latest",

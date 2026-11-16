@@ -43,3 +43,25 @@
   Cache-Control: public, max-age=600
 /search-manifest.json
   Cache-Control: no-cache
+
+/codec.html
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
+/codec
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
+/codec/
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  X-Robots-Tag: noindex
+  Cache-Control: no-store
+/assets/heic.worker-*.js
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+/assets/heic-enc-*.js
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin

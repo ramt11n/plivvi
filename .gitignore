@@ -3,6 +3,10 @@ dist/
 .sites-runtime/
 .DS_Store
 test-output/
+test-results/
+playwright-report/
+test-results/
+playwright-report/
 *.log
 *.tsbuildinfo
 .env
