@@ -67,7 +67,8 @@ async function convert(file: File): Promise<Input> {
   const host = document.createElement('div');
   host.style.cssText = 'position:fixed;left:-100000px;top:0;pointer-events:none;opacity:0';
   host.setAttribute('aria-hidden', 'true');
-  host.append(svg);
+  // Keep imported SVG styles from affecting the rest of the application.
+  host.attachShadow({ mode: 'closed' }).append(svg);
   document.body.append(host);
   try {
     const [{ jsPDF }, { svg2pdf }] = await Promise.all([import('jspdf'), import('svg2pdf.js')]);

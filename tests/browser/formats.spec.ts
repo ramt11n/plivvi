@@ -269,13 +269,11 @@ test('PSD, QOI and multi-frame TIFF inputs are decoded by their advertised codec
   await page.goto('/file-converter/');
   await page.locator('.tool-landing-hero button').click();
   for (const source of sources) {
-    await page
-      .locator('.converter-panel input[type=file]')
-      .setInputFiles({
-        name: source.name,
-        mimeType: 'application/octet-stream',
-        buffer: Buffer.from(source.bytes),
-      });
+    await page.locator('.converter-panel input[type=file]').setInputFiles({
+      name: source.name,
+      mimeType: 'application/octet-stream',
+      buffer: Buffer.from(source.bytes),
+    });
     await page.getByLabel('Convert to', { exact: true }).selectOption('png');
     await page.getByRole('button', { name: 'Convert files' }).click();
     await expect(page.locator('.converter-result')).toHaveCount(
@@ -287,6 +285,29 @@ test('PSD, QOI and multi-frame TIFF inputs are decoded by their advertised codec
   }
 });
 
+test('imported SVG styles remain isolated and external resources are not requested', async ({
+  page,
+}) => {
+  const requests: string[] = [];
+  await page.route('https://example.invalid/**', (route) => {
+    requests.push(route.request().url());
+    return route.abort();
+  });
+  await page.goto('/file-converter/');
+  await page.locator('.tool-landing-hero button').click();
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="48"><style>@import url("https://example.invalid/style.css"); body{display:none}.shape{fill:#ff0000}</style><image href="https://example.invalid/photo.png"/><rect class="shape" width="64" height="48"/></svg>';
+  await page
+    .locator('.converter-panel input[type=file]')
+    .setInputFiles({ name: 'styled.svg', mimeType: 'image/svg+xml', buffer: Buffer.from(svg) });
+  await expect(page.locator('.converter-source')).toContainText('1 page');
+  await page.getByLabel('Convert to', { exact: true }).selectOption('png');
+  await page.getByRole('button', { name: 'Convert files' }).click();
+  await expect(page.locator('.converter-result')).toHaveCount(1);
+  await expect(page.locator('.converter-header')).toBeVisible();
+  expect(requests).toEqual([]);
+});
+
 test('FB2 input uses the native book handler', async ({ page }) => {
   const xml =
     '<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0"><description><title-info><book-title>Plivvi fixture</book-title><lang>en</lang></title-info></description><body><section><title><p>PLIVVI FB2</p></title><p>Useful local reading copies.</p></section></body></FictionBook>';
@@ -294,13 +315,11 @@ test('FB2 input uses the native book handler', async ({ page }) => {
   await page.goto('/file-converter/');
   await page.locator('.tool-landing-hero button').click();
   for (const input of inputs) {
-    await page
-      .locator('.converter-panel input[type=file]')
-      .setInputFiles({
-        name: input.name,
-        mimeType: 'application/octet-stream',
-        buffer: input.bytes,
-      });
+    await page.locator('.converter-panel input[type=file]').setInputFiles({
+      name: input.name,
+      mimeType: 'application/octet-stream',
+      buffer: input.bytes,
+    });
     await page.getByLabel('Convert to', { exact: true }).selectOption('pdf');
     await page.getByRole('button', { name: 'Convert files' }).click();
     await expect(page.locator('.converter-result')).toHaveCount(1);
