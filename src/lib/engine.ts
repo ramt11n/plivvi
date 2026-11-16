@@ -2,14 +2,24 @@ import brand from '../brand.json';
 import { textDirection } from './unicode';
 import { parseRanges, selectedPages } from './catalog';
 import type { Input, Output, Preview } from './client';
+import { inputData, inputSize, inputStream } from './input';
 type Progress = (s: string) => void;
 let muPromise: Promise<typeof import('mupdf')>;
 export async function mu() {
-  return (muPromise ??= import('mupdf'));
+  return (muPromise ??= import('mupdf').catch((error) => {
+    muPromise = undefined as any;
+    throw error;
+  }));
 }
-export async function open(input: Input, password = '', maxPages = 300) {
-  const m = await mu(),
-    doc = new m.PDFDocument(input.data);
+export async function open(input: Input, password = '', maxPages = 100000) {
+  const m = await mu();
+  const stream = inputStream(m, input);
+  let doc: import('mupdf').PDFDocument;
+  try {
+    doc = new m.PDFDocument(stream ?? (await inputData(input)));
+  } finally {
+    stream?.destroy();
+  }
   if (doc.needsPassword() && !doc.authenticatePassword(password)) {
     doc.destroy();
     throw Error('This PDF needs its current password. Enter it and try again.');
@@ -17,7 +27,9 @@ export async function open(input: Input, password = '', maxPages = 300) {
   doc.disableJS();
   if (doc.countPages() > maxPages) {
     doc.destroy();
-    throw Error(`Please use a document with ${maxPages.toLocaleString('en-US')} pages or fewer for this operation.`);
+    throw Error(
+      `Please use a document with ${maxPages.toLocaleString('en-US')} pages or fewer for this operation.`,
+    );
   }
   return doc;
 }
@@ -54,7 +66,12 @@ export async function render(
     page.destroy();
   }
 }
-export async function preview(input: Input, password = '', pageIndex?: number): Promise<Preview> {
+export async function preview(
+  input: Input,
+  password = '',
+  pageIndex?: number,
+  options: { limit?: number; fields?: boolean } = {},
+): Promise<Preview> {
   const doc = await open(input, password);
   try {
     const count = doc.countPages(),
@@ -62,7 +79,7 @@ export async function preview(input: Input, password = '', pageIndex?: number): 
     const indices =
       pageIndex !== undefined
         ? [pageIndex]
-        : Array.from({ length: Math.min(count, 60) }, (_, i) => i);
+        : Array.from({ length: Math.min(count, options.limit ?? 60) }, (_, i) => i);
     for (const i of indices) {
       if (i < 0 || i >= count) throw Error('That page does not exist.');
       const r = await render(doc, i, pageIndex === undefined ? 220 : 1100);
@@ -70,7 +87,7 @@ export async function preview(input: Input, password = '', pageIndex?: number): 
     }
     const fields: NonNullable<Preview['fields']> = [],
       seen = new Set<string>();
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; options.fields !== false && i < count; i++) {
       const p = doc.loadPage(i);
       const widgets = p.getWidgets();
       try {
@@ -149,8 +166,8 @@ export async function operate(
 ): Promise<Output[]> {
   const { PDFDocument, degrees, rgb, StandardFonts } = await import('pdf-lib');
   if (!files.length) throw Error('Add a file to get started.');
-  if (files.reduce((s, f) => s + f.data.byteLength, 0) > 150 * 1048576)
-    throw Error('Please work with fewer than 150 MB at a time.');
+  if (files.reduce((s, f) => s + (f.file ? 0 : f.data.byteLength), 0) > 512 * 1048576)
+    throw Error('Process these files in smaller batches; the decoded input exceeds 512 MB.');
   const name = base(files[0].name),
     password = o.currentPassword ?? '';
   if (
@@ -308,8 +325,8 @@ export async function operate(
         }
       }
       let data = snapshot(doc, opts);
-      if (id === 'compress' && data.length >= files[0].data.byteLength)
-        data = new Uint8Array(files[0].data);
+      if (id === 'compress' && data.length >= inputSize(files[0]))
+        data = new Uint8Array(await inputData(files[0]));
       return [output(`${name}-${id}.pdf`, data)];
     } finally {
       doc.destroy();
@@ -530,21 +547,13 @@ export async function operate(
         });
         text = sheets.join('\n\f\n');
       } else if (ext === 'pptx') {
-        const { unzipSync } = await import('fflate'),
-          zip = unzipSync(new Uint8Array(file.data));
-        const paths = Object.keys(zip)
-          .filter((k) => /^ppt\/slides\/slide\d+\.xml$/.test(k))
-          .sort((a, b) => Number(a.match(/slide(\d+)/)![1]) - Number(b.match(/slide(\d+)/)![1]));
-        text = paths
-          .map(
-            (p) =>
-              new TextDecoder()
-                .decode(zip[p])
-                .match(/<a:t(?:\s[^>]*)?>[\s\S]*?<\/a:t>/g)
-                ?.map((t) => decodeEntities(t.replace(/<[^>]*>/g, '')))
-                .join('\n') ?? '',
-          )
-          .join('\n\f\n');
+        const { pptxReadingCopy } = await import('../converter/pptx');
+        const filename =
+          base(file.name) +
+          (files.filter((f) => base(f.name) === base(file.name)).length > 1 ? '-pptx' : '') +
+          '.pdf';
+        results.push(output(filename, await pptxReadingCopy(file.data)));
+        continue;
       } else if (['txt', 'md', 'html', 'htm'].includes(ext ?? '')) {
         text = new TextDecoder().decode(file.data);
         if (ext === 'html' || ext === 'htm')

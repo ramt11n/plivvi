@@ -21,24 +21,30 @@
         "a": "This converter preserves the photos. To recognize printed words, open the separate OCR tool after conversion."
       }
     ],
-    "options": {}
+    "options": {},
+    "reverse": [
+      {
+        "slug": "pdf-to-jpg",
+        "label": "Reverse: PDF to JPG"
+      }
+    ]
   },
   "pdf-to-jpg": {
     "slug": "pdf-to-jpg",
     "toolId": "pdf-image",
     "title": "PDF to JPG — Free Page Image Export",
-    "description": "Export PDF pages as JPG images locally. Choose the output resolution, then download your images without uploading the PDF.",
+    "description": "Convert selected PDF pages to JPG images. Download separate pages or join them into one picture, with resolution, rotation and edge-trimming controls.",
     "heading": "Take the pages you need as JPG images.",
     "steps": [
-      "Choose a PDF from your device.",
-      "For only a few pages, use Extract pages first and open the extracted PDF here.",
-      "JPG is selected for you; adjust the image resolution.",
-      "Convert and download the page images."
+      "Add your PDF and review its page count and previews.",
+      "Choose JPG, then select the page range and resolution.",
+      "Choose separate images or a vertical or horizontal joined image.",
+      "Convert and download the images individually or in a ZIP."
     ],
     "faqs": [
       {
-        "q": "Can I choose only selected pages?",
-        "a": "This converter exports every page of the supplied PDF. Use the separate Extract pages tool first to prepare a PDF containing only the pages you need."
+        "q": "Can I select pages or combine them into one image?",
+        "a": "Yes. Enter a range such as 1-2,5, then choose separate files or join the selected pages vertically or horizontally. Joined images are limited to 32 million pixels."
       },
       {
         "q": "Will the exported image contain selectable PDF text?",
@@ -47,7 +53,13 @@
     ],
     "options": {
       "format": "jpg"
-    }
+    },
+    "reverse": [
+      {
+        "slug": "jpg-to-pdf",
+        "label": "Reverse: JPG to PDF"
+      }
+    ]
   },
   "png-to-pdf": {
     "slug": "png-to-pdf",
@@ -71,24 +83,30 @@
         "a": "This converter preserves the photos. To recognize printed words, open the separate OCR tool after conversion."
       }
     ],
-    "options": {}
+    "options": {},
+    "reverse": [
+      {
+        "slug": "pdf-to-png",
+        "label": "Reverse: PDF to PNG"
+      }
+    ]
   },
   "pdf-to-png": {
     "slug": "pdf-to-png",
     "toolId": "pdf-image",
     "title": "PDF to PNG — Free Page Image Export",
-    "description": "Export PDF pages as PNG images locally. Choose the output resolution, then download your images without uploading the PDF.",
+    "description": "Convert selected PDF pages to PNG images. Download separate pages or join them into one picture, with resolution, rotation and edge-trimming controls.",
     "heading": "Take the pages you need as PNG images.",
     "steps": [
-      "Choose a PDF from your device.",
-      "For only a few pages, use Extract pages first and open the extracted PDF here.",
-      "PNG is selected for you; adjust the image resolution.",
-      "Convert and download the page images."
+      "Add your PDF and review its page count and previews.",
+      "Choose PNG, then select the page range and resolution.",
+      "Choose separate images or a vertical or horizontal joined image.",
+      "Convert and download the images individually or in a ZIP."
     ],
     "faqs": [
       {
-        "q": "Can I choose only selected pages?",
-        "a": "This converter exports every page of the supplied PDF. Use the separate Extract pages tool first to prepare a PDF containing only the pages you need."
+        "q": "Can I select pages or combine them into one image?",
+        "a": "Yes. Enter a range such as 1-2,5, then choose separate files or join the selected pages vertically or horizontally. Joined images are limited to 32 million pixels."
       },
       {
         "q": "Will the exported image contain selectable PDF text?",
@@ -97,7 +115,13 @@
     ],
     "options": {
       "format": "png"
-    }
+    },
+    "reverse": [
+      {
+        "slug": "png-to-pdf",
+        "label": "Reverse: PNG to PDF"
+      }
+    ]
   },
   "word-to-pdf": {
     "slug": "word-to-pdf",
@@ -121,7 +145,13 @@
         "a": "The converter creates a separate PDF output. Your source Office file remains unchanged."
       }
     ],
-    "options": {}
+    "options": {},
+    "reverse": [
+      {
+        "slug": "pdf-to-word",
+        "label": "Reverse: PDF to Word"
+      }
+    ]
   },
   "excel-to-pdf": {
     "slug": "excel-to-pdf",
@@ -145,7 +175,13 @@
         "a": "The converter creates a separate PDF output. Your source Office file remains unchanged."
       }
     ],
-    "options": {}
+    "options": {},
+    "reverse": [
+      {
+        "slug": "pdf-to-excel",
+        "label": "Reverse: PDF to Excel"
+      }
+    ]
   },
   "powerpoint-to-pdf": {
     "slug": "powerpoint-to-pdf",
@@ -169,7 +205,13 @@
         "a": "The converter creates a separate PDF output. Your source Office file remains unchanged."
       }
     ],
-    "options": {}
+    "options": {},
+    "reverse": [
+      {
+        "slug": "pdf-to-powerpoint",
+        "label": "Reverse: PDF to PowerPoint"
+      }
+    ]
   },
   "persian-ocr": {
     "slug": "persian-ocr",
@@ -246,5 +288,607 @@
       }
     ],
     "options": {}
+  },
+  "heic-to-jpg": {
+    "slug": "heic-to-jpg",
+    "toolId": "converter",
+    "title": "HEIC to JPG — Free Local Converter",
+    "description": "Convert HEIC files to JPG on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Make iPhone photos easy to share.",
+    "steps": [
+      "Add your HEIC file and review the available preview.",
+      "JPG is selected. Adjust the page range, size and other available output settings.",
+      "HEIC photos are decoded locally and exported as JPEG. JPEG removes transparency and may reduce detail; use quality controls before sharing.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "HEIC photos are decoded locally and exported as JPEG. JPEG removes transparency and may reduce detail; use quality controls before sharing."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "jpg"
+    },
+    "reverse": [
+      {
+        "slug": "jpg-to-heic",
+        "label": "Reverse: JPG to HEIC"
+      }
+    ]
+  },
+  "jpg-to-heic": {
+    "slug": "jpg-to-heic",
+    "toolId": "converter",
+    "title": "JPG to HEIC — Free Local Converter",
+    "description": "Convert JPG files to HEIC on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Create an HEIC copy from a JPEG.",
+    "steps": [
+      "Add your JPG file and review the available preview.",
+      "HEIC is selected. Adjust the page range, size and other available output settings.",
+      "HEIC encoding uses a separate local conversion window. Allow that window to open and keep it open until conversion finishes. HEIC recipients need a compatible viewer.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "HEIC encoding uses a separate local conversion window. Allow that window to open and keep it open until conversion finishes. HEIC recipients need a compatible viewer."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "heic"
+    },
+    "reverse": [
+      {
+        "slug": "heic-to-jpg",
+        "label": "Reverse: HEIC to JPG"
+      }
+    ]
+  },
+  "heic-to-png": {
+    "slug": "heic-to-png",
+    "toolId": "converter",
+    "title": "HEIC to PNG — Free Local Converter",
+    "description": "Convert HEIC files to PNG on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Open Apple photos as PNG images.",
+    "steps": [
+      "Add your HEIC file and review the available preview.",
+      "PNG is selected. Adjust the page range, size and other available output settings.",
+      "PNG keeps a lossless pixel copy after HEIC decoding, although its file size can be larger. Multi-image sources become separate outputs.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "PNG keeps a lossless pixel copy after HEIC decoding, although its file size can be larger. Multi-image sources become separate outputs."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "png"
+    },
+    "reverse": [
+      {
+        "slug": "png-to-heic",
+        "label": "Reverse: PNG to HEIC"
+      }
+    ]
+  },
+  "png-to-heic": {
+    "slug": "png-to-heic",
+    "toolId": "converter",
+    "title": "PNG to HEIC — Free Local Converter",
+    "description": "Convert PNG files to HEIC on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Save a PNG image as HEIC.",
+    "steps": [
+      "Add your PNG file and review the available preview.",
+      "HEIC is selected. Adjust the page range, size and other available output settings.",
+      "HEIC export requires the separate local encoding window. HEIC compatibility and transparency support vary between viewers.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "HEIC export requires the separate local encoding window. HEIC compatibility and transparency support vary between viewers."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "heic"
+    },
+    "reverse": [
+      {
+        "slug": "heic-to-png",
+        "label": "Reverse: HEIC to PNG"
+      }
+    ]
+  },
+  "webp-to-jpg": {
+    "slug": "webp-to-jpg",
+    "toolId": "converter",
+    "title": "WEBP to JPG — Free Local Converter",
+    "description": "Convert WEBP files to JPG on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Turn a web image into a familiar photo file.",
+    "steps": [
+      "Add your WEBP file and review the available preview.",
+      "JPG is selected. Adjust the page range, size and other available output settings.",
+      "JPG is widely readable. Transparent WebP pixels are composited on white, and animated frames are exported separately.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "JPG is widely readable. Transparent WebP pixels are composited on white, and animated frames are exported separately."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "jpg"
+    },
+    "reverse": [
+      {
+        "slug": "jpg-to-webp",
+        "label": "Reverse: JPG to WEBP"
+      }
+    ]
+  },
+  "jpg-to-webp": {
+    "slug": "jpg-to-webp",
+    "toolId": "converter",
+    "title": "JPG to WEBP — Free Local Converter",
+    "description": "Convert JPG files to WEBP on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Create compact WebP images for the web.",
+    "steps": [
+      "Add your JPG file and review the available preview.",
+      "WEBP is selected. Adjust the page range, size and other available output settings.",
+      "WebP output uses a real local image encoder. Adjust quality and width to balance file size and detail.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "WebP output uses a real local image encoder. Adjust quality and width to balance file size and detail."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "webp"
+    },
+    "reverse": [
+      {
+        "slug": "webp-to-jpg",
+        "label": "Reverse: WEBP to JPG"
+      }
+    ]
+  },
+  "webp-to-png": {
+    "slug": "webp-to-png",
+    "toolId": "converter",
+    "title": "WEBP to PNG — Free Local Converter",
+    "description": "Convert WEBP files to PNG on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Keep WebP pixels in a lossless PNG copy.",
+    "steps": [
+      "Add your WEBP file and review the available preview.",
+      "PNG is selected. Adjust the page range, size and other available output settings.",
+      "Decoded transparency is preserved in PNG. Animated WebP frames are exported separately rather than silently dropping frames.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "Decoded transparency is preserved in PNG. Animated WebP frames are exported separately rather than silently dropping frames."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "png"
+    },
+    "reverse": [
+      {
+        "slug": "png-to-webp",
+        "label": "Reverse: PNG to WEBP"
+      }
+    ]
+  },
+  "png-to-webp": {
+    "slug": "png-to-webp",
+    "toolId": "converter",
+    "title": "PNG to WEBP — Free Local Converter",
+    "description": "Convert PNG files to WEBP on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Keep transparent graphics ready for the web.",
+    "steps": [
+      "Add your PNG file and review the available preview.",
+      "WEBP is selected. Adjust the page range, size and other available output settings.",
+      "WebP supports transparent images. Select the output width and quality; compare fine edges before publishing.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "WebP supports transparent images. Select the output width and quality; compare fine edges before publishing."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "webp"
+    },
+    "reverse": [
+      {
+        "slug": "webp-to-png",
+        "label": "Reverse: WEBP to PNG"
+      }
+    ]
+  },
+  "svg-to-png": {
+    "slug": "svg-to-png",
+    "toolId": "converter",
+    "title": "SVG to PNG — Free Local Converter",
+    "description": "Convert SVG files to PNG on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Render vector artwork into a PNG picture.",
+    "steps": [
+      "Add your SVG file and review the available preview.",
+      "PNG is selected. Adjust the page range, size and other available output settings.",
+      "SVG is rendered at your chosen pixel width. The PNG is a raster copy; retain the source SVG for further vector editing.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "SVG is rendered at your chosen pixel width. The PNG is a raster copy; retain the source SVG for further vector editing."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "png"
+    },
+    "reverse": [
+      {
+        "slug": "png-to-svg",
+        "label": "Reverse: PNG to SVG"
+      }
+    ]
+  },
+  "png-to-svg": {
+    "slug": "png-to-svg",
+    "toolId": "converter",
+    "title": "PNG to SVG — Free Local Converter",
+    "description": "Convert PNG files to SVG on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Trace pixel artwork into colored vector shapes.",
+    "steps": [
+      "Add your PNG file and review the available preview.",
+      "SVG is selected. Adjust the page range, size and other available output settings.",
+      "This creates vector paths with a chosen color palette. Tracing changes fine details and is most useful for simple logos or illustrations. It does not recover an original design file.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "This creates vector paths with a chosen color palette. Tracing changes fine details and is most useful for simple logos or illustrations. It does not recover an original design file."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "svg"
+    },
+    "reverse": [
+      {
+        "slug": "svg-to-png",
+        "label": "Reverse: SVG to PNG"
+      }
+    ]
+  },
+  "pdf-to-svg": {
+    "slug": "pdf-to-svg",
+    "toolId": "converter",
+    "title": "PDF to SVG — Free Local Converter",
+    "description": "Convert PDF files to SVG on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Export PDF vector drawing commands.",
+    "steps": [
+      "Add your PDF file and review the available preview.",
+      "SVG is selected. Adjust the page range, size and other available output settings.",
+      "PDF pages export as SVG drawings. Text can become outlines and embedded photographs remain images; this cannot invent vectors from a scanned page.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "PDF pages export as SVG drawings. Text can become outlines and embedded photographs remain images; this cannot invent vectors from a scanned page."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "svg"
+    },
+    "reverse": [
+      {
+        "slug": "svg-to-pdf",
+        "label": "Reverse: SVG to PDF"
+      }
+    ]
+  },
+  "svg-to-pdf": {
+    "slug": "svg-to-pdf",
+    "toolId": "converter",
+    "title": "SVG to PDF — Free Local Converter",
+    "description": "Convert SVG files to PDF on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Put vector artwork on a PDF page.",
+    "steps": [
+      "Add your SVG file and review the available preview.",
+      "PDF is selected. Adjust the page range, size and other available output settings.",
+      "A local SVG becomes a PDF reading copy. Choose original bounds, A4 or Letter. Review font rendering and effects before sharing.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "A local SVG becomes a PDF reading copy. Choose original bounds, A4 or Letter. Review font rendering and effects before sharing."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "pdf"
+    },
+    "reverse": [
+      {
+        "slug": "pdf-to-svg",
+        "label": "Reverse: PDF to SVG"
+      }
+    ]
+  },
+  "pdf-to-cbz": {
+    "slug": "pdf-to-cbz",
+    "toolId": "converter",
+    "title": "PDF to CBZ — Free Local Converter",
+    "description": "Convert PDF files to CBZ on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Read PDF pages as a comic archive.",
+    "steps": [
+      "Add your PDF file and review the available preview.",
+      "CBZ is selected. Adjust the page range, size and other available output settings.",
+      "Selected pages are rendered as numbered PNG images in a CBZ archive. Image-only comic pages do not retain the original PDF text layer.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "Selected pages are rendered as numbered PNG images in a CBZ archive. Image-only comic pages do not retain the original PDF text layer."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "cbz"
+    },
+    "reverse": [
+      {
+        "slug": "cbz-to-pdf",
+        "label": "Reverse: CBZ to PDF"
+      }
+    ]
+  },
+  "cbz-to-pdf": {
+    "slug": "cbz-to-pdf",
+    "toolId": "converter",
+    "title": "CBZ to PDF — Free Local Converter",
+    "description": "Convert CBZ files to PDF on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Turn a comic archive into a page document.",
+    "steps": [
+      "Add your CBZ file and review the available preview.",
+      "PDF is selected. Adjust the page range, size and other available output settings.",
+      "CBZ image entries become PDF pages in archive page order. Reordering source archives changes their order in a combined PDF.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "CBZ image entries become PDF pages in archive page order. Reordering source archives changes their order in a combined PDF."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "pdf"
+    },
+    "reverse": [
+      {
+        "slug": "pdf-to-cbz",
+        "label": "Reverse: PDF to CBZ"
+      }
+    ]
+  },
+  "pdf-to-epub": {
+    "slug": "pdf-to-epub",
+    "toolId": "converter",
+    "title": "PDF to EPUB — Free Local Converter",
+    "description": "Convert PDF files to EPUB on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Make a reflowable text reading copy.",
+    "steps": [
+      "Add your PDF file and review the available preview.",
+      "EPUB is selected. Adjust the page range, size and other available output settings.",
+      "Selectable PDF text is collected into an EPUB book. Page layout, tables and illustrations are not reconstructed. Scanned PDFs need OCR before text conversion.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "Selectable PDF text is collected into an EPUB book. Page layout, tables and illustrations are not reconstructed. Scanned PDFs need OCR before text conversion."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "epub"
+    },
+    "reverse": [
+      {
+        "slug": "epub-to-pdf",
+        "label": "Reverse: EPUB to PDF"
+      }
+    ]
+  },
+  "epub-to-pdf": {
+    "slug": "epub-to-pdf",
+    "toolId": "converter",
+    "title": "EPUB to PDF — Free Local Converter",
+    "description": "Convert EPUB files to PDF on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Make an EPUB reading copy for PDF viewers.",
+    "steps": [
+      "Add your EPUB file and review the available preview.",
+      "PDF is selected. Adjust the page range, size and other available output settings.",
+      "The EPUB is laid out by the local document engine and exported as PDF pages. Review typography and page breaks before printing.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "The EPUB is laid out by the local document engine and exported as PDF pages. Review typography and page breaks before printing."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "pdf"
+    },
+    "reverse": [
+      {
+        "slug": "pdf-to-epub",
+        "label": "Reverse: PDF to EPUB"
+      }
+    ]
+  },
+  "txt-to-pdf": {
+    "slug": "txt-to-pdf",
+    "toolId": "converter",
+    "title": "TXT to PDF — Free Local Converter",
+    "description": "Convert TXT files to PDF on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Give plain text a portable page layout.",
+    "steps": [
+      "Add your TXT file and review the available preview.",
+      "PDF is selected. Adjust the page range, size and other available output settings.",
+      "Text becomes a PDF reading copy. Choose paper size and review long lines or multilingual text.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "Text becomes a PDF reading copy. Choose paper size and review long lines or multilingual text."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "pdf"
+    }
+  },
+  "pdf-to-html": {
+    "slug": "pdf-to-html",
+    "toolId": "converter",
+    "title": "PDF to HTML — Free Local Converter",
+    "description": "Convert PDF files to HTML on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Make a readable HTML text copy.",
+    "steps": [
+      "Add your PDF file and review the available preview.",
+      "HTML is selected. Adjust the page range, size and other available output settings.",
+      "Text from selected PDF pages is escaped into an HTML document. It preserves reading text rather than rebuilding the original page design.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "Text from selected PDF pages is escaped into an HTML document. It preserves reading text rather than rebuilding the original page design."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "html"
+    },
+    "reverse": [
+      {
+        "slug": "html-to-pdf",
+        "label": "Reverse: HTML to PDF"
+      }
+    ]
+  },
+  "html-to-pdf": {
+    "slug": "html-to-pdf",
+    "toolId": "converter",
+    "title": "HTML to PDF — Free Local Converter",
+    "description": "Convert HTML files to PDF on your device. Choose pages or frames, review the conversion settings and download without a required account.",
+    "heading": "Turn local HTML text into a reading PDF.",
+    "steps": [
+      "Add your HTML file and review the available preview.",
+      "PDF is selected. Adjust the page range, size and other available output settings.",
+      "HTML input is sanitized and converted as reading text. Scripts, remote resources and original web page layout are not reproduced.",
+      "Convert and download the result. Keep the original source for future editing."
+    ],
+    "faqs": [
+      {
+        "q": "What does this conversion preserve?",
+        "a": "HTML input is sanitized and converted as reading text. Scripts, remote resources and original web page layout are not reproduced."
+      },
+      {
+        "q": "Are my files uploaded for conversion?",
+        "a": "Processing runs on this device. The browser downloads the required document engine and codecs on first use. Account sign-in and cloud saving are optional."
+      }
+    ],
+    "options": {
+      "target": "pdf"
+    },
+    "reverse": [
+      {
+        "slug": "pdf-to-html",
+        "label": "Reverse: PDF to HTML"
+      }
+    ]
   }
 }

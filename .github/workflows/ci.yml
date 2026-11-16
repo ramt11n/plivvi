@@ -25,6 +25,17 @@ jobs:
           VITE_SITE_URL: ${{ vars.SITE_URL }}
           VITE_REPO_URL: https://github.com/ramt11n/plivvi
       - run: node scripts/verify-build.mjs
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: plivvi-browser-checks
+          path: |
+            test-output/browser-results.json
+            test-output/*.png
+            test-results/
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: plivvi-static-site

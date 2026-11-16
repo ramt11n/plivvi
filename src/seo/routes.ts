@@ -12,6 +12,7 @@ export type ToolContent = {
   heading: string;
   steps: string[];
   faqs: { q: string; a: string }[];
+  reverse?: { slug: string; label: string }[];
 };
 export const toolContent = content as Record<string, ToolContent>;
 export type FeatureContent = ToolContent & { toolId: string; options: Record<string, string> };

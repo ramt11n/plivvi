@@ -6,7 +6,7 @@ import { tools } from '../src/lib/catalog.ts';
 import { structuredData } from '../src/seo/schema.ts';
 const sitePages = JSON.parse(await readFile('src/seo/site-pages.json', 'utf8'));
 const guides = JSON.parse(await readFile('src/seo/guides.json', 'utf8'));
-const modified = '2026-11-05';
+const modified = '2026-11-17';
 const manifest = [];
 const features = JSON.parse(await readFile('src/seo/features.json', 'utf8'));
 const brand = JSON.parse(await readFile('src/brand.json', 'utf8'));
@@ -149,7 +149,7 @@ for (const tool of [
     route,
     d.title + ' · {brand}',
     d.description,
-    `<article class="tool-landing"><div class="tool-landing-hero"><span class="eyebrow">FREE. OPEN SOURCE. ON YOUR DEVICE.</span><h1>${esc(d.title.split(' — ')[0])}</h1><p>${esc(d.description)}</p><a class="button primary" href="#start">${esc(tool.action)}</a><p>No feature paywalls. Sign-in is optional.</p></div><section class="tool-guide" id="start"><div><h2>${esc(d.heading)}</h2><p>${esc(tool.description)} ${esc(tool.note ?? 'Create a new output while keeping your original file unchanged.')}</p></div><ol>${steps}</ol></section><section class="tool-faq"><h2>A few useful answers.</h2>${faqs}<details><summary>Can I use it on a phone or tablet?</summary><p>Yes. {brand} adapts to modern phones, tablets, laptops, and desktop browsers. File import works without a camera. Load tools online before relying on offline use.</p></details></section><p>Keep the tools free: <a href="/support/">sponsor the project</a>, <a href="/contact/">send feedback</a>, or contribute to the open-source application.</p>${Object.values(guides).some((g) => g.toolIds.includes(d.toolId ?? tool.id)) ? `<h2>Put this tool to work</h2><div class="seo-tools">${guideLinks(Object.values(guides).filter((g) => g.toolIds.includes(d.toolId ?? tool.id)))}</div>` : ''}<h2>More document tools</h2><div class="seo-tools">${tools
+    `<article class="tool-landing"><div class="tool-landing-hero"><span class="eyebrow">FREE. OPEN SOURCE. ON YOUR DEVICE.</span><h1>${esc(d.title.split(' — ')[0])}</h1><p>${esc(d.description)}</p><a class="button primary" href="#start">${esc(tool.action)}</a><p>No feature paywalls. Sign-in is optional.</p></div><section class="tool-guide" id="start"><div><h2>${esc(d.heading)}</h2><p>${esc(tool.description)} ${esc(tool.note ?? 'Create a new output while keeping your original file unchanged.')}</p></div><ol>${steps}</ol></section><section class="tool-faq"><h2>A few useful answers.</h2>${faqs}<details><summary>Can I use it on a phone or tablet?</summary><p>Yes. {brand} adapts to modern phones, tablets, laptops, and desktop browsers. File import works without a camera. Load tools online before relying on offline use.</p></details></section><p>Keep the tools free: <a href="/support/">sponsor the project</a>, <a href="/contact/">send feedback</a>, or contribute to the open-source application.</p>${Object.values(guides).some((g) => g.toolIds.includes(d.toolId ?? tool.id)) ? `<h2>Put this tool to work</h2><div class="seo-tools">${guideLinks(Object.values(guides).filter((g) => g.toolIds.includes(d.toolId ?? tool.id)))}</div>` : ''}${d.reverse?.length ? `<nav aria-label="Reverse conversions">${d.reverse.map((link) => `<a href="/${esc(link.slug)}/">${esc(link.label)}</a>`).join(' · ')}</nav>` : ''}<h2>More document tools</h2><div class="seo-tools">${tools
       .filter((t) => t.id !== tool.id && t.group === tool.group)
       .slice(0, 4)
       .map((t) => `<a href="/${content[t.id].slug}/">${esc(t.title)}</a>`)

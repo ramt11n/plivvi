@@ -89,6 +89,12 @@
         "q": "Can I merge encrypted PDFs?",
         "a": "You need the current source password. Files using different passwords are best unlocked separately before merging."
       }
+    ],
+    "reverse": [
+      {
+        "slug": "split-pdf",
+        "label": "Split PDF"
+      }
     ]
   },
   "split": {
@@ -110,6 +116,12 @@
       {
         "q": "Are the original pages deleted?",
         "a": "No. Splitting creates new files and leaves the original PDF unchanged."
+      }
+    ],
+    "reverse": [
+      {
+        "slug": "merge-pdf",
+        "label": "Merge PDF"
       }
     ]
   },
@@ -287,27 +299,47 @@
         "q": "Are these official document templates?",
         "a": "They are neutral copy layouts for authentic user-provided scans. They do not create credentials or guarantee government acceptance."
       }
+    ],
+    "reverse": [
+      {
+        "slug": "pdf-to-images",
+        "label": "PDF to JPG & PNG"
+      }
     ]
   },
   "pdf-image": {
     "slug": "pdf-to-images",
     "title": "PDF to JPG & PNG — Export PDF Pages",
-    "description": "Render PDF pages as JPG or PNG images with selectable output widths. Download pages separately or together as a ZIP.",
+    "description": "Convert PDF pages to JPG, PNG, WebP and other images. Select pages, rotate or trim edges, export separate files or join pages into one image locally.",
     "heading": "A picture of every page.",
     "steps": [
-      "Open your PDF.",
-      "Choose JPG for compact images or PNG for lossless image encoding.",
-      "Set the output page width.",
-      "Export page images and download them or a ZIP."
+      "Add a PDF and review the page count and previews.",
+      "Choose the output format, page range and resolution.",
+      "Export one image per page or join selected pages vertically or horizontally.",
+      "Download individual images or a ZIP. Use direct disk saving for large batches."
     ],
     "faqs": [
       {
-        "q": "Will the exported images contain editable text?",
-        "a": "No. Page images are raster pictures. Keep the PDF or use text/OCR tools when you need selectable words."
+        "q": "Can I export just a few pages?",
+        "a": "Yes. Enter a range such as 1-2,5. You can also reverse the selected page order."
       },
       {
-        "q": "Can I make WebP images?",
-        "a": "Export PNG or JPG pages, then use Convert images to create WebP copies."
+        "q": "Can I make one image from two PDF pages?",
+        "a": "Yes. Choose a vertical or horizontal arrangement. Joined images have a 32-million-pixel limit; lower the resolution or export separate images for long documents."
+      },
+      {
+        "q": "Can the conversion preserve vector artwork?",
+        "a": "JPG, PNG and WebP are raster pictures. Choose SVG for vector drawing commands from the PDF; photographs in the source stay embedded images."
+      }
+    ],
+    "reverse": [
+      {
+        "slug": "jpg-to-pdf",
+        "label": "Reverse: JPG to PDF"
+      },
+      {
+        "slug": "png-to-pdf",
+        "label": "Reverse: PNG to PDF"
       }
     ]
   },
@@ -353,6 +385,12 @@
         "q": "Are columns preserved?",
         "a": "Plain text has no page layout. Reading order can vary in multi-column pages and complex tables."
       }
+    ],
+    "reverse": [
+      {
+        "slug": "text-html-to-pdf",
+        "label": "Text & HTML to PDF"
+      }
     ]
   },
   "markdown": {
@@ -374,6 +412,12 @@
       {
         "q": "Does it support scanned PDFs?",
         "a": "Run OCR first for documents that contain only page images."
+      }
+    ],
+    "reverse": [
+      {
+        "slug": "text-html-to-pdf",
+        "label": "Text & HTML to PDF"
       }
     ]
   },
@@ -397,6 +441,12 @@
         "q": "Can I edit the result in other apps?",
         "a": "The output is a DOCX file that compatible word processors can open. Review the converted document before sharing."
       }
+    ],
+    "reverse": [
+      {
+        "slug": "office-to-pdf",
+        "label": "Office to PDF"
+      }
     ]
   },
   "excel": {
@@ -419,6 +469,12 @@
         "q": "Can I use a scanned table?",
         "a": "Run OCR first. Recognition errors in digits and separators can affect spreadsheet results."
       }
+    ],
+    "reverse": [
+      {
+        "slug": "excel-to-pdf",
+        "label": "Reverse: Excel to PDF"
+      }
     ]
   },
   "powerpoint": {
@@ -440,6 +496,12 @@
       {
         "q": "Will portrait pages be stretched?",
         "a": "The page images are fitted proportionally to widescreen slides, with space around them when needed."
+      }
+    ],
+    "reverse": [
+      {
+        "slug": "powerpoint-to-pdf",
+        "label": "Reverse: PowerPoint to PDF"
       }
     ]
   },
@@ -467,6 +529,12 @@
         "q": "Can I convert Persian, Arabic, Chinese, Japanese, or Indic text?",
         "a": "Yes. Text conversion uses script-aware shaping, local Noto fonts for supported Arabic and Indic scripts, and CJK fallback fonts. Persian and Arabic paragraphs use right-to-left layout. This creates a reading copy; complex original Office layouts are not reproduced."
       }
+    ],
+    "reverse": [
+      {
+        "slug": "pdf-to-word",
+        "label": "PDF to Word"
+      }
     ]
   },
   "html-pdf": {
@@ -492,6 +560,12 @@
       {
         "q": "Does it support accented and non-Latin characters?",
         "a": "Yes. Extended Latin, Persian, Arabic, Chinese, Japanese, Korean, and common Indic scripts use Unicode text layout with script font fallback. Text remains selectable in the generated PDF."
+      }
+    ],
+    "reverse": [
+      {
+        "slug": "pdf-to-markdown",
+        "label": "PDF to Markdown"
       }
     ]
   },
@@ -647,6 +721,12 @@
         "q": "Are all password characters accepted?",
         "a": "The interface rejects option-delimiter characters used by the underlying writer. Use a long unique password that meets its validation rules."
       }
+    ],
+    "reverse": [
+      {
+        "slug": "unlock-pdf",
+        "label": "Unlock PDF"
+      }
     ]
   },
   "unlock": {
@@ -668,6 +748,12 @@
       {
         "q": "Is the encrypted original overwritten?",
         "a": "No. The source remains unchanged and the tool creates a new unlocked PDF."
+      }
+    ],
+    "reverse": [
+      {
+        "slug": "protect-pdf",
+        "label": "Protect PDF"
       }
     ]
   },
@@ -778,6 +864,58 @@
       {
         "q": "Can I rely on it instead of reading?",
         "a": "It is a reading aid. Frequency-based sentence selection can miss context, exceptions, and important details."
+      }
+    ]
+  },
+  "converter": {
+    "slug": "file-converter",
+    "title": "File Converter — PDF, Images, Office, Comics & SVG",
+    "description": "Convert PDFs, images, Office reading copies and comics locally. Export JPG, PNG, WebP, HEIC, SVG and more with page ranges, previews and batch downloads.",
+    "heading": "Choose a file. Choose what comes next.",
+    "steps": [
+      "Add supported files and review their page previews. Reorder the sources if you are combining them.",
+      "Choose the output format. Read the conversion note for text, layout and vector capabilities.",
+      "Select a page range, resolution, rotation and separate or joined images.",
+      "Convert, review the output and download individual files or a ZIP. For large batches, save directly to disk in desktop Brave, Chrome or Edge."
+    ],
+    "faqs": [
+      {
+        "q": "Does it convert every possible file type?",
+        "a": "No. Supported inputs include PDF, common and modern images, SVG, modern Office documents, OpenDocument reading copies, text, EPUB and comic archives. Formats without a local decoder are identified before conversion. Legacy DOC, XLS and PPT need saving to modern Office formats first."
+      },
+      {
+        "q": "Can I work with PDFs larger than 1 GB?",
+        "a": "PDF inputs use file-backed random access rather than reading the whole source into browser memory. Work page by page or export selected pages. Output size, image dimensions, complex pages and available device memory still matter. Direct ZIP saving avoids retaining a large image batch in browser memory."
+      },
+      {
+        "q": "Are SVG outputs real vectors?",
+        "a": "PDF drawing commands are exported as SVG; embedded photographs remain embedded images. Raster photos can instead be traced into colored vector paths, which changes photographic detail. The SVG studio lets you create and export original vector shapes and code."
+      },
+      {
+        "q": "What happens to an Office document?",
+        "a": "Office imports become text and data reading copies. Complex page layouts, charts, slide styling and formulas are not faithfully reproduced. PDF-to-Word extracts paragraphs, PDF-to-Excel infers rows and PDF-to-PowerPoint creates page-image slides."
+      }
+    ]
+  },
+  "svg-create": {
+    "slug": "svg-studio",
+    "title": "SVG Studio — Draw Vectors & Export SVG Code",
+    "description": "Create vector drawings with pen, shapes and text. Edit SVG source, import local vectors, copy the code and export SVG or convert to PNG, JPG and PDF.",
+    "heading": "A drawing you can edit as code.",
+    "steps": [
+      "Choose pen, rectangle, ellipse, line or text. Set the stroke, fill and width.",
+      "Draw with a mouse, touch or stylus. Undo or redo changes as you work.",
+      "Edit the SVG source and apply it to the canvas. Imported vectors are sanitized for local editing.",
+      "Download the SVG, copy its code or send it to the converter for a PNG, JPG or PDF copy."
+    ],
+    "faqs": [
+      {
+        "q": "Does this export vector paths?",
+        "a": "Yes. Strokes, shapes and text are stored as SVG elements, rather than a photograph of the canvas. Text may use a different font on another device unless converted to paths elsewhere."
+      },
+      {
+        "q": "Can I import an existing SVG?",
+        "a": "Yes, up to 500 KB in the code editor. Scripts, external resources, embedded images, style blocks and animations are removed. Use the file converter for larger SVG documents."
       }
     ]
   }

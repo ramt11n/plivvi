@@ -1,4 +1,4 @@
-const CACHE = 'plivvi-v4-8-1';
+const CACHE = 'plivvi-v3-9-0';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
@@ -41,7 +41,7 @@ self.addEventListener('fetch', (event) => {
     request.method !== 'GET' ||
     url.origin !== self.location.origin ||
     /^\/(?:api|cdn-cgi)\//.test(url.pathname) ||
-    /^\/(?:redirect(?:\.html)?|auth\/callback)\/?$/.test(url.pathname) ||
+    /^\/(?:redirect(?:\.html)?|codec(?:\.html)?|auth\/callback)\/?$/.test(url.pathname) ||
     url.searchParams.has('code') ||
     url.searchParams.has('access_token') ||
     ['/version.json', '/pocket-config.json', '/source.zip', '/redirect.html', '/redirect'].includes(

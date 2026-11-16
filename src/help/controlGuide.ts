@@ -38,7 +38,7 @@ const explanations: [RegExp, string][] = [
   ],
   [
     /featured tool|play tool tour|pause tool tour|previous feature|next feature/i,
-    'Browse the tool illustrations. Select any of the 35 tools directly; the tour advances automatically only after you choose Play.',
+    'Browse the tool illustrations. Select any tool directly; the tour advances automatically only after you choose Play.',
   ],
   [
     /report.*bug|private report|email plivvi|review on github/i,
