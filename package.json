@@ -26,6 +26,7 @@
     "icodec": "^0.6.0",
     "idb-keyval": "latest",
     "imagetracerjs": "^1.2.6",
+    "jspdf": "^4.2.1",
     "libarchive-wasm": "1.2.0",
     "lucide-react": "latest",
     "mammoth": "latest",
@@ -35,6 +36,7 @@
     "qrcode": "^1.5.4",
     "react": "latest",
     "react-dom": "latest",
+    "svg2pdf.js": "^2.9.0",
     "tesseract.js": "latest"
   },
   "devDependencies": {

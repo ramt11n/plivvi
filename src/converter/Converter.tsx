@@ -13,7 +13,8 @@ import {
 } from 'lucide-react';
 import type { Tool } from '../lib/catalog';
 import { bytes } from '../lib/catalog';
-import { inputs, type Output } from '../lib/client';
+import type { Output } from '../lib/client';
+import { conversionInputs } from './inputs';
 import { conversionClient } from './client';
 import {
   converterAccept,
@@ -123,7 +124,7 @@ export default function Converter({
       const key = entry.id + ':' + options.currentPassword;
       if (thumbnails.current.has(key)) continue;
       thumbnails.current.add(key);
-      inputs([entry.file])
+      conversionInputs([entry.file])
         .then(([input]) =>
           getClient().request<Inspection>('convert-inspect', {
             input,
@@ -216,10 +217,12 @@ export default function Converter({
       if (run !== generation.current) return;
       let stored = 0,
         count = 0;
+      const prepared = await conversionInputs(entries.map((e) => e.file));
+      if (run !== generation.current) throw Error('Conversion cancelled.');
       await getClient().request(
         'convert',
         {
-          files: await inputs(entries.map((e) => e.file)),
+          files: prepared,
           options: { ...options, streamArchive: direct && options.target === 'cbz' },
         },
         (label, percent) => {
@@ -792,9 +795,9 @@ export default function Converter({
           <p>
             Inputs: PDF, JPG, PNG, WebP, HEIC/HEIF, AVIF, TIFF, BMP, GIF, ICO, PSD, QOI, SVG, DOCX,
             XLSX, PPTX, ODT, ODS, ODP, TXT, Markdown, HTML, CSV, TSV, JSON, XML, CBZ, CBR/RAR, EPUB,
-            XPS, OXPS and FB2. Modern image formats require their local codec download. GIF/TIFF
-            frames become separate pages. CBR is read-only; export comics as CBZ. Legacy DOC/XLS/PPT
-            require saving to their modern Office equivalents first.
+            and FB2. Modern image formats require their local codec download. GIF/TIFF frames become
+            separate pages. CBR is read-only; export comics as CBZ. Legacy DOC/XLS/PPT require
+            saving to their modern Office equivalents first.
           </p>
           <p>
             Text extraction requires a text layer; use OCR for scans. Office imports produce reading

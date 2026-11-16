@@ -26,6 +26,7 @@ export async function rasterFrames(data: Uint8Array): Promise<Uint8Array[]> {
     data[0] === 0 && data[1] === 0 && data[2] === 1 && data[3] === 0
       ? new m.MagickReadSettings({ format: m.MagickFormat.Ico })
       : new m.MagickReadSettings();
+  if (data[0] === 56 && data[1] === 66 && data[2] === 80 && data[3] === 83) settings.frameCount = 1;
   const info = m.MagickImageInfo.create(data, settings);
   if (info.width * info.height > 40_000_000)
     throw Error(

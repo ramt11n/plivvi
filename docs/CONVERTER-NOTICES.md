@@ -4,6 +4,8 @@ Plivvi remains AGPL-3.0-or-later. Its source archive includes the application, l
 
 New conversion dependencies:
 
+SVG input also uses [svg2pdf.js 2.9.0](https://github.com/yWorks/svg2pdf.js) and [jsPDF 4.2.1](https://github.com/parallax/jsPDF), both MIT-licensed. DOMPurify sanitizes SVG before insertion into the hidden measuring document. External stylesheets and image resources are disabled.
+
 | Component                     | Package version | License                                                          | Source                                           |
 | ----------------------------- | --------------- | ---------------------------------------------------------------- | ------------------------------------------------ |
 | magick-wasm                   | 0.0.46          | Apache-2.0 wrapper; bundled native codecs have their own notices | https://github.com/dlemstra/magick-wasm          |

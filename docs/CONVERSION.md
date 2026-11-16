@@ -15,9 +15,11 @@ The file converter runs locally in a dedicated, cancellable worker. It shares th
 
 Outputs: PDF, JPG/JPEG, PNG, WebP, AVIF, HEIC, TIFF, BMP, GIF, ICO, SVG, TXT, Markdown, HTML, DOCX, XLSX, PPTX, CBZ and EPUB.
 
-Inputs: those formats, HEIF, PSD, QOI, modern Office and OpenDocument documents, CSV/TSV/JSON/XML, CBR/RAR comics, XPS/OXPS and FB2. Legacy DOC/XLS/PPT are not advertised as supported. CBR is read-only; CBZ is the editable/exportable comic archive counterpart. GIF, TIFF and other multi-frame sources are treated as pages, not animated outputs.
+Inputs: those formats, HEIF, PSD, QOI, modern Office and OpenDocument documents, CSV/TSV/JSON/XML, CBR/RAR comics and FB2. Legacy DOC/XLS/PPT are not advertised as supported. CBR is read-only; CBZ is the editable/exportable comic archive counterpart. GIF, TIFF and other multi-frame sources are treated as pages, not animated outputs.
 
 PDF-to-SVG preserves the PDF's drawing commands; embedded photos stay images. Photo-to-SVG traces colored paths and changes detail. Text extraction cannot recover text from image-only scans; OCR is a separate local tool. DOCX/XLSX/ODF imports are text/data reading copies, and do not reproduce complex Office layouts. PPTX imports preserve embedded pictures and positioned text as a reading copy, without full Office theme, chart, group, effect or animation fidelity. PDF-to-Word extracts paragraphs, PDF-to-Excel infers rows, and PDF-to-PowerPoint makes page-image slides. Converting a PDF also does not preserve every interactive PDF feature or accessibility tag.
+
+SVG input is sanitized and converted to vector PDF commands locally with svg2pdf.js/jsPDF before the worker renders or exports it. External resources are blocked. Custom fonts, filters and advanced SVG effects need visual review. Editable SVG inputs are capped at 32 MiB. PSD conversion uses its flattened composite; GIF/TIFF frames remain separate pages. The installed MuPDF WASM build has no XPS/OpenXPS handler, so those extensions are not offered as supported inputs.
 
 ## Large files
 

@@ -30,7 +30,7 @@ async function genericDocument(input: Input, magic: string) {
 async function loadDocument(input: Input, password = ''): Promise<Document> {
   const ext = extension(input.name),
     m = await mu();
-  if (ext === 'pdf') return open(input, password);
+  if (ext === 'pdf' || input.type === 'application/pdf') return open(input, password);
   if (officeExtensions.includes(ext) || textExtensions.includes(ext)) {
     let source = input;
     if (['odt', 'ods', 'odp'].includes(ext)) {
@@ -93,12 +93,9 @@ async function loadDocument(input: Input, password = ''): Promise<Document> {
     }
   }
   const mime: Record<string, string> = {
-    svg: 'image/svg+xml',
     cbz: 'application/vnd.comicbook+zip',
     epub: 'application/epub+zip',
-    xps: 'application/oxps',
-    oxps: 'application/oxps',
-    fb2: 'application/x-fictionbook+xml',
+    fb2: 'fb2',
   };
   if (!mime[ext])
     throw Error('This file type has no local converter yet. Choose one of the listed formats.');

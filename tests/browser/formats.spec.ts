@@ -4,6 +4,7 @@ import { unzipSync, strToU8, zipSync } from 'fflate';
 import { PDFDocument } from 'pdf-lib';
 import { sampleComic } from '../fixtures/sampleComic';
 import * as mupdf from 'mupdf';
+import * as magick from '@imagemagick/magick-wasm';
 
 test('image encoders write real files, preserve PNG transparency and round-trip each supported codec', async ({
   page,
@@ -188,4 +189,123 @@ test('reader opens a file-backed PDF through its actual UI', async ({ page }) =>
     .setInputFiles('public/samples/pli-free-pages.pdf');
   await expect(page.locator('.reader-shell canvas').first()).toBeVisible();
   await expect(page.locator('.reader-shell')).not.toContainText('Choose a PDF or a CBR comic');
+});
+
+test('SVG input converts to PDF and PNG through the same handoff used by SVG Studio', async ({
+  page,
+}) => {
+  await page.goto('/svg-studio/');
+  await page.locator('.tool-landing-hero button').click();
+  await page
+    .getByLabel('SVG code editor')
+    .fill(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="48" viewBox="0 0 64 48"><rect width="64" height="48" fill="#3659e3"/><circle cx="32" cy="24" r="12" fill="#b7f0dd"/></svg>',
+    );
+  await page.getByRole('button', { name: 'Apply SVG code', exact: true }).click();
+  await page.getByRole('button', { name: 'Convert SVG to PNG, JPG or PDF', exact: true }).click();
+  await expect(page.locator('.converter-source')).toContainText('1 page');
+  await page.getByRole('button', { name: 'Convert files' }).click();
+  await expect(page.locator('.converter-result')).toHaveCount(1);
+  const download = page.waitForEvent('download');
+  await page
+    .locator('.converter-result')
+    .getByRole('button', { name: /^Download / })
+    .click();
+  const pdf = new mupdf.PDFDocument(
+    new Uint8Array(await readFile((await (await download).path())!)),
+  );
+  let paths = 0,
+    images = 0;
+  const device = new mupdf.Device({
+    fillPath: () => {
+      paths++;
+    },
+    fillImage: () => {
+      images++;
+    },
+  });
+  const p = pdf.loadPage(0);
+  p.run(device, mupdf.Matrix.identity);
+  device.close();
+  device.destroy();
+  p.destroy();
+  pdf.destroy();
+  expect(paths).toBeGreaterThan(0);
+  expect(images).toBe(0);
+  await page.getByLabel('Convert to', { exact: true }).selectOption('png');
+  await page.getByRole('button', { name: 'Convert files' }).click();
+  await expect(page.locator('.converter-result')).toHaveCount(1);
+  expect(await page.locator('.converter-error').allTextContents()).toEqual([]);
+});
+
+test('PSD, QOI and multi-frame TIFF inputs are decoded by their advertised codecs', async ({
+  page,
+}) => {
+  await magick.initializeImageMagick(
+    new Uint8Array(
+      await readFile(new URL(import.meta.resolve('@imagemagick/magick-wasm/magick.wasm'))),
+    ),
+  );
+  const image = magick.MagickImage.create(magick.MagickColors.Blue, 64, 48);
+  const sources = [
+    {
+      name: 'drawing.psd',
+      bytes: image.write(magick.MagickFormat.Psd, (bytes) => new Uint8Array(bytes)),
+    },
+    {
+      name: 'drawing.qoi',
+      bytes: image.write(magick.MagickFormat.Qoi, (bytes) => new Uint8Array(bytes)),
+    },
+  ];
+  image.dispose();
+  const collection = magick.MagickImageCollection.create();
+  collection.push(magick.MagickImage.create(magick.MagickColors.Blue, 64, 48));
+  collection.push(magick.MagickImage.create(magick.MagickColors.Red, 64, 48));
+  sources.push({
+    name: 'pages.tiff',
+    bytes: collection.write(magick.MagickFormat.Tiff, (bytes) => new Uint8Array(bytes)),
+  });
+  collection.dispose();
+  await page.goto('/file-converter/');
+  await page.locator('.tool-landing-hero button').click();
+  for (const source of sources) {
+    await page
+      .locator('.converter-panel input[type=file]')
+      .setInputFiles({
+        name: source.name,
+        mimeType: 'application/octet-stream',
+        buffer: Buffer.from(source.bytes),
+      });
+    await page.getByLabel('Convert to', { exact: true }).selectOption('png');
+    await page.getByRole('button', { name: 'Convert files' }).click();
+    await expect(page.locator('.converter-result')).toHaveCount(
+      source.name.endsWith('tiff') ? 2 : 1,
+    );
+    await expect(page.getByRole('button', { name: 'Convert files' })).toBeVisible();
+    expect(await page.locator('.converter-error').allTextContents()).toEqual([]);
+    await page.getByRole('button', { name: 'Remove ' + source.name, exact: true }).click();
+  }
+});
+
+test('FB2 input uses the native book handler', async ({ page }) => {
+  const xml =
+    '<FictionBook xmlns="http://www.gribuser.ru/xml/fictionbook/2.0"><description><title-info><book-title>Plivvi fixture</book-title><lang>en</lang></title-info></description><body><section><title><p>PLIVVI FB2</p></title><p>Useful local reading copies.</p></section></body></FictionBook>';
+  const inputs = [{ name: 'book.fb2', bytes: Buffer.from(xml) }];
+  await page.goto('/file-converter/');
+  await page.locator('.tool-landing-hero button').click();
+  for (const input of inputs) {
+    await page
+      .locator('.converter-panel input[type=file]')
+      .setInputFiles({
+        name: input.name,
+        mimeType: 'application/octet-stream',
+        buffer: input.bytes,
+      });
+    await page.getByLabel('Convert to', { exact: true }).selectOption('pdf');
+    await page.getByRole('button', { name: 'Convert files' }).click();
+    await expect(page.locator('.converter-result')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Convert files' })).toBeVisible();
+    expect(await page.locator('.converter-error').allTextContents()).toEqual([]);
+    await page.getByRole('button', { name: 'Remove ' + input.name, exact: true }).click();
+  }
 });

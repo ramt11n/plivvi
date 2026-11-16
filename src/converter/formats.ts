@@ -54,7 +54,7 @@ export const imageExtensions = [
 ];
 export const officeExtensions = ['docx', 'xlsx', 'pptx', 'odt', 'ods', 'odp'];
 export const textExtensions = ['txt', 'md', 'html', 'htm', 'csv', 'tsv', 'json', 'xml'];
-export const documentExtensions = ['pdf', 'svg', 'cbz', 'cbr', 'rar', 'epub', 'xps', 'oxps', 'fb2'];
+export const documentExtensions = ['pdf', 'svg', 'cbz', 'cbr', 'rar', 'epub', 'fb2'];
 export const acceptedExtensions = [
   ...imageExtensions,
   ...officeExtensions,
@@ -65,6 +65,8 @@ export const converterAccept = acceptedExtensions.map((ext) => '.' + ext).join('
 export const isConvertible = (name: string) => acceptedExtensions.includes(extension(name));
 export const isRaster = (name: string) => imageExtensions.includes(extension(name));
 export function conversionNote(name: string, target: OutputFormat) {
+  if (extension(name) === 'svg')
+    return 'SVG paths become vector PDF drawing commands before conversion. External resources are excluded; review fonts, filters and other advanced SVG effects.';
   if (officeExtensions.includes(extension(name)))
     return 'Office inputs become a text and data reading copy. Complex original layouts, charts and slide designs are not reproduced.';
   if (['docx', 'xlsx'].includes(target))
