@@ -1,4 +1,5 @@
 import brand from '../brand.json';
+import social from './social.json';
 import content from './content.json';
 import featureData from './features.json';
 import { structuredData } from './schema';
@@ -112,18 +113,24 @@ export function updateSEO(route: Route) {
   meta('og:url', url, true);
   meta(
     'og:image',
-    (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') + '/og.png',
+    (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') + social.image,
     true,
   );
-  meta('og:image:alt', 'Plivvi — free PDF tools and digital notebooks', true);
-  meta('twitter:image:alt', 'Plivvi — free PDF tools and digital notebooks');
-  meta('og:image:width', '1200', true);
-  meta('og:image:height', '630', true);
+  meta(
+    'og:image:secure_url',
+    (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') + social.image,
+    true,
+  );
+  meta('og:image:type', social.type, true);
+  meta('og:image:alt', social.alt, true);
+  meta('twitter:image:alt', social.alt);
+  meta('og:image:width', String(social.width), true);
+  meta('og:image:height', String(social.height), true);
   meta('twitter:title', identity(title));
   meta('twitter:description', identity(description));
   meta(
     'twitter:image',
-    (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') + '/og.png',
+    (import.meta.env.VITE_SITE_URL || location.origin).replace(/\/$/, '') + social.image,
   );
   let ld = document.head.querySelector<HTMLScriptElement>('#plivvi-seo-data');
   if (!ld) {

@@ -45,6 +45,32 @@ assert(!sitemap.includes('/documents/'));
 assert(!sitemap.includes('/account/'));
 const social = await stat('dist/og.png');
 assert(social.size > 1000, 'Social preview missing');
+const socialMeta = JSON.parse(await readFile('src/seo/social.json', 'utf8'));
+const socialAsset = await stat('dist' + socialMeta.image);
+assert(
+  socialAsset.size > 1000 && socialAsset.size < 5 * 1024 * 1024,
+  'Sharing artwork must be public and below LinkedIn’s limit',
+);
+for (const route of ['/', '/file-converter/', '/svg-studio/', '/notebooks/']) {
+  const html = await readFile(`dist${route}index.html`, 'utf8');
+  assert.equal(
+    (html.match(/property="og:image"/g) ?? []).length,
+    1,
+    route + ': duplicate social image',
+  );
+  assert(
+    html.includes(`property="og:image" content="https://plivvi.pages.dev${socialMeta.image}"`),
+    route + ': social image must be in initial HTML',
+  );
+  assert(
+    html.includes(`property="og:image:type" content="${socialMeta.type}"`),
+    route + ': missing image MIME',
+  );
+  assert(
+    html.includes(`name="twitter:image" content="https://plivvi.pages.dev${socialMeta.image}"`),
+    route + ': inconsistent Twitter artwork',
+  );
+}
 const source = await stat('dist/source.zip');
 assert(source.size > 1000, 'Source download missing');
 console.log(

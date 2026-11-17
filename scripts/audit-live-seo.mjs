@@ -1,5 +1,6 @@
 // Public HTTP checks, independent of JavaScript execution and owner sessions.
 import { mkdir, writeFile } from 'node:fs/promises';
+import social from '../src/seo/social.json' with { type: 'json' };
 const origin = (process.env.VITE_SITE_URL || 'https://plivvi.pages.dev').replace(/\/$/, '');
 const failures = [],
   checks = [];
@@ -81,7 +82,7 @@ async function worker() {
         ld?.['@graph']?.some((node) => node.url === url),
         url + ': structured data mismatch',
       );
-      expect(page.text.includes(origin + '/og.png'), url + ': no social preview');
+      expect(page.text.includes(origin + social.image), url + ': no social preview');
       checks.push({ url, status: page.status, title, canonical });
     } catch (error) {
       failures.push(url + ': ' + error.message);
@@ -98,7 +99,7 @@ for (const route of ['/documents/', '/account/']) {
 }
 const missing = await get('/seo-check-nonexistent-page/');
 expect(missing.status === 404, 'Unknown URL is a soft 404');
-for (const route of ['/favicon.ico', '/favicon-96.png', '/icon-512.png', '/og.png']) {
+for (const route of ['/favicon.ico', '/favicon-96.png', '/icon-512.png', '/og.png', social.image]) {
   const asset = await get(route);
   expect(asset.status === 200 && asset.type.startsWith('image/'), route + ': missing image');
 }

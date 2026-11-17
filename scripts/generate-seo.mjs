@@ -10,6 +10,7 @@ const modified = '2026-11-17';
 const manifest = [];
 const features = JSON.parse(await readFile('src/seo/features.json', 'utf8'));
 const brand = JSON.parse(await readFile('src/brand.json', 'utf8'));
+const social = JSON.parse(await readFile('src/seo/social.json', 'utf8'));
 const identity = (value) => String(value).replaceAll('{brand}', brand.name);
 const env = { ...loadEnv('production', process.cwd(), ''), ...process.env },
   origin = (env.VITE_SITE_URL || 'https://plivvi.pages.dev').replace(/\/$/, ''),
@@ -33,7 +34,25 @@ async function page(route, title, description, body, ld = {}, index = true) {
     description = main.description;
   }
   const url = origin + route,
-    head = `<link rel="canonical" href="${esc(url)}"><meta name="robots" content="${index ? 'index,follow' : 'noindex,nofollow'}"><meta property="og:type" content="website"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${esc(url)}"><meta property="og:image" content="${origin}/og.png"><meta property="og:site_name" content="{brand}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${origin}/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:image:alt" content="Plivvi — free PDF tools and digital notebooks"><meta property="og:image:alt" content="Plivvi — free PDF tools and digital notebooks"><script id="plivvi-seo-data" type="application/ld+json">${schema(structuredData(origin, route, title, description, Object.entries(content).find(([, d]) => route === '/' + d.slug + '/')?.[0] ?? Object.values(features).find((d) => route === '/' + d.slug + '/')?.toolId))}</script>`;
+    head = `<link rel="canonical" href="${esc(url)}">
+<meta name="robots" content="${index ? 'index,follow' : 'noindex,nofollow'}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(description)}">
+<meta property="og:url" content="${esc(url)}">
+<meta property="og:image" content="${esc(origin + social.image)}">
+<meta property="og:image:secure_url" content="${esc(origin + social.image)}">
+<meta property="og:image:type" content="${social.type}">
+<meta property="og:image:width" content="${social.width}">
+<meta property="og:image:height" content="${social.height}">
+<meta property="og:image:alt" content="${esc(social.alt)}">
+<meta property="og:site_name" content="{brand}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(description)}">
+<meta name="twitter:image" content="${esc(origin + social.image)}">
+<meta name="twitter:image:alt" content="${esc(social.alt)}">
+<script id="plivvi-seo-data" type="application/ld+json">${schema(structuredData(origin, route, title, description, Object.entries(content).find(([, d]) => route === '/' + d.slug + '/')?.[0] ?? Object.values(features).find((d) => route === '/' + d.slug + '/')?.toolId))}</script>`;
   let html = base
     .replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`)
     .replace(

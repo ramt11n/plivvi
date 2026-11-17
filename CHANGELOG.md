@@ -1,5 +1,11 @@
 # Releases
 
+## 3.10.2 · 2026-11-17
+
+- Refreshed link-sharing artwork with the native Plivvi wordmark, original Pli mascot, file converter, SVG Studio and notebooks.
+- Added versioned JPEG artwork, explicit image MIME and secure URL metadata, and consistent Open Graph/Twitter images in the initial HTML and client navigation.
+- Added public image caching headers and build checks for crawler-visible preview metadata.
+
 ## 3.10.1 · 2026-11-17
 
 - Balanced showcase tabs: six across on larger screens, three by two on smaller screens.

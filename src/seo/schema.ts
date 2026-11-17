@@ -1,4 +1,5 @@
 import brand from '../brand.json' with { type: 'json' };
+import social from './social.json' with { type: 'json' };
 import content from './content.json' with { type: 'json' };
 import features from './features.json' with { type: 'json' };
 import guides from './guides.json' with { type: 'json' };
@@ -79,7 +80,7 @@ export function structuredData(
       publisher: { '@id': organization['@id'] },
       dateModified: guide.updated,
       inLanguage: 'en',
-      image: origin + '/og.png',
+      image: origin + social.image,
       isAccessibleForFree: true,
     });
   if (path === '/guides/')
