@@ -1,3 +1,4 @@
+import Instagram from './InstagramIcon';
 import { lazy, Suspense } from 'react';
 import LoadingProgress from './LoadingProgress';
 const DonatePanel = lazy(() => import('../donations/DonatePanel'));
@@ -98,6 +99,17 @@ export function SiteFooter() {
             Send a private bug report
           </button>
           <a href={`mailto:${maker.email}`}>Email the Plivvi team</a>
+          <a
+            className="footer-instagram"
+            href="https://www.instagram.com/plivvi.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Plivvi on Instagram (opens in a new tab)"
+          >
+            <Instagram size={17} aria-hidden="true" />
+            <span>@plivvi.app</span>
+            <ArrowUpRight size={12} aria-hidden="true" />
+          </a>
         </div>
         <div>
           <h3>Good to know</h3>
@@ -135,9 +147,6 @@ export function SiteFooter() {
         </span>
         <span>AGPL-3.0-or-later</span>
       </div>
-      <a href="https://www.instagram.com/plivvi.app/" target="_blank" rel="noopener noreferrer">
-        Instagram � @plivvi.app
-      </a>
     </footer>
   );
 }

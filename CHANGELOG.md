@@ -1,5 +1,12 @@
 # Releases
 
+## 3.10.1 · 2026-11-17
+
+- Balanced showcase tabs: six across on larger screens, three by two on smaller screens.
+- Restored visible five-second progress tracks beneath each workflow, with correct wraparound reset.
+- Added accessible Instagram icon links above Support in navigation and within the footer contact group.
+- Corrected the broken footer separator character.
+
 ## 3.10.0 · 2026-11-17
 
 - Removed the duplicate converter banner and replaced platform-dependent text symbols with vector icons.

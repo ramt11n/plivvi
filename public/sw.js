@@ -1,4 +1,4 @@
-const CACHE = 'plivvi-v3-10-0';
+const CACHE = 'plivvi-v3-10-1';
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {

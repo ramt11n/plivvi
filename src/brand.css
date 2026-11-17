@@ -1685,3 +1685,27 @@ html[data-theme='dark'] .topbar.studio-topbar {
   color: var(--ink);
   text-decoration: none;
 }
+
+.rail-instagram {
+  text-decoration: none;
+  color: var(--muted);
+}
+.rail-instagram:hover {
+  color: var(--ink);
+}
+.footer-top .footer-instagram {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  padding: 7px 10px;
+  margin-top: 5px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  text-decoration: none;
+  color: var(--ink);
+  background: var(--surface-soft);
+}
+.footer-top .footer-instagram:hover {
+  background: var(--hover);
+}

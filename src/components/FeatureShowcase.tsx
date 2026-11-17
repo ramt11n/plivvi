@@ -227,18 +227,14 @@ export default function FeatureShowcase({
           >
             <slide.icon size={18} />
             <span>{slide.label}</span>
+            <span className="showcase-tab-timer" aria-hidden="true">
+              <i
+                key={`${revision}:${index}:${i}`}
+                ref={index === i ? progress : undefined}
+                style={{ transform: `scaleX(${i < index ? 1 : 0})` }}
+              />
+            </span>
           </button>
-        ))}
-      </div>
-      <div className="showcase-timeline" aria-hidden="true">
-        {showcaseSlides.map((slide, i) => (
-          <span key={slide.key}>
-            <i
-              key={`${revision}:${index}:${i}`}
-              ref={index === i ? progress : undefined}
-              style={{ transform: `scaleX(${i < index ? 1 : 0})` }}
-            />
-          </span>
         ))}
       </div>
       <div

@@ -1,3 +1,4 @@
+import Instagram from './components/InstagramIcon';
 import { useAppStatus } from './lib/appStatus';
 import { isComicFile } from './reader/sources';
 import { isConvertible } from './converter/formats';
@@ -547,6 +548,16 @@ export default function App() {
           ))}
         </nav>
         <div className="rail-bottom">
+          <a
+            className="rail-item rail-instagram"
+            href="https://www.instagram.com/plivvi.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Plivvi on Instagram (opens in a new tab)"
+          >
+            <Instagram size={21} aria-hidden="true" />
+            <span>Instagram</span>
+          </a>
           <button
             className="rail-item rail-support"
             aria-label="Donate to improve Plivvi"

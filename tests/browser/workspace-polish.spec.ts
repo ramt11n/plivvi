@@ -16,7 +16,7 @@ test('one converter banner, Instagram, and refreshed workflow artwork', async ({
     'aria-selected',
     'true',
   );
-  await expect(page.locator('.showcase-timeline i').last()).toHaveCSS(
+  await expect(page.locator('.showcase-tab-timer i').last()).toHaveCSS(
     'transform',
     'matrix(0, 0, 0, 1, 0, 0)',
   );
