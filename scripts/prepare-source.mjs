@@ -21,6 +21,7 @@ const roots = [
   'project-site',
   '.github',
   'README.md',
+  'CHANGELOG.md',
   'CONTRIBUTING.md',
   'CODE_OF_CONDUCT.md',
   'SECURITY.md',

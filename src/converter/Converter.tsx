@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
+  ArrowRightLeft,
   ArrowDown,
   ArrowUp,
   ArrowRight,
@@ -326,7 +327,9 @@ export default function Converter({
     >
       <section className="converter-panel" role="dialog" aria-modal="true" aria-label={tool.title}>
         <header className="converter-header">
-          <span className="converter-mark">↔</span>
+          <span className="converter-mark">
+            <ArrowRightLeft aria-hidden="true" />
+          </span>
           <div>
             <span className="converter-eyebrow">PLIVVI / CONVERT</span>
             <h2>{tool.title}</h2>

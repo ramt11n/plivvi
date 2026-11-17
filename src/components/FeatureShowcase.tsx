@@ -5,6 +5,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  PenTool,
   ScanLine,
   Layers3,
   Images,
@@ -38,8 +39,12 @@ export const showcaseSlides = [
     title: 'Open it.',
     accent: 'Get lost in it.',
     description:
-      'Open a PDF or CBR comic from your device or a direct file link. Read page by page or settle into a fullscreen spread.',
-    features: ['PDF and CBR comics', 'Fullscreen and two-page spreads', 'Left-to-right or right-to-left'],
+      'Open a PDF or CBR comic. Choose horizontal pages or an endless vertical strip, with optional gentle motion and manga reading direction.',
+    features: [
+      'PDF and CBR comics',
+      'Fullscreen and two-page spreads',
+      'Left-to-right or right-to-left',
+    ],
     action: 'Open the PDF reader',
     tool: 'reader',
     asset: 'reader',
@@ -86,13 +91,33 @@ export const showcaseSlides = [
     title: 'New format.',
     accent: 'Same possibilities.',
     description:
-      'Bring photos together in a PDF, or take PDF pages out as JPG or PNG. Make the copy you need, right here.',
-    features: ['Images to PDF', 'PDF to JPG or PNG', 'No feature subscription'],
-    action: 'Make a PDF from images',
-    tool: 'image-pdf',
+      'Convert PDFs, photos, Office documents and comics. Choose separate pages or one joined image, including real HEIC and WebP output.',
+    features: ['19 output formats', 'Separate or joined pages', 'SVG vectors and code'],
+    action: 'Open file converter',
+    tool: 'converter',
     asset: 'convert',
     device: 'all-in-one desktop',
     note: 'More conversion tools live on your tool shelf.',
+  },
+  {
+    key: 'vectors',
+    label: 'SVG Studio',
+    icon: PenTool,
+    eyebrow: 'YOUR IDEAS, YOUR VECTORS',
+    title: 'Draw freely.',
+    accent: 'Keep the code.',
+    description:
+      'A pen-friendly vector workspace. Sketch, arrange shapes, edit the source and export your work without a subscription.',
+    features: [
+      'Pressure-aware pen',
+      'Layers, zoom and touch navigation',
+      'SVG code and image export',
+    ],
+    action: 'Open SVG Studio',
+    tool: 'svg-create',
+    asset: 'vectors',
+    device: 'vector drawing tablet',
+    note: 'Stylus pressure depends on your device and browser. Your drawing stays local.',
   },
 ] as const;
 
@@ -152,7 +177,7 @@ export default function FeatureShowcase({
   useEffect(() => {
     const next = showcaseSlides[(index + 1) % showcaseSlides.length];
     const image = new Image();
-    image.src = `/visuals/showcase/${next.asset}-device.${next.asset === 'reader' ? 'svg' : 'webp'}`;
+    image.src = `/visuals/showcase/${next.asset}-device.${['reader', 'vectors'].includes(next.asset) ? 'svg' : 'webp'}`;
   }, [index]);
   const playing =
     !paused && !hovered && !focused && visible && pageVisible && !reducedMotion && artReady;
@@ -161,7 +186,7 @@ export default function FeatureShowcase({
     <section
       ref={section}
       className={`feature-showcase curated-showcase ${item.key} ${compact ? 'compact' : ''}`}
-      aria-label="Discover five free document workflows"
+      aria-label="Discover free document workflows"
       aria-roledescription="carousel"
       onPointerEnter={(e) => {
         if (e.pointerType === 'mouse') setHovered(true);
@@ -209,6 +234,7 @@ export default function FeatureShowcase({
         {showcaseSlides.map((slide, i) => (
           <span key={slide.key}>
             <i
+              key={`${revision}:${index}:${i}`}
               ref={index === i ? progress : undefined}
               style={{ transform: `scaleX(${i < index ? 1 : 0})` }}
             />
@@ -274,7 +300,7 @@ export default function FeatureShowcase({
         </div>
         <figure className={`showcase-product ${item.asset}`} key={`art-${item.key}`}>
           <img
-            src={`/visuals/showcase/${item.asset}-device.${item.asset === 'reader' ? 'svg' : 'webp'}`}
+            src={`/visuals/showcase/${item.asset}-device.${['reader', 'vectors'].includes(item.asset) ? 'svg' : 'webp'}`}
             width={item.asset === 'reader' ? 1433 : item.asset === 'notebooks' ? 1448 : 1536}
             height={item.asset === 'reader' ? 1098 : item.asset === 'notebooks' ? 1086 : 1024}
             decoding="async"
@@ -288,7 +314,8 @@ export default function FeatureShowcase({
         <span className="showcase-free">Free to create. Yours to keep.</span>
         <div className="showcase-controls">
           <span>
-            <b>{String(index + 1).padStart(2, '0')}</b> / 05
+            <b>{String(index + 1).padStart(2, '0')}</b> /{' '}
+            {String(showcaseSlides.length).padStart(2, '0')}
           </span>
           <button
             className="showcase-playback"

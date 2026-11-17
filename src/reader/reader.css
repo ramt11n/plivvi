@@ -1360,3 +1360,39 @@
   margin-top: 14px;
   font-size: 11px;
 }
+
+.reader-horizontal .reader-page-stack {
+  flex-direction: row;
+  align-items: flex-start;
+  min-height: 100%;
+}
+.reader-horizontal {
+  scroll-snap-type: x proximity;
+}
+.reader-horizontal .reader-page {
+  scroll-snap-align: center;
+}
+.reader-motion {
+  scroll-behavior: smooth;
+}
+.reader-motion:not(.reader-horizontal) .reader-page {
+  animation: comic-arrive 0.22s ease-out;
+}
+@keyframes comic-arrive {
+  from {
+    opacity: 0.65;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reader-motion {
+    scroll-behavior: auto;
+  }
+  .reader-motion .reader-page {
+    animation: none !important;
+  }
+}

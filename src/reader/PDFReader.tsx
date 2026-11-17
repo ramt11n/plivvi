@@ -124,7 +124,7 @@ export default function PDFReader({
     [cursor, setCursor] = useState(0),
     [zoom, setZoom] = useState(100),
     [fit, setFit] = useState<'width' | 'page' | 'manual'>('width'),
-    [layout, setLayout] = useState<'continuous' | 'single' | 'spread'>('continuous'),
+    [layout, setLayout] = useState<'continuous' | 'horizontal' | 'single' | 'spread'>('continuous'),
     [direction, setDirection] = useState<'ltr' | 'rtl'>(
       notebook?.paperSettings?.direction ?? 'ltr',
     ),
@@ -160,7 +160,9 @@ export default function PDFReader({
   const shell = useRef<HTMLElement>(null);
   const previousTool = useRef<ReaderTool>('pen');
   const swipe = useRef<{ id: number; x: number; y: number } | null>(null);
-  const continuous = layout === 'continuous';
+  const continuous = layout === 'continuous' || layout === 'horizontal';
+  const [pageMotion, setPageMotion] = useState(false);
+  const motionAllowed = pageMotion && !matchMedia('(prefers-reduced-motion: reduce)').matches;
   const spread = layout === 'spread' && viewport.width >= 600;
   const spreadStart = spread && page > 0 ? 1 + 2 * Math.floor((page - 1) / 2) : page;
   const spreadPages =
@@ -414,7 +416,11 @@ export default function PDFReader({
     if (continuous)
       document
         .getElementById(`reader-page-${next}`)
-        ?.scrollIntoView({ block: 'start', behavior: 'instant' });
+        ?.scrollIntoView({
+          block: 'start',
+          inline: 'center',
+          behavior: motionAllowed ? 'smooth' : 'instant',
+        });
     else if (!spread || next < spreadStart || next > spreadPages.at(-1)!)
       scroller.current?.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }
@@ -1680,7 +1686,7 @@ export default function PDFReader({
             </aside>
           )}
           <div
-            className={`reader-scroll ${tool !== 'select' ? 'reader-writing' : !continuous && fit !== 'manual' ? 'reader-swipe' : ''}`}
+            className={`reader-scroll ${layout === 'horizontal' ? 'reader-horizontal' : ''} ${motionAllowed ? 'reader-motion' : ''} ${tool !== 'select' ? 'reader-writing' : !continuous && fit !== 'manual' ? 'reader-swipe' : ''}`}
             ref={scroller}
             onPointerDown={(e) => {
               swipe.current = null;
@@ -1708,7 +1714,7 @@ export default function PDFReader({
           >
             <div
               className={`reader-page-stack ${spreadPages.length > 1 ? 'reader-spread' : ''}`}
-              dir={spreadPages.length > 1 ? direction : undefined}
+              dir={spreadPages.length > 1 || layout === 'horizontal' ? direction : undefined}
             >
               {(continuous ? info.pages.map((_, i) => i) : spreadPages).map((i) => (
                 <PDFPage
@@ -1898,12 +1904,22 @@ export default function PDFReader({
             {notice || `${marks.length} marks · original unchanged`}
           </span>
           <div className="reader-view-controls">
+            <label>
+              <input
+                type="checkbox"
+                aria-label="Animate page navigation"
+                checked={pageMotion}
+                onChange={(e) => setPageMotion(e.target.checked)}
+              />{' '}
+              Gentle motion
+            </label>
             <select
               aria-label="Page layout"
               value={layout}
               onChange={(e) => setLayout(e.target.value as typeof layout)}
             >
-              <option value="continuous">Continuous</option>
+              <option value="continuous">Vertical · continuous</option>
+              <option value="horizontal">Horizontal · continuous</option>
               <option value="single">Single page</option>
               <option value="spread">Two-page spread</option>
             </select>

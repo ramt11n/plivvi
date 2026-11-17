@@ -722,3 +722,42 @@ body:has(.modal-shade, .reader-shell) .guide-fab {
     width: 100%;
   }
 }
+
+.svg-board {
+  overflow: hidden;
+  min-height: 350px;
+}
+.svg-art-only {
+  grid-template-columns: 1fr;
+}
+.svg-code-pane[hidden] {
+  display: none;
+}
+.svg-layers {
+  max-height: 120px;
+  overflow: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 10px 0;
+}
+.svg-layers button,
+.svg-object-actions button {
+  color: var(--ink);
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+}
+.svg-layers [aria-pressed='true'] {
+  outline: 2px solid var(--accent, #3659e3);
+}
+.svg-object-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+.svg-toolbar label input[type='checkbox'] {
+  width: 18px;
+}

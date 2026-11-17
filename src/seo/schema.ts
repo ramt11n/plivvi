@@ -35,7 +35,7 @@ export function structuredData(
     url: origin + '/',
     logo: { '@type': 'ImageObject', url: origin + '/icon-512.png', width: 512, height: 512 },
     founder: { '@id': origin + '/#creator' },
-    sameAs: [repo],
+    sameAs: [repo, 'https://www.instagram.com/plivvi.app/'],
   };
   const guide = Object.values(guides).find((item) => path === '/guides/' + item.slug + '/');
   const app = {

@@ -135,6 +135,9 @@ export function SiteFooter() {
         </span>
         <span>AGPL-3.0-or-later</span>
       </div>
+      <a href="https://www.instagram.com/plivvi.app/" target="_blank" rel="noopener noreferrer">
+        Instagram � @plivvi.app
+      </a>
     </footer>
   );
 }

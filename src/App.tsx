@@ -408,7 +408,9 @@ export default function App() {
   );
   const converterBanner = (
     <section className="converter-banner">
-      <span aria-hidden="true">↔</span>
+      <span aria-hidden="true">
+        <Icon name="ArrowRightLeft" size={32} />
+      </span>
       <div>
         <h2>One file. A world of formats.</h2>
         <p>
@@ -746,7 +748,6 @@ export default function App() {
           )}
           {view === 'home' && (
             <>
-              {converterBanner}
               <section className="workbench-hero">
                 <div className="workbench-copy">
                   <div className="workbench-kicker">

@@ -356,13 +356,16 @@ export async function convertFiles(
             await send(
               `${name}.html`,
               utf8(
-                `<!doctype html><html lang="en"><meta charset="utf-8"><title>${escapeHTML(name)}</title><body>${pages.map((text, i) => `<section><h2>Page ${indices[i] + 1}</h2><pre style="white-space:pre-wrap">${escapeHTML(text)}</pre></section>`).join('')}</body></html>`,
+                `<!doctype html><html><meta charset="utf-8"><title>${escapeHTML(name)}</title><body>${pages.map((text, i) => `<section><h2>Page ${indices[i] + 1}</h2><pre dir="auto" style="white-space:pre-wrap;unicode-bidi:plaintext">${escapeHTML(text)}</pre></section>`).join('')}</body></html>`,
               ),
             );
           else if (options.target === 'epub') {
             const { zipSync, strToU8 } = await import('fflate');
             const body = pages
-              .map((text) => `<p>${escapeHTML(text).replaceAll('\n', '<br/>')}</p>`)
+              .map(
+                (text) =>
+                  `<p dir="auto" style="white-space:pre-wrap;unicode-bidi:plaintext">${escapeHTML(text).replaceAll('\n', '<br/>')}</p>`,
+              )
               .join('');
             await send(
               `${name}.epub`,
@@ -372,7 +375,7 @@ export async function convertFiles(
                   '<?xml version="1.0"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>',
                 ),
                 'content.opf': strToU8(
-                  `<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">urn:uuid:${crypto.randomUUID()}</dc:identifier><dc:title>${escapeHTML(name)}</dc:title><dc:language>en</dc:language><meta property="dcterms:modified">${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</meta></metadata><manifest><item id="page" href="book.xhtml" media-type="application/xhtml+xml"/><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/></manifest><spine><itemref idref="page"/></spine></package>`,
+                  `<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="id">urn:uuid:${crypto.randomUUID()}</dc:identifier><dc:title>${escapeHTML(name)}</dc:title><dc:language>und</dc:language><meta property="dcterms:modified">${new Date().toISOString().replace(/\.\d+Z$/, 'Z')}</meta></metadata><manifest><item id="page" href="book.xhtml" media-type="application/xhtml+xml"/><item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/></manifest><spine><itemref idref="page"/></spine></package>`,
                 ),
                 'book.xhtml': strToU8(
                   `<html xmlns="http://www.w3.org/1999/xhtml"><head><title>${escapeHTML(name)}</title></head><body>${body}</body></html>`,

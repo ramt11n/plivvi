@@ -17,6 +17,54 @@ export function controlName(element: HTMLElement) {
 }
 const explanations: [RegExp, string][] = [
   [
+    /gentle motion|animate page/i,
+    'Enable gentle page-navigation motion. Turn it off for immediate jumps. Your device’s reduced-motion preference always takes priority.',
+  ],
+  [
+    /page layout/i,
+    'Choose continuous vertical scrolling for webcomics, continuous horizontal pages for comics, a single page, or a two-page spread. Reading direction also supports manga.',
+  ],
+  [
+    /join|separate|image layout/i,
+    'Export one image per selected page, or join pages vertically or horizontally. Very large combined images are limited to protect device memory.',
+  ],
+  [
+    /page range|pages to convert/i,
+    'Use page numbers and ranges, for example 1,3-5. Only selected pages are converted, in source order unless reversed.',
+  ],
+  [
+    /direct.*disk|stream.*zip/i,
+    'Write ZIP or CBZ pages progressively to disk or temporary browser storage, reducing memory use. Keep this window open until saving finishes.',
+  ],
+  [
+    /reverse.*order/i,
+    'Reverse the selected pages before exporting. Reorder whole source files with their move controls.',
+  ],
+  [
+    /svg code|vector source|apply svg/i,
+    'Edit SVG markup directly, then Apply SVG code to update the drawing. Unsafe scripts and external resources are removed. Download exports the applied drawing.',
+  ],
+  [
+    /pressure|draw with finger/i,
+    'Stylus input draws with pressure when supported. Leave finger drawing off to navigate with touch without adding accidental marks.',
+  ],
+  [
+    /layers|bring.*front|send.*back|duplicate.*object|delete.*object/i,
+    'Select an object to move, duplicate, delete or change its stacking order. Undo restores changes. Imported groups remain groups.',
+  ],
+  [
+    /canvas|pan|drawing tool|transparent fill/i,
+    'Choose a drawing tool, select and move objects, or pan the artboard. Adjust zoom, paper size, stroke and fill independently.',
+  ],
+  [
+    /file converter/i,
+    'Convert supported PDF, image, Office, text, ebook and comic files locally. Select pages and output settings, then download individual files or a ZIP.',
+  ],
+  [
+    /svg studio/i,
+    'Create local vector drawings with a pen or mouse, arrange objects and edit SVG code. Export SVG or open the converter for other formats.',
+  ],
+  [
     /guide to every|guide to this|show me around/i,
     'Open a guided tour of the visible controls in this workspace. Jump to any control without running its action.',
   ],

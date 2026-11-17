@@ -70,13 +70,13 @@ This is an independent open-source workshop, not Adobe Acrobat, CamScanner, or i
 - Shadow normalization cannot reconstruct obscured text, clipped glare, curved books, or blurred detail. Automatic corners are adjustable suggestions.
 - OCR accuracy/reading order varies. Persian/Arabic recognition is available, but full bidirectional shaping is not implemented in every export path or annotation font.
 - Office conversions are basic reading/editing copies. DOCX extracts paragraphs, XLSX infers rows, PPTX contains page images, and Office-to-PDF does not preserve full layout/charts. No certified PDF/A, certificate-backed digital signing, AI translation, cloud document synchronization, or generative summary service is included.
-- Large documents can exceed browser memory, especially on iOS. Sources are capped at 100 MB each and PDFs at 300 pages; visual organization previews up to 60. These are browser resource guards, not paid limits.
+- Large documents can exceed browser memory, especially on iOS. PDF input uses random-access file reads, including tested files above 1 GiB. Decoded images, joined canvases and buffered outputs have separate memory guards; visual organization previews up to 60 pages. See the conversion guide for exact limits. These are browser resource guards, not paid limits.
 - Lossless optimization may return the original if rewriting is larger. Raster compression loses interactive/searchable structure. PDF edits can invalidate existing cryptographic signatures.
 - Crop changes the visible box; it is not redaction. Content redaction does not automatically sanitize attachments, every metadata field, or all other document structures.
 
 ## Search discovery
 
-The production build generates **58 indexable pages**, including 45 tool/workflow pages, nine main pages and four practical guides. Each has static HTML, a distinct title and description, a canonical URL, social metadata and matching structured data. Private workspace/account routes are excluded and marked noindex.
+The production build generates **79 indexable pages**, including 66 tool/workflow pages, nine main pages and four practical guides. Each has static HTML, a distinct title and description, a canonical URL, social metadata and matching structured data. Private workspace/account routes are excluded and marked noindex.
 
 `/sitemap-index.xml` lists the tools, pages and guides sitemaps. `/sitemap.xml` remains available for existing submissions. Run `node scripts/audit-live-seo.mjs` after deployment to check public HTTP responses. The optional Cloudflare workflow notifies IndexNow of changed public content; it does not submit private user data. See [search operations](docs/SEARCH-OPERATIONS.md). Submission is a discovery hint, not a guarantee of indexing or ranking.
 

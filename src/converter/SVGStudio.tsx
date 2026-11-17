@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
-import { X, Download, Undo2, Redo2, Upload, ArrowRight, Copy } from 'lucide-react';
+import { X, Download, Undo2, Redo2, Upload, ArrowRight, Copy, PenTool } from 'lucide-react';
 import { downloadBlob } from './downloads';
 import './converter.css';
 
@@ -53,7 +53,7 @@ export function cleanSVG(source: string) {
     );
   return new XMLSerializer().serializeToString(root);
 }
-type Point = { x: number; y: number };
+type Point = { x: number; y: number; pressure?: number };
 export default function SVGStudio({
   onClose,
   onConvert,
@@ -61,9 +61,23 @@ export default function SVGStudio({
   onClose: () => void;
   onConvert: (file: File) => void;
 }) {
-  const [history, setHistory] = useState([blank]),
+  const [history, setHistory] = useState(() => {
+      try {
+        return [cleanSVG(localStorage.getItem('plivvi-svg-draft') || blank)];
+      } catch {
+        return [blank];
+      }
+    }),
     [index, setIndex] = useState(0),
-    [code, setCode] = useState(blank);
+    [code, setCode] = useState(history[0]);
+  const [selectedObject, setSelectedObject] = useState<number | null>(null);
+  const [zoom, setZoom] = useState(100),
+    [offset, setOffset] = useState({ x: 0, y: 0 }),
+    [finger, setFinger] = useState(false),
+    [pressure, setPressure] = useState(true),
+    [transparent, setTransparent] = useState(false),
+    [showCode, setShowCode] = useState(true);
+  const gesture = useRef<{ x: number; y: number; ox: number; oy: number; id: number } | null>(null);
   const [mode, setMode] = useState('pen'),
     [fill, setFill] = useState('#b7d7f4'),
     [stroke, setStroke] = useState('#244cc9'),
@@ -76,6 +90,19 @@ export default function SVGStudio({
     upload = useRef<HTMLInputElement>(null),
     points = useRef<Point[]>([]);
   const source = history[index];
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem('plivvi-svg-draft', source);
+      } catch {
+        setMessage('Draft storage is full. Download a backup.');
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [source]);
+  const touches = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ distance: number; zoom: number } | null>(null);
+  const moving = useRef<{ index: number; x: number; y: number; transform: string } | null>(null);
   const parsed = new DOMParser().parseFromString(source, 'image/svg+xml'),
     root = parsed.documentElement;
   const viewBox = root.getAttribute('viewBox') || '0 0 800 600';
@@ -111,22 +138,41 @@ export default function SVGStudio({
     p.x = event.clientX;
     p.y = event.clientY;
     const result = p.matrixTransform(board.current!.getScreenCTM()!.inverse());
-    return { x: Math.round(result.x), y: Math.round(result.y) };
+    return {
+      x: Math.round(result.x),
+      y: Math.round(result.y),
+      pressure: event.pointerType === 'pen' && pressure ? Math.max(0.1, event.pressure) : 0.5,
+    };
   }
   function shape(list: Point[]) {
     const first = list[0],
       last = list[list.length - 1];
     const attrs = `stroke="${stroke}" stroke-width="${weight}" stroke-linecap="round" stroke-linejoin="round"`;
+    if (mode === 'pen' && pressure && list.length > 1) {
+      const sides = list.map((p, i) => {
+        const a = list[Math.max(0, i - 1)],
+          b = list[Math.min(list.length - 1, i + 1)],
+          dx = b.x - a.x,
+          dy = b.y - a.y,
+          n = Math.hypot(dx, dy) || 1,
+          r = weight * (0.2 + (p.pressure ?? 0.5) * 0.8);
+        return [
+          { x: p.x - (dy / n) * r, y: p.y + (dx / n) * r },
+          { x: p.x + (dy / n) * r, y: p.y - (dx / n) * r },
+        ];
+      });
+      return `<path d="${[...sides.map((s) => s[0]), ...sides.map((s) => s[1]).reverse()].map((p, i) => `${i ? 'L' : 'M'}${p.x} ${p.y}`).join(' ')} Z" fill="${stroke}"/>`;
+    }
     if (mode === 'text')
-      return `<text x="${first.x}" y="${first.y}" fill="${stroke}" font-family="sans-serif" font-size="32">${escape(text)}</text>`;
+      return `<text x="${first.x}" y="${first.y}" fill="${stroke}" font-family="sans-serif" font-size="32" direction="${/[\p{Script=Arabic}\p{Script=Hebrew}]/u.test(text) ? 'rtl' : 'ltr'}" unicode-bidi="plaintext">${escape(text)}</text>`;
     if (mode === 'pen')
       return `<path d="${list.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${p.y}`).join(' ')}" fill="none" ${attrs}/>`;
     if (mode === 'line')
       return `<line x1="${first.x}" y1="${first.y}" x2="${last.x}" y2="${last.y}" ${attrs}/>`;
     if (mode === 'rect')
-      return `<rect x="${Math.min(first.x, last.x)}" y="${Math.min(first.y, last.y)}" width="${Math.abs(last.x - first.x)}" height="${Math.abs(last.y - first.y)}" fill="${fill}" ${attrs}/>`;
+      return `<rect x="${Math.min(first.x, last.x)}" y="${Math.min(first.y, last.y)}" width="${Math.abs(last.x - first.x)}" height="${Math.abs(last.y - first.y)}" fill="${transparent ? 'none' : fill}" ${attrs}/>`;
     if (mode === 'ellipse')
-      return `<ellipse cx="${(first.x + last.x) / 2}" cy="${(first.y + last.y) / 2}" rx="${Math.abs(last.x - first.x) / 2}" ry="${Math.abs(last.y - first.y) / 2}" fill="${fill}" ${attrs}/>`;
+      return `<ellipse cx="${(first.x + last.x) / 2}" cy="${(first.y + last.y) / 2}" rx="${Math.abs(last.x - first.x) / 2}" ry="${Math.abs(last.y - first.y) / 2}" fill="${transparent ? 'none' : fill}" ${attrs}/>`;
     return '';
   }
   function finish(event: React.PointerEvent) {
@@ -146,7 +192,9 @@ export default function SVGStudio({
         aria-label="SVG studio"
       >
         <header className="converter-header">
-          <span className="converter-mark">✎</span>
+          <span className="converter-mark">
+            <PenTool aria-hidden="true" />
+          </span>
           <div>
             <span className="converter-eyebrow">PLIVVI / CREATE</span>
             <h2>SVG studio</h2>
@@ -159,6 +207,8 @@ export default function SVGStudio({
         <div className="svg-toolbar">
           <div className="svg-modes" role="group" aria-label="Drawing tool">
             {[
+              ['select', 'Select'],
+              ['pan', 'Pan'],
               ['pen', 'Pen'],
               ['line', 'Line'],
               ['rect', 'Rectangle'],
@@ -218,27 +268,182 @@ export default function SVGStudio({
             <small>Click the drawing where the text should appear.</small>
           </label>
         )}
-        <div className="svg-workspace">
+        <div className="svg-toolbar">
+          <label>
+            <input type="checkbox" checked={finger} onChange={(e) => setFinger(e.target.checked)} />
+            Draw with finger
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={pressure}
+              onChange={(e) => setPressure(e.target.checked)}
+            />
+            Pressure
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={transparent}
+              onChange={(e) => setTransparent(e.target.checked)}
+            />
+            Transparent fill
+          </label>
+          <label>
+            Canvas zoom
+            <input
+              aria-label="Canvas zoom"
+              type="range"
+              min="25"
+              max="400"
+              value={zoom}
+              onChange={(e) => setZoom(+e.target.value)}
+            />
+          </label>
+          <span>{zoom}%</span>
+          <button
+            onClick={() => {
+              setZoom(100);
+              setOffset({ x: 0, y: 0 });
+            }}
+          >
+            Fit canvas
+          </button>
+          <button onClick={() => setShowCode(!showCode)} aria-pressed={showCode}>
+            Vector source
+          </button>
+        </div>
+        <div className={`svg-workspace ${showCode ? '' : 'svg-art-only'}`}>
           <div className="svg-board">
             <svg
               ref={board}
               viewBox={viewBox}
+              style={{
+                transform: `translate(${offset.x}px,${offset.y}px) scale(${zoom / 100})`,
+                transformOrigin: 'center',
+              }}
               aria-label="Vector drawing canvas"
               onPointerDown={(event) => {
                 event.preventDefault();
+                if (event.pointerType === 'touch') {
+                  touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+                  if (touches.current.size === 2) {
+                    const [a, b] = [...touches.current.values()];
+                    pinch.current = { distance: Math.hypot(a.x - b.x, a.y - b.y), zoom };
+                    gesture.current = null;
+                    points.current = [];
+                    setDraft('');
+                    board.current!.setPointerCapture(event.pointerId);
+                    return;
+                  }
+                }
+                if (!event.isPrimary) {
+                  points.current = [];
+                  setDraft('');
+                  return;
+                }
                 board.current!.setPointerCapture(event.pointerId);
+                if (mode === 'pan' || (event.pointerType === 'touch' && !finger)) {
+                  gesture.current = {
+                    x: event.clientX,
+                    y: event.clientY,
+                    ox: offset.x,
+                    oy: offset.y,
+                    id: event.pointerId,
+                  };
+                  return;
+                }
+                if (mode === 'select') {
+                  const holder = board.current!.querySelector('g')!;
+                  let target = event.target as Element;
+                  while (target.parentElement && target.parentNode !== holder)
+                    target = target.parentElement;
+                  const at = Array.from(holder.children).indexOf(target);
+                  setSelectedObject(at < 0 ? null : at);
+                  if (at >= 0) {
+                    const start = point(event);
+                    moving.current = {
+                      index: at,
+                      x: start.x,
+                      y: start.y,
+                      transform: root.children[at]?.getAttribute('transform') || '',
+                    };
+                  }
+                  return;
+                }
                 points.current = [point(event)];
                 setDraft(shape(points.current));
               }}
               onPointerMove={(event) => {
+                if (touches.current.has(event.pointerId))
+                  touches.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+                if (pinch.current && touches.current.size === 2) {
+                  const [a, b] = [...touches.current.values()];
+                  setZoom(
+                    Math.max(
+                      25,
+                      Math.min(
+                        400,
+                        (pinch.current.zoom * Math.hypot(a.x - b.x, a.y - b.y)) /
+                          (pinch.current.distance || 1),
+                      ),
+                    ),
+                  );
+                  return;
+                }
+                if (moving.current) {
+                  const m = moving.current,
+                    end = point(event);
+                  const node = board.current!.querySelector('g')?.children[m.index];
+                  node?.setAttribute(
+                    'transform',
+                    `translate(${end.x - m.x} ${end.y - m.y}) ${m.transform}`,
+                  );
+                  return;
+                }
+                if (gesture.current) {
+                  const g = gesture.current;
+                  if (g.id === event.pointerId)
+                    setOffset({ x: g.ox + event.clientX - g.x, y: g.oy + event.clientY - g.y });
+                  return;
+                }
                 if (!points.current.length) return;
                 if (mode === 'pen') points.current.push(point(event));
                 else points.current = [points.current[0], point(event)];
                 setDraft(shape(points.current));
               }}
-              onPointerUp={finish}
+              onPointerUp={(event) => {
+                touches.current.delete(event.pointerId);
+                if (pinch.current) {
+                  pinch.current = null;
+                  gesture.current = null;
+                  return;
+                }
+                if (moving.current) {
+                  const m = moving.current,
+                    node = board.current!.querySelector('g')?.children[m.index];
+                  if (node && root.children[m.index]) {
+                    root.children[m.index].setAttribute(
+                      'transform',
+                      node.getAttribute('transform') || '',
+                    );
+                    commit(new XMLSerializer().serializeToString(root));
+                  }
+                  moving.current = null;
+                  return;
+                }
+                if (gesture.current) {
+                  gesture.current = null;
+                  return;
+                }
+                finish(event);
+              }}
               onPointerCancel={() => {
                 points.current = [];
+                gesture.current = null;
+                touches.current.clear();
+                pinch.current = null;
+                moving.current = null;
                 setDraft('');
               }}
             >
@@ -246,11 +451,65 @@ export default function SVGStudio({
               <g dangerouslySetInnerHTML={{ __html: draft }} />
             </svg>
             <p>
-              Draw with a mouse, touch or stylus. Undo shapes or edit their SVG attributes in the
-              code.
+              Draw with a stylus or mouse. Touch pans by default. Select objects in Layers to
+              arrange them; edit any attribute in the source.
             </p>
           </div>
-          <aside className="svg-code-pane">
+          <aside className="svg-code-pane" hidden={!showCode}>
+            <strong>Layers · objects</strong>
+            <div className="svg-layers" role="list" aria-label="Drawing layers">
+              {Array.from(root.children).map((child, i) => (
+                <button
+                  key={i}
+                  aria-pressed={selectedObject === i}
+                  onClick={() => {
+                    setSelectedObject(i);
+                    setMode('select');
+                  }}
+                >
+                  {i + 1}. {child.localName}
+                </button>
+              ))}
+            </div>
+            {selectedObject !== null && root.children[selectedObject] && (
+              <div className="svg-object-actions">
+                {[
+                  'Move left',
+                  'Move right',
+                  'Move up',
+                  'Move down',
+                  'Duplicate object',
+                  'Delete object',
+                  'Bring to front',
+                  'Send to back',
+                ].map((action) => (
+                  <button
+                    key={action}
+                    onClick={() => {
+                      const node = root.children[selectedObject];
+                      if (!node) return;
+                      if (action.startsWith('Move')) {
+                        const dx = action === 'Move left' ? -10 : action === 'Move right' ? 10 : 0,
+                          dy = action === 'Move up' ? -10 : action === 'Move down' ? 10 : 0;
+                        node.setAttribute(
+                          'transform',
+                          `translate(${dx} ${dy}) ${node.getAttribute('transform') || ''}`,
+                        );
+                      } else if (action === 'Duplicate object')
+                        root.appendChild(node.cloneNode(true));
+                      else if (action === 'Delete object') {
+                        node.remove();
+                        setSelectedObject(null);
+                      } else if (action === 'Bring to front') root.appendChild(node);
+                      else root.insertBefore(node, root.firstChild);
+                      commit(new XMLSerializer().serializeToString(root));
+                    }}
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="converter-toolbar">
               <strong>Vector source</strong>
               <button

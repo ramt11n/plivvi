@@ -1,0 +1,35 @@
+name: Publish version release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: node scripts/verify-build.mjs
+      - name: Publish matching changelog section
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import cp from 'node:child_process';
+          const version=JSON.parse(fs.readFileSync('package.json')).version;
+          const tag=process.env.GITHUB_REF_NAME;
+          if(tag!=='v'+version) throw Error('Tag and package version must match');
+          const section=fs.readFileSync('CHANGELOG.md','utf8').split('## '+version+' · ')[1]?.split('\n## ')[0];
+          if(!section) throw Error('Add changelog notes before tagging');
+          fs.writeFileSync('release-notes.md',section.split('\n').slice(1).join('\n').trim());
+          const exists=cp.spawnSync('gh',['release','view',tag],{stdio:'ignore'}).status===0;
+          cp.execFileSync('gh',['release',exists?'edit':'create',tag,'--title','Plivvi '+version,'--notes-file','release-notes.md'],{stdio:'inherit'});
+          JS
